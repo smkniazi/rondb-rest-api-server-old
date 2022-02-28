@@ -17,6 +17,8 @@ GITCOMMIT=`git rev-parse --short HEAD`
 BUILDTIME=`date +%FT%T%z`
 HOSTNAME=`hostname`
 BRANCH=`git rev-parse --abbrev-ref HEAD`
+VERSION=`grep "\bVERSION\b" version/version.go  | grep -o "[0-9.]*"`
+SERVER_BIN="rondb-rest-api-server"
 
 DIRS = $(shell find . -type d)
 FILES = $(shell find . -type f -iname '*.go')
@@ -30,11 +32,11 @@ rondb-rest-api-server: $(DIRS) $(FILES)
 		-X hopsworks.ai/rondb-rest-api-server/version.BUILDTIME=${BUILDTIME} \
 		-X hopsworks.ai/rondb-rest-api-server/version.HOSTNAME=${HOSTNAME} \
 		-X hopsworks.ai/rondb-rest-api-server/version.BRANCH=${BRANCH}" \
-		-o rondb-rest-api-server
+		-o ./bin/server/$(VERSION)/$(SERVER_BIN) ./cmd/server/main.go 
 
 clean:
-	rm -f rondb-rest-api-server \
+	rm -rf ./bin/*
 
 test: 
 	go test ./... -coverprofile coverage.out 
-	go tool cover -html=coverage.out -o coverage.html
+	go tool cover -html=coverage.out -o coverage.html && xdg-open coverage.html

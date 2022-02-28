@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"log"
 
-	"hopsworks.ai/rondb-rest-api-server/app"
+	"hopsworks.ai/rondb-rest-api-server/pkg/server/router"
 	"hopsworks.ai/rondb-rest-api-server/version"
 )
 
@@ -29,7 +29,7 @@ func main() {
 	log.Printf("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
 	log.Printf("Starting API Version : %s  \n", version.API_VERSION)
-	router := app.CreateRouterContext()
+	router := router.CreateRouterContext()
 	router.SetupRouter()
 	router.StartRouter()
 	fmt.Println("Bye ...")

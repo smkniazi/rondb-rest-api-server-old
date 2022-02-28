@@ -15,14 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package ginrouter
+package router
 
 import (
 	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rondb-rest-api-server/internal/router"
+	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/batchops"
 	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/pkread"
 	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/stat"
 )
@@ -34,12 +34,14 @@ type RouterConext struct {
 	Engine     *gin.Engine
 }
 
-var _ router.Router = (*RouterConext)(nil)
+var _ Router = (*RouterConext)(nil)
 
 func (rc *RouterConext) SetupRouter() {
 	rc.Engine = gin.Default()
+
 	rc.Engine.GET("/"+rc.APIVersion+"/ping", stat.StatHandler)
-	rc.Engine.GET("/"+rc.APIVersion+"/:db/:table/pk-read", pkread.PkReadHandler)
+	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+pkread.DB_OPERATION, pkread.PkReadHandler)
+	rc.Engine.POST("/"+rc.APIVersion+"/"+batchops.DB_OPERATION, batchops.BatchOpsHandler)
 }
 
 func (rc *RouterConext) StartRouter() error {
@@ -50,4 +52,13 @@ func (rc *RouterConext) StartRouter() error {
 		log.Fatalf("unable to start server. Error: %v ", err)
 	}
 	return nil
+}
+
+func CreateRouterContext() Router {
+	router := RouterConext{
+		Ip:         "localhost",
+		Port:       8080,
+		APIVersion: "1.0.0",
+	}
+	return &router
 }
