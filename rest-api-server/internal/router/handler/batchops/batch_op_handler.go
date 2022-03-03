@@ -25,8 +25,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/pkread"
-	"hopsworks.ai/rondb-rest-api-server/version"
+	"hopsworks.ai/rdrs/internal/router/handler/pkread"
+	"hopsworks.ai/rdrs/version"
 )
 
 const DB_OPS_EP_GROUP = "/" + version.API_VERSION + "/"

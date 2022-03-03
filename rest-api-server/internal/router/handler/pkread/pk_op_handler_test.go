@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	tu "hopsworks.ai/rondb-rest-api-server/internal/router/handler/utils"
+	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
 // Simple test with all parameters correctly supplied

@@ -22,9 +22,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/batchops"
-	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/pkread"
-	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/stat"
+	"hopsworks.ai/rdrs/internal/router/handler/batchops"
+	"hopsworks.ai/rdrs/internal/router/handler/pkread"
+	"hopsworks.ai/rdrs/internal/router/handler/stat"
 )
 
 type RouterConext struct {

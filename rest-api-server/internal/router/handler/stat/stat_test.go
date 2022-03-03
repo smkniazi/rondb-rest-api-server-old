@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rondb-rest-api-server/version"
+	"hopsworks.ai/rdrs/version"
 )
 
 func TestPing(t *testing.T) {

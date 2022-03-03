@@ -18,20 +18,20 @@ BUILDTIME=`date +%FT%T%z`
 HOSTNAME=`hostname`
 BRANCH=`git rev-parse --abbrev-ref HEAD`
 VERSION=`grep "\bVERSION\b" version/version.go  | grep -o "[0-9.]*"`
-SERVER_BIN="rondb-rest-api-server"
+SERVER_BIN="rdrs"
 
 DIRS = $(shell find . -type d)
 FILES = $(shell find . -type f -iname '*.go')
 
-all: rondb-rest-api-server
+all: rdrs
 
 #-tags osusergo,netgo
-rondb-rest-api-server: $(DIRS) $(FILES)
+rdrs: $(DIRS) $(FILES)
 	go build  -ldflags="-w \
-		-X hopsworks.ai/rondb-rest-api-server/version.GITCOMMIT=${GITCOMMIT} \
-		-X hopsworks.ai/rondb-rest-api-server/version.BUILDTIME=${BUILDTIME} \
-		-X hopsworks.ai/rondb-rest-api-server/version.HOSTNAME=${HOSTNAME} \
-		-X hopsworks.ai/rondb-rest-api-server/version.BRANCH=${BRANCH}" \
+		-X hopsworks.ai/rdrs/version.GITCOMMIT=${GITCOMMIT} \
+		-X hopsworks.ai/rdrs/version.BUILDTIME=${BUILDTIME} \
+		-X hopsworks.ai/rdrs/version.HOSTNAME=${HOSTNAME} \
+		-X hopsworks.ai/rdrs/version.BRANCH=${BRANCH}" \
 		-o ./bin/server/$(VERSION)/$(SERVER_BIN) ./cmd/server/main.go 
 
 clean:

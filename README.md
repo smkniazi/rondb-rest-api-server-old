@@ -1,2 +1,6 @@
-# rondb-rest-api-server
-RonDB REST API Server
+# RDRS -- *R*on*D*B *R*EST API *S*erver 
+
+This RonDB REST API Server and data access library. 
+
+
+

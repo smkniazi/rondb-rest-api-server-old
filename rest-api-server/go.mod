@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 //
-module hopsworks.ai/rondb-rest-api-server
+module hopsworks.ai/rdrs
 
 go 1.17
 

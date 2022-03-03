@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"log"
 
-	"hopsworks.ai/rondb-rest-api-server/pkg/server/router"
-	"hopsworks.ai/rondb-rest-api-server/version"
+	"hopsworks.ai/rdrs/pkg/server/router"
+	"hopsworks.ai/rdrs/version"
 )
 
 func main() {

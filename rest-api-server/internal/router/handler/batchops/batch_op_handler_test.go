@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rondb-rest-api-server/internal/router/handler/pkread"
-	tu "hopsworks.ai/rondb-rest-api-server/internal/router/handler/utils"
+	"hopsworks.ai/rdrs/internal/router/handler/pkread"
+	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
 func TestBatchOps(t *testing.T) {
