@@ -19,12 +19,14 @@
 package pkread
 
 import (
-	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"hopsworks.ai/rdrs/internal/native"
 	"hopsworks.ai/rdrs/version"
 )
 
@@ -76,10 +78,13 @@ func PkReadHandler(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Full URI: %s\n", c.Request.URL)
-	msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
-	fmt.Printf("Request Params: %s\n", msg)
+	t := rand.Int63n(5000)
+	time.Sleep(time.Duration(t) * time.Millisecond)
+	// fmt.Printf("Full URI: %s\n", c.Request.URL)
+	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
+	// fmt.Printf("Request Params: %s\n", msg)
 	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
+	native.HelloWorld()
 }
 
 func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {

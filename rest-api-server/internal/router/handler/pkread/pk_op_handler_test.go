@@ -22,10 +22,34 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
+
+func TestPKNative(t *testing.T) {
+
+	router := gin.New()
+
+	group := router.Group(DB_OPS_EP_GROUP)
+	group.POST(DB_OPERATION, PkReadHandler)
+
+	param := PKReadBody{
+		Filters:     NewFilters(t, "filter_col_", 3),
+		ReadColumns: NewReadColumns(t, "read_col_", 5),
+		OperationID: NewOperationID(t, 64),
+	}
+
+	body, _ := json.MarshalIndent(param, "", "\t")
+
+	for i := 0; i < 1; i++ {
+		url := NewPKReadURL(fmt.Sprintf("db_%d", i), fmt.Sprintf("time_%d", i))
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
+	}
+
+	time.Sleep(5 * time.Second)
+}
 
 // Simple test with all parameters correctly supplied
 func TestPKReadTest(t *testing.T) {

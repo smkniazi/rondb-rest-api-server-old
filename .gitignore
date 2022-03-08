@@ -1,4 +1,7 @@
 # Binaries for programs and plugins
+#_
+./data-access-rondb/build
+./rest-api-server/bin
 *.exe
 *.exe~
 *.dll
