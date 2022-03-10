@@ -16,17 +16,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
-#include <stdbool.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef LOGGER_H 
+#define LOGGER_H
+
+#include <iostream>
+
 
 #define WARN(msg) std::cout << msg << std::endl;
 #define ERROR(msg) std::cout << msg << std::endl;
 #define INFO(msg) std::cout << msg << std::endl;
 #define TRACE(msg) std::cout << msg << std::endl;
 
-#ifdef __cplusplus
-}
 #endif
-

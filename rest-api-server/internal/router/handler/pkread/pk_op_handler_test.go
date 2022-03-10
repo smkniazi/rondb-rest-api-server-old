@@ -28,6 +28,12 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
+func TestString(t *testing.T) {
+
+	fmt.Printf("%c\n", rune(0x0001))
+
+}
+
 func TestPKNative(t *testing.T) {
 
 	router := gin.New()
@@ -36,7 +42,7 @@ func TestPKNative(t *testing.T) {
 	group.POST(DB_OPERATION, PkReadHandler)
 
 	param := PKReadBody{
-		Filters:     NewFilters(t, "filter_col_", 3),
+		Filters:     NewFilters(t, "filter_col_", 5),
 		ReadColumns: NewReadColumns(t, "read_col_", 5),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -44,11 +50,11 @@ func TestPKNative(t *testing.T) {
 	body, _ := json.MarshalIndent(param, "", "\t")
 
 	for i := 0; i < 1; i++ {
-		url := NewPKReadURL(fmt.Sprintf("db_%d", i), fmt.Sprintf("time_%d", i))
+		url := NewPKReadURL(fmt.Sprintf("db_%d", i), fmt.Sprintf("table_%d", i))
 		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 }
 
 // Simple test with all parameters correctly supplied

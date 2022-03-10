@@ -26,7 +26,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"hopsworks.ai/rdrs/internal/native"
 	"hopsworks.ai/rdrs/version"
 )
 
@@ -78,13 +77,13 @@ func PkReadHandler(c *gin.Context) {
 		return
 	}
 
-	t := rand.Int63n(5000)
+	t := rand.Int63n(500)
 	time.Sleep(time.Duration(t) * time.Millisecond)
 	// fmt.Printf("Full URI: %s\n", c.Request.URL)
 	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
 	// fmt.Printf("Request Params: %s\n", msg)
 	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
-	native.HelloWorld()
+	PKReadDB(&pkReadParams)
 }
 
 func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {
@@ -180,7 +179,9 @@ func validateDBIdentifier(identifier string) error {
 		return fmt.Errorf("field length validation failed")
 	}
 
+	//https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
 	for _, r := range identifier {
+		// test for basic latin characters
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || (r == '_') || r == '$') {
 			return fmt.Errorf("field validation failed. Invalid character '%c' ", r)
 		}

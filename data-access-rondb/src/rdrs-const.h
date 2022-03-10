@@ -17,37 +17,29 @@
  * USA.
  */
 
+#ifndef RDRS_CONST
+#define RDRS_CONST
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct RDRSRet {
-  int   ret_code;
-  char *message;
-} RDRSRet;
+// Request Type Identifiers
+#define RDRS_PK_REQ_ID    1
+#define RDRS_BATCH_REQ_ID 2
 
-/**
- * Initialize connection to the database
- */
-RDRSRet init(const char *connection_string);
-
-/**
- * Primary key read operation
- *
- * @db database
- * @table table
- * @pkCols char array of primary key column names
- * @values char array of primary key column values
- * @readCols re
- */
-RDRSRet pkRead(const char *db, const char *table, const char **pkCols,
-               const char **values, const char **readCols);
-/**
- * hello work function for testing
- */
-RDRSRet helloWorld(const char *request);
+// Primary Key Read Request Header Indexes
+#define PKR_OP_TYPE_IDX   0
+#define PKR_CAPACITY_IDX  1
+#define PKR_LENGTH_IDX    2
+#define PKR_DB_IDX        3
+#define PKR_TABLE_IDX     4
+#define PKR_PK_COLS_IDX   5
+#define PKR_READ_COLS_IDX 6
+#define PKR_OP_ID_IDX     7
+#define PKR_HEADER_END    32 
 
 #ifdef __cplusplus
 }
 #endif
-
+#endif
