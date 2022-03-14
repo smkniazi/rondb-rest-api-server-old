@@ -79,8 +79,12 @@ const char *PKRead::pkValue(uint32_t index) {
 
 uint32_t PKRead::readColumnsCount() {
   uint32_t offset = ((uint32_t *)request)[PKR_READ_COLS_IDX];
-  uint32_t count  = ((uint32_t *)request)[offset / sizeof(uint32_t)];
-  return count;
+  if (offset == 0) {
+    return 0;
+  } else {
+    uint32_t count = ((uint32_t *)request)[offset / sizeof(uint32_t)];
+    return count;
+  }
 }
 
 const char *PKRead::readColumnName(const uint32_t n) {
@@ -97,5 +101,9 @@ const char *PKRead::readColumnName(const uint32_t n) {
 
 const char *PKRead::operationId() {
   uint32_t offset = ((uint32_t *)request)[PKR_OP_ID_IDX];
-  return request + offset;
+  if (offset != 0) {
+    return request + offset;
+  } else {
+    return NULL;
+  }
 }

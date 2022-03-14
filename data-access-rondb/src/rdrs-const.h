@@ -24,6 +24,10 @@
 extern "C" {
 #endif
 
+// 4 bytes. Max addressable memrory is 4GB 
+// which is max supported blob size
+#define ADDRESS_SIZE 4
+
 // Request Type Identifiers
 #define RDRS_PK_REQ_ID    1
 #define RDRS_BATCH_REQ_ID 2
@@ -37,7 +41,7 @@ extern "C" {
 #define PKR_PK_COLS_IDX   5
 #define PKR_READ_COLS_IDX 6
 #define PKR_OP_ID_IDX     7
-#define PKR_HEADER_END    32 
+#define PKR_HEADER_END    32
 
 #ifdef __cplusplus
 }

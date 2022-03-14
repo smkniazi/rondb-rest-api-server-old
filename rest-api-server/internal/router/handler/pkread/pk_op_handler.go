@@ -20,12 +20,11 @@ package pkread
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"hopsworks.ai/rdrs/internal/native"
 	"hopsworks.ai/rdrs/version"
 )
 
@@ -77,13 +76,14 @@ func PkReadHandler(c *gin.Context) {
 		return
 	}
 
-	t := rand.Int63n(500)
-	time.Sleep(time.Duration(t) * time.Millisecond)
+	// t := rand.Int63n(500)
+	// time.Sleep(time.Duration(t) * time.Millisecond)
 	// fmt.Printf("Full URI: %s\n", c.Request.URL)
 	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
 	// fmt.Printf("Request Params: %s\n", msg)
+	request := createNativeRequest(&pkReadParams)
+	native.RonDBPKRead(request)
 	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
-	PKReadDB(&pkReadParams)
 }
 
 func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {
@@ -181,9 +181,8 @@ func validateDBIdentifier(identifier string) error {
 
 	//https://dev.mysql.com/doc/refman/8.0/en/identifiers.html
 	for _, r := range identifier {
-		// test for basic latin characters
-		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || (r == '_') || r == '$') {
-			return fmt.Errorf("field validation failed. Invalid character '%c' ", r)
+		if !((r >= rune(0x0001) && r <= rune(0x007F)) || (r >= rune(0x0080) && r <= rune(0x0FFF))) {
+			return fmt.Errorf("field validation failed. Invalid character '%U' ", r)
 		}
 	}
 	return nil

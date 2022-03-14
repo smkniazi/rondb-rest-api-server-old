@@ -20,7 +20,7 @@ Ndb                    *ndb_object;
 
 int main(int argc, char **argv) {
   char connection_string[] = "localhost:1186";
-  /* init(connection_string); */
+  init(connection_string);
   helloWorld(NULL);
   return 0;
 }
@@ -59,6 +59,8 @@ RDRSRet pkRead(const char *db, const char *table, const char **pkCols, const cha
                const char **readCols) {
   return mkRDRSRet(0, NULL);
 }
+
+
 
 RDRSRet helloWorld(const char *request) {
   /* int tid =  pthread_self(); */

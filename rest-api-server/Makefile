@@ -25,6 +25,7 @@ FILES = $(shell find . -type f -iname '*.go')
 
 all: rdrs
 
+#static linking https://ragoragino.github.io/softwareengineering/miscellaneous/2021/03/23/cgo-static.html 
 #-tags osusergo,netgo
 rdrs: $(DIRS) $(FILES)
 	go build  -ldflags="-w \

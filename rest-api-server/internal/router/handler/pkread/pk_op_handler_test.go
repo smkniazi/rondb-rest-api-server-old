@@ -30,7 +30,7 @@ import (
 
 func TestString(t *testing.T) {
 
-	fmt.Printf("%c\n", rune(0x0001))
+	fmt.Printf("%c\n", rune(0x007F))
 
 }
 
@@ -128,8 +128,8 @@ func TestPKReadLargeColumns(t *testing.T) {
 	}
 	body, _ := json.MarshalIndent(param, "", "\t")
 	url := NewPKReadURL("db", "table")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url, string(body), http.StatusBadRequest, "Field validation for 'Column' failed on the 'max' tag")
+	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body),
+		http.StatusBadRequest, "Field validation for 'Column' failed on the 'max' tag")
 
 	// Test. Large read column names.
 	param = PKReadBody{
@@ -149,17 +149,17 @@ func TestPKReadLargeColumns(t *testing.T) {
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	url1 := NewPKReadURL(RandString(65), "table")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url1, string(body), http.StatusBadRequest, "Field validation for 'DB' failed on the 'max' tag")
+	tu.ProcessRequest(t, router, HTTP_VERB, url1, string(body),
+		http.StatusBadRequest, "Field validation for 'DB' failed on the 'max' tag")
 	url2 := NewPKReadURL("db", RandString(65))
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url2, string(body), http.StatusBadRequest, "Field validation for 'Table' failed on the 'max' tag")
+	tu.ProcessRequest(t, router, HTTP_VERB, url2, string(body),
+		http.StatusBadRequest, "Field validation for 'Table' failed on the 'max' tag")
 	url3 := NewPKReadURL("", "table")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url3, string(body), http.StatusBadRequest, "Field validation for 'DB' failed on the 'min' tag")
+	tu.ProcessRequest(t, router, HTTP_VERB, url3, string(body),
+		http.StatusBadRequest, "Field validation for 'DB' failed on the 'min' tag")
 	url4 := NewPKReadURL("db", "")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url4, string(body), http.StatusBadRequest, "Field validation for 'Table' failed on the 'min' tag")
+	tu.ProcessRequest(t, router, HTTP_VERB, url4, string(body), http.StatusBadRequest,
+		"Field validation for 'Table' failed on the 'min' tag")
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
@@ -167,8 +167,10 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	group := router.Group(DB_OPS_EP_GROUP)
 	group.POST(DB_OPERATION, PkReadHandler)
 
+	//Valid chars [ U+0001 .. U+007F] and [ U+0080 .. U+FFFF]
+
 	// Test. invalid filter
-	col := "col@"
+	col := "col" + string(rune(0x0000))
 	val := "val"
 	param := PKReadBody{
 		Filters:     NewFilter(t, &col, &val),
@@ -177,20 +179,20 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	}
 	body, _ := json.MarshalIndent(param, "", "\t")
 	url := NewPKReadURL("db", "table")
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body),
-		http.StatusBadRequest, "field validation failed. Invalid character '@'")
+	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+		fmt.Sprintf("field validation failed. Invalid character '%U' ", rune(0x0000)))
 
 	// Test. invalid read col
 	col = "col"
 	val = "val"
 	param = PKReadBody{
 		Filters:     NewFilter(t, &col, &val),
-		ReadColumns: NewReadColumn(t, "col#"),
+		ReadColumns: NewReadColumn(t, "col"+string(rune(0x10000))),
 		OperationID: NewOperationID(t, 64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body),
-		http.StatusBadRequest, "field validation failed. Invalid character '#'")
+	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+		fmt.Sprintf("field validation failed. Invalid character '%U'", rune(0x10000)))
 
 	// Test. Invalid path parameteres
 	param = PKReadBody{
@@ -199,12 +201,12 @@ func TestPKInvalidIdentifier(t *testing.T) {
 		OperationID: NewOperationID(t, 64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
-	url1 := NewPKReadURL("db*", "table")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url1, string(body), http.StatusBadRequest, "field validation failed. Invalid character '*'")
-	url2 := NewPKReadURL("db", "table!")
-	tu.ProcessRequest(t, router, HTTP_VERB,
-		url2, string(body), http.StatusBadRequest, "field validation failed. Invalid character '!'")
+	url1 := NewPKReadURL("db"+string(rune(0x10000)), "table")
+	tu.ProcessRequest(t, router, HTTP_VERB, url1, string(body), http.StatusBadRequest,
+		fmt.Sprintf("field validation failed. Invalid character '%U'", rune(0x10000)))
+	url2 := NewPKReadURL("db", "table"+string(rune(0x10000)))
+	tu.ProcessRequest(t, router, HTTP_VERB, url2, string(body), http.StatusBadRequest,
+		fmt.Sprintf("field validation failed. Invalid character '%U'", rune(0x10000)))
 }
 
 func TestPKUniqueParams(t *testing.T) {

@@ -22,16 +22,21 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/native"
 	"hopsworks.ai/rdrs/internal/router/handler/batchops"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	"hopsworks.ai/rdrs/internal/router/handler/stat"
 )
 
 type RouterConext struct {
+	// REST Server
 	Ip         string
 	Port       int32
 	APIVersion string
 	Engine     *gin.Engine
+
+	// RonDB
+	ConnStr string
 }
 
 var _ Router = (*RouterConext)(nil)
@@ -42,6 +47,9 @@ func (rc *RouterConext) SetupRouter() {
 	rc.Engine.GET("/"+rc.APIVersion+"/ping", stat.StatHandler)
 	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+pkread.DB_OPERATION, pkread.PkReadHandler)
 	rc.Engine.POST("/"+rc.APIVersion+"/"+batchops.DB_OPERATION, batchops.BatchOpsHandler)
+
+	// connect to RonDB
+	native.InitRonDBConnection(rc.ConnStr)
 }
 
 func (rc *RouterConext) StartRouter() error {
@@ -59,6 +67,7 @@ func CreateRouterContext() Router {
 		Ip:         "localhost",
 		Port:       8080,
 		APIVersion: "1.0.0",
+		ConnStr:    "localhost:1186",
 	}
 	return &router
 }
