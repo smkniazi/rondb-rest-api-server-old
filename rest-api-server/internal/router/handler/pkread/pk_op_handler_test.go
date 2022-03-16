@@ -25,32 +25,41 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/native"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-func TestString(t *testing.T) {
-
-	fmt.Printf("%c\n", rune(0x007F))
-
-}
-
-func TestPKNative(t *testing.T) {
-
+func initRouter(t *testing.T) *gin.Engine {
+	t.Helper()
+	//router := gin.Default()
 	router := gin.New()
 
 	group := router.Group(DB_OPS_EP_GROUP)
 	group.POST(DB_OPERATION, PkReadHandler)
+	err := native.InitRonDBConnection("localhost:1186")
+	if err != nil {
+		t.Errorf("Failed to connect to RonDB. Error: %v", err)
+	}
+	return router
+}
 
+func TestPKNative(t *testing.T) {
+
+	initRouter(t)
+	router := initRouter(t)
+
+	pkCol := "id"
+	pkVal := "1"
 	param := PKReadBody{
-		Filters:     NewFilters(t, "filter_col_", 5),
-		ReadColumns: NewReadColumns(t, "read_col_", 5),
+		Filters:     NewFilter(t, &pkCol, &pkVal),
+		ReadColumns: NewReadColumn(t, "value"),
 		OperationID: NewOperationID(t, 64),
 	}
 
 	body, _ := json.MarshalIndent(param, "", "\t")
 
 	for i := 0; i < 1; i++ {
-		url := NewPKReadURL(fmt.Sprintf("db_%d", i), fmt.Sprintf("table_%d", i))
+		url := NewPKReadURL("db", "test")
 		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
 	}
 
@@ -59,9 +68,7 @@ func TestPKNative(t *testing.T) {
 
 // Simple test with all parameters correctly supplied
 func TestPKReadTest(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	router := initRouter(t)
 
 	param := PKReadBody{
 		Filters:     NewFilters(t, "filter_col_", 3),
@@ -81,9 +88,7 @@ func TestPKReadTest(t *testing.T) {
 }
 
 func TestPKReadOmitRequired(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	router := initRouter(t)
 
 	// Test. Omitting filter should result in 400 error
 	param := PKReadBody{
@@ -114,9 +119,7 @@ func TestPKReadOmitRequired(t *testing.T) {
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	router := initRouter(t)
 
 	// Test. Large filter column names.
 	col := RandString(65)
@@ -163,9 +166,7 @@ func TestPKReadLargeColumns(t *testing.T) {
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	router := initRouter(t)
 
 	//Valid chars [ U+0001 .. U+007F] and [ U+0080 .. U+FFFF]
 
@@ -210,9 +211,7 @@ func TestPKInvalidIdentifier(t *testing.T) {
 }
 
 func TestPKUniqueParams(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	router := initRouter(t)
 
 	// Test. unique read columns
 	readColumns := make([]string, 2)

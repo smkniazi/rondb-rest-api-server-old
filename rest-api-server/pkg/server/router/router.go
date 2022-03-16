@@ -18,6 +18,6 @@
 package router
 
 type Router interface {
-	SetupRouter()
+	SetupRouter() error
 	StartRouter() error
 }

@@ -17,31 +17,13 @@
  * USA.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "pkr-response.hpp"
 
-#ifndef RDRSLIB_H
-#define RDRSLIB_H
-
-typedef struct RS_Status {
-  int   ret_code;
-  char *message;
-} RS_Status;
-
-/**
- * Initialize connection to the database
- */
-RS_Status init(const char *connection_string);
-
-/**
- * Primary key read operation
- */
-RS_Status pkRead(char *reqBuff, char *respBuff) ; 
-
-#endif
-
-#ifdef __cplusplus
+PKRResponse::PKRResponse(char *respBuff) {
+  this->respBuff = respBuff;
 }
-#endif
+
+char *PKRResponse::getResponseBuffer() {
+  return respBuff;
+}
 

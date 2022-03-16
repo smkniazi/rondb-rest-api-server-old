@@ -16,32 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
+#ifndef PKR_RESPONSE
+#define PKR_RESPONSE
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#ifndef RDRSLIB_H
-#define RDRSLIB_H
+class PKRResponse {
 
-typedef struct RS_Status {
-  int   ret_code;
-  char *message;
-} RS_Status;
+private:
+  char *respBuff;
 
-/**
- * Initialize connection to the database
- */
-RS_Status init(const char *connection_string);
+public:
+  PKRResponse(char* respBuff); 
 
-/**
- * Primary key read operation
- */
-RS_Status pkRead(char *reqBuff, char *respBuff) ; 
+  char* getResponseBuffer() ;
+};
 
 #endif
-
-#ifdef __cplusplus
-}
-#endif
-

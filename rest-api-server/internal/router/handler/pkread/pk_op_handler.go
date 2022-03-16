@@ -81,9 +81,13 @@ func PkReadHandler(c *gin.Context) {
 	// fmt.Printf("Full URI: %s\n", c.Request.URL)
 	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
 	// fmt.Printf("Request Params: %s\n", msg)
-	request := createNativeRequest(&pkReadParams)
-	native.RonDBPKRead(request)
-	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
+	request, response := createNativeRequest(&pkReadParams)
+	err = native.RonDBPKRead(request, response)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"OK": true, "msg": processResponse(response)})
+	}
 }
 
 func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {

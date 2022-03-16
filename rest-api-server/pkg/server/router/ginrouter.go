@@ -19,7 +19,6 @@ package router
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/native"
@@ -41,7 +40,7 @@ type RouterConext struct {
 
 var _ Router = (*RouterConext)(nil)
 
-func (rc *RouterConext) SetupRouter() {
+func (rc *RouterConext) SetupRouter() error {
 	rc.Engine = gin.Default()
 
 	rc.Engine.GET("/"+rc.APIVersion+"/ping", stat.StatHandler)
@@ -49,16 +48,23 @@ func (rc *RouterConext) SetupRouter() {
 	rc.Engine.POST("/"+rc.APIVersion+"/"+batchops.DB_OPERATION, batchops.BatchOpsHandler)
 
 	// connect to RonDB
-	native.InitRonDBConnection(rc.ConnStr)
+	err := native.InitRonDBConnection(rc.ConnStr)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (rc *RouterConext) StartRouter() error {
+
 	address := fmt.Sprintf("%s:%d", rc.Ip, rc.Port)
 	fmt.Printf("Listening on %s\n", address)
 	err := rc.Engine.Run(address)
 	if err != nil {
-		log.Fatalf("unable to start server. Error: %v ", err)
+		return err
 	}
+
 	return nil
 }
 

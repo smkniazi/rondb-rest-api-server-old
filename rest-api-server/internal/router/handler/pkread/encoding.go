@@ -66,11 +66,12 @@ import (
 //  [ bytes ... ] ...
 //   null terminated transaction Id
 
-func createNativeRequest(pkrParams *PKReadParams) unsafe.Pointer {
-	buffer := native.GetBuffer()
+func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointer) {
+	response := native.GetBuffer()
+	request := native.GetBuffer()
 
-	iBuf := (*[native.BUFFER_SIZE / C.ADDRESS_SIZE]uint32)(buffer)
-	bBuf := (*[native.BUFFER_SIZE]byte)(buffer)
+	iBuf := (*[native.BUFFER_SIZE / C.ADDRESS_SIZE]uint32)(request)
+	bBuf := (*[native.BUFFER_SIZE]byte)(request)
 
 	// First N bytes are for header
 	var head uint32 = C.PKR_HEADER_END
@@ -143,5 +144,9 @@ func createNativeRequest(pkrParams *PKReadParams) unsafe.Pointer {
 	iBuf[C.PKR_PK_COLS_IDX] = uint32(pkOffset)
 	iBuf[C.PKR_READ_COLS_IDX] = uint32(readColsOffset)
 	iBuf[C.PKR_OP_ID_IDX] = uint32(opIdOffset)
-	return buffer
+	return request, response
+}
+
+func processResponse(buffer unsafe.Pointer) string {
+	return C.GoString((*C.char)(buffer))
 }

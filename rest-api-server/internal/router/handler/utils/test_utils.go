@@ -17,6 +17,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -33,10 +34,12 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 
 	if resp.Code != expectedStatus || !strings.Contains(resp.Body.String(), expectedMsg) {
 		if resp.Code != expectedStatus {
-			t.Errorf("Test failed. Expected: %d, Got: %d. ", expectedStatus, resp.Code)
+			t.Errorf("Test failed. Expected: %d, Got: %d. Complete Response Body: %v ", expectedStatus, resp.Code, resp.Body)
 		}
 		if !strings.Contains(resp.Body.String(), expectedMsg) {
 			t.Errorf("Test failed. Response body does not contain %s. Body: %s", expectedMsg, resp.Body)
 		}
 	}
+
+	fmt.Printf("Response Body: %v\n", resp.Body)
 }

@@ -30,7 +30,11 @@ func main() {
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
 	log.Printf("Starting API Version : %s  \n", version.API_VERSION)
 	router := router.CreateRouterContext()
-	router.SetupRouter()
-	router.StartRouter()
+	err := router.SetupRouter()
+	if err != nil {
+	}
+	err = router.StartRouter()
+	if err != nil {
+	}
 	fmt.Println("Bye ...")
 }

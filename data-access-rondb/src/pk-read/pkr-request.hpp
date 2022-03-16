@@ -16,51 +16,44 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
-#ifndef PK_READ
-#define PK_READ
+#ifndef PKR_REQUEST
+#define PKR_REQUEST
 
+#include <NdbApi.hpp>
 #include <stdint.h>
 
-typedef struct KeyValueTuple {
-  const char *key;
-  const char *value;
-} KeyValueTuple;
-
-class PKRead {
+class PKRRequest {
 private:
-  const char *request;
+  char *buffer;
 
   /**
    * Get offset of nth primary key/value pair
    *
    * @param n nth key/value pair
-   * @return offset 
+   * @return offset
    */
-  uint32_t pkTupleOffset(const int n);
-
-
+   uint32_t pkTupleOffset(const int n);
 
 public:
-
-  PKRead(const char *request);
+  PKRRequest(char *request);
 
   /**
    * Opration type
    * @return Operation type
    */
-  uint32_t operationType();
+   uint32_t operationType();
 
   /**
    * Get length of the data
    * @return data length
    */
-  uint32_t length();
+   uint32_t length();
 
   /**
    * Get maximum capacity of the buffer
    * @return buffer capacity
    */
-  uint32_t capacity();
+   uint32_t capacity();
 
   /**
    * Get database name
@@ -78,7 +71,7 @@ public:
    * Get number of PK columns
    * @return number of PK Columns
    */
-  uint32_t pkColumnsCount();
+   uint32_t pkColumnsCount();
 
   /**
    * Get PK column name
@@ -100,7 +93,7 @@ public:
    * Get number of read columns
    * @return number of read columns
    */
-  uint32_t readColumnsCount();
+   uint32_t readColumnsCount();
 
   /**
    * Get read column name

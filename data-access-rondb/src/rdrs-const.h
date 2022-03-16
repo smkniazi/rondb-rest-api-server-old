@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-// 4 bytes. Max addressable memrory is 4GB 
+// 4 bytes. Max addressable memrory is 4GB
 // which is max supported blob size
 #define ADDRESS_SIZE 4
 

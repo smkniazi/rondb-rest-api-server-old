@@ -46,6 +46,12 @@ func InitRonDBConnection(connStr string) error {
 	return nil
 }
 
-func RonDBPKRead(request unsafe.Pointer) {
-	C.helloWorld((*C.char)(request))
+func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) error {
+	ret := C.pkRead((*C.char)(request), (*C.char)(response))
+	if ret.ret_code != 0 {
+		defer C.free(unsafe.Pointer(ret.message))
+		return fmt.Errorf(C.GoString(ret.message))
+	}
+
+	return nil
 }
