@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rdrs/internal/native"
+	"hopsworks.ai/rdrs/internal/dal"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
@@ -36,7 +36,7 @@ func initRouter(t *testing.T) *gin.Engine {
 
 	group := router.Group(DB_OPS_EP_GROUP)
 	group.POST(DB_OPERATION, PkReadHandler)
-	err := native.InitRonDBConnection("localhost:1186")
+	err := dal.InitRonDBConnection("localhost:1186")
 	if err != nil {
 		t.Errorf("Failed to connect to RonDB. Error: %v", err)
 	}

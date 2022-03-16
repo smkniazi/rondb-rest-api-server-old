@@ -16,14 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package native
+package dal
 
 /*
 #cgo CFLAGS: -g -Wall
 #cgo LDFLAGS: -L./../../../data-access-rondb/build/ -lrdrclient
 #cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
-#include <stdlib.h>
-#include "./../../../data-access-rondb/src/rdrslib.h"
 #include "./../../../data-access-rondb/src/rdrs-const.h"
 */
 import "C"
@@ -32,26 +30,18 @@ import (
 	"unsafe"
 )
 
-func InitRonDBConnection(connStr string) error {
+const BUFFER_SIZE = 512
 
-	cs := C.CString(connStr)
-	defer C.free(unsafe.Pointer(cs))
-	ret := C.init(cs)
-
-	if ret.ret_code != 0 {
-		defer C.free(unsafe.Pointer(ret.message))
-		return fmt.Errorf(C.GoString(ret.message))
+func init() {
+	if C.ADDRESS_SIZE != 4 {
+		panic(fmt.Sprintf("Only 4 byte address are supported", C.ADDRESS_SIZE))
 	}
 
-	return nil
+	if BUFFER_SIZE%C.ADDRESS_SIZE != 0 {
+		panic(fmt.Sprintf("Buffer size must be multiple of %s", C.ADDRESS_SIZE))
+	}
 }
 
-func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) error {
-	ret := C.pkRead((*C.char)(request), (*C.char)(response))
-	if ret.ret_code != 0 {
-		defer C.free(unsafe.Pointer(ret.message))
-		return fmt.Errorf(C.GoString(ret.message))
-	}
-
-	return nil
+func GetBuffer() (unsafe.Pointer, uint32) {
+	return C.malloc(C.size_t(BUFFER_SIZE)), BUFFER_SIZE
 }

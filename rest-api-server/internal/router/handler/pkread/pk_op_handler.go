@@ -24,7 +24,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"hopsworks.ai/rdrs/internal/native"
+	"hopsworks.ai/rdrs/internal/dal"
 	"hopsworks.ai/rdrs/version"
 )
 
@@ -81,8 +81,10 @@ func PkReadHandler(c *gin.Context) {
 	// fmt.Printf("Full URI: %s\n", c.Request.URL)
 	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
 	// fmt.Printf("Request Params: %s\n", msg)
+
+	// createNativeRequest(&pkReadParams)
 	request, response := createNativeRequest(&pkReadParams)
-	err = native.RonDBPKRead(request, response)
+	err = dal.RonDBPKRead(request, response)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 	} else {

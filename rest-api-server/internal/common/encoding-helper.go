@@ -16,17 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package native
+package common
 
 // copy a go string to a buffer at the specified location. Null is appended to the string
 // for c/c++ compatibility
-func CopyGoString(src []byte, dst *[BUFFER_SIZE]byte, offset uint32) uint32 {
+func CopyGoString(src []byte, dst []byte, offset uint32) uint32 {
 	for i, j := offset, 0; i < (offset + uint32(len(src))); i, j = i+1, j+1 {
-		(*dst)[i] = src[j]
+		dst[i] = src[j]
 	}
-	(*dst)[offset+uint32(len(src))] = 0x00
+	dst[offset+uint32(len(src))] = 0x00
 	return offset + uint32(len(src)) + 1
-	// return 0
 }
 
 // WORD alignment

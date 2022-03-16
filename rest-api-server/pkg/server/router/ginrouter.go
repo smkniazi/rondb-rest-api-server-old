@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rdrs/internal/native"
+	"hopsworks.ai/rdrs/internal/dal"
 	"hopsworks.ai/rdrs/internal/router/handler/batchops"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	"hopsworks.ai/rdrs/internal/router/handler/stat"
@@ -48,7 +48,7 @@ func (rc *RouterConext) SetupRouter() error {
 	rc.Engine.POST("/"+rc.APIVersion+"/"+batchops.DB_OPERATION, batchops.BatchOpsHandler)
 
 	// connect to RonDB
-	err := native.InitRonDBConnection(rc.ConnStr)
+	err := dal.InitRonDBConnection(rc.ConnStr)
 	if err != nil {
 		return err
 	}
