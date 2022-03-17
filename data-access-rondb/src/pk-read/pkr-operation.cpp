@@ -24,7 +24,8 @@
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
 
-PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject) : request(reqBuff), response(respBuff) {
+PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
+    : request(reqBuff), response(respBuff) {
   this->ndbObject = ndbObject;
 }
 
@@ -39,7 +40,7 @@ PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject) : requ
  * @return status
  */
 
-RS_Status  PKROperation::setupTransaction() {
+RS_Status PKROperation::setupTransaction() {
 
   if (ndbObject->setCatalogName(request.db()) != 0) {
     return RS_ERROR(1, "Database does not exist. Database: " + string(request.db()));
@@ -77,7 +78,12 @@ RS_Status PKROperation::setupReadOperation() {
 
   operation->readTuple(NdbOperation::LM_CommittedRead);
   for (uint32_t i = 0; i < request.pkColumnsCount(); i++) {
-    operation->equal(request.pkName(i), stoi(request.pkValue(i)));
+
+    char *data;
+    if (request.pkValueNDBStr(i, tableDic->getColumn(request.pkName(i)), &data) != 0) {
+      return RS_ERROR(-1, "Invalid data for column \"" + string(request.pkName(i)) + "\"");
+    }
+    operation->equal(request.pkName(i), data);
     // operation->equal(pkName(i),  pkValue(i));
   }
 
@@ -168,7 +174,7 @@ int PKROperation::copyString(const NdbRecAttr *attr, int start) {
     //        str = str.substr(0, endpos + 1);
     //      }
     //    }
-    response.getResponseBuffer()[start + attr_bytes ] = 0x00;
+    response.getResponseBuffer()[start + attr_bytes] = 0x00;
     return start + attr_bytes + 1;
   }
   return 0;

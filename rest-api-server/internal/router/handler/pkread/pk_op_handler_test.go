@@ -59,7 +59,7 @@ func TestPKNative(t *testing.T) {
 	body, _ := json.MarshalIndent(param, "", "\t")
 
 	for i := 0; i < 1; i++ {
-		url := NewPKReadURL("db", "test")
+		url := NewPKReadURL("db", "table")
 		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
 	}
 

@@ -83,7 +83,11 @@ func PkReadHandler(c *gin.Context) {
 	// fmt.Printf("Request Params: %s\n", msg)
 
 	// createNativeRequest(&pkReadParams)
-	request, response := createNativeRequest(&pkReadParams)
+	request, response, err := createNativeRequest(&pkReadParams)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
+	}
+
 	err = dal.RonDBPKRead(request, response)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})

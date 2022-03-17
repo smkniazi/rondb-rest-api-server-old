@@ -34,6 +34,8 @@ import (
 	"hopsworks.ai/rdrs/internal/dal"
 )
 
+// Also checkout internal/router/handler/pkread/encoding-scheme.png
+
 //  PK READ Request
 //  ===============
 //
@@ -50,13 +52,13 @@ import (
 //  [ bytes ... ]
 //    Null termnated Table Name
 //
-//  [   4B   ][   4B   ]...[   4B   ][   4B   ][   4B   ][   bytes ...  ][   4B   ][   4B   ] ....
-//    Count     kv 1          kv n       key       value     key value      key       value     key value
-//            offset        offset     offset     offset       pair       offset     offset       pair
+//  [   4B   ][   4B   ]...[   4B   ][   4B   ][   4B   ][   bytes ...  ][ 2B ] [ bytes... ][   4B   ][   4B   ] ....
+//    Count     kv 1          kv n       key       value     key          val     val
+//            offset        offset     offset     offset                 size
 //                                      ^
 //              ________________________|
-//                                                                          ^
-//                           _______________________________________________|
+//                                                                                            ^
+//                           _________________________________________________________________|
 //
 //  [   4B   ][   bytes ... ] ....
 //    Count     null terminated column names
@@ -67,8 +69,8 @@ import (
 //  [ bytes ... ] ...
 //   null terminated transaction Id
 
-func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointer) {
-	response, _ := dal.GetBuffer()
+func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointer, error) {
+	response, respSize := dal.GetBuffer()
 	request, reqSize := dal.GetBuffer()
 
 	// iBuf := (*[dal.BUFFER_SIZE / C.ADDRESS_SIZE]uint32)(request)
@@ -80,10 +82,17 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 	var head uint32 = C.PKR_HEADER_END
 
 	dbOffSet := head
-	head = common.CopyGoString([]byte(*pkrParams.DB), bBuf, head)
+
+	head, err := common.CopyGoStrToCStr([]byte(*pkrParams.DB), bBuf, head, reqSize)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	tableOffSet := head
-	head = common.CopyGoString([]byte(*pkrParams.Table), bBuf, head)
+	head, err = common.CopyGoStrToCStr([]byte(*pkrParams.Table), bBuf, head, reqSize)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// PK Filters
 	head = common.AlignWord(head)
@@ -101,9 +110,15 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 
 		head = head + 8 //  for key and value offsets
 		keyOffset := head
-		head = common.CopyGoString([]byte(*filter.Column), bBuf, head)
+		head, err = common.CopyGoStrToCStr([]byte(*filter.Column), bBuf, head, reqSize)
+		if err != nil {
+			return nil, nil, err
+		}
 		valueOffset := head
-		head = common.CopyGoString([]byte(*filter.Value), bBuf, head)
+		head, err = common.CopyGoStrToNDBStr([]byte(*filter.Value), bBuf, head, reqSize)
+		if err != nil {
+			return nil, nil, err
+		}
 
 		iBuf[kvi] = tupleOffset
 		kvi++
@@ -127,7 +142,10 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 			iBuf[rci] = head
 			rci++
 			// fmt.Printf("Read col offset %d\n", head)
-			head = common.CopyGoString([]byte(col), bBuf, head)
+			head, err = common.CopyGoStrToCStr([]byte(col), bBuf, head, reqSize)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 
@@ -135,12 +153,15 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 	var opIdOffset uint32 = 0
 	if pkrParams.OperationID != nil {
 		opIdOffset = head
-		head = common.CopyGoString([]byte(*pkrParams.OperationID), bBuf, head)
+		head, err = common.CopyGoStrToCStr([]byte(*pkrParams.OperationID), bBuf, head, reqSize)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
-	// Header
+	// request buffer header
 	iBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
-	iBuf[C.PKR_CAPACITY_IDX] = uint32(dal.BUFFER_SIZE)
+	iBuf[C.PKR_CAPACITY_IDX] = uint32(reqSize)
 	iBuf[C.PKR_LENGTH_IDX] = uint32(head)
 	iBuf[C.PKR_DB_IDX] = uint32(dbOffSet)
 	iBuf[C.PKR_TABLE_IDX] = uint32(tableOffSet)
@@ -148,8 +169,13 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 	iBuf[C.PKR_READ_COLS_IDX] = uint32(readColsOffset)
 	iBuf[C.PKR_OP_ID_IDX] = uint32(opIdOffset)
 
+	//response buffer header
+	respBuf := unsafe.Slice((*uint32)(request), reqSize)
+	respBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
+	respBuf[C.PKR_CAPACITY_IDX] = uint32(respSize)
+	respBuf[C.PKR_LENGTH_IDX] = uint32(C.ADDRESS_SIZE * 2)
 	// xxd.Print(0, bBuf[:])
-	return request, response
+	return request, response, nil
 }
 
 func processResponse(buffer unsafe.Pointer) string {
