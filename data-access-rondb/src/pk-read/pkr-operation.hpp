@@ -24,16 +24,23 @@
 #include "src/rdrslib.h"
 #include <NdbApi.hpp>
 #include <stdint.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class PKROperation {
 private:
   PKRRequest request;
   PKRResponse response;
+
   const NdbDictionary::Table *tableDic = nullptr;
   NdbTransaction *transaction          = nullptr;
   NdbOperation *operation              = nullptr;
   Ndb *ndbObject                       = nullptr;
-  NdbRecAttr *rec                      = nullptr;
+
+  std::vector<NdbRecAttr *> recs; // records that will be read from DB
+  std::unordered_map<std::string, const NdbDictionary::Column *> nonPkCols;
+  std::unordered_map<std::string, const NdbDictionary::Column *> pkCols;
 
 public:
   PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject);
@@ -86,6 +93,18 @@ private:
    * @return status
    */
   RS_Status createResponse();
+
+  /**
+   * initialize data structures
+   * @return status
+   */
+RS_Status init();
+
+  /**
+   * Validate request
+   * @return status
+   */
+  RS_Status validateRequest();
 
   int get_byte_array(const NdbRecAttr *attr, const char *&first_byte, int *bytes);
 

@@ -20,9 +20,12 @@
 #include "pkr-operation.hpp"
 #include "pkr-request.hpp"
 #include "pkr-response.hpp"
+#include "src/error-strs.h"
 #include "src/logger.hpp"
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
+
+using namespace std;
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -41,21 +44,9 @@ PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
  */
 
 RS_Status PKROperation::setupTransaction() {
-
-  if (ndbObject->setCatalogName(request.db()) != 0) {
-    return RS_ERROR(1, "Database does not exist. Database: " + string(request.db()));
-  }
-
-  const NdbDictionary::Dictionary *dict = ndbObject->getDictionary();
-  tableDic                              = dict->getTable(request.table());
-
-  if (tableDic == nullptr) {
-    return RS_ERROR(1, "Table does not exist. Table: " + string(request.table()));
-  }
-
   transaction = ndbObject->startTransaction(tableDic);
   if (transaction == nullptr) {
-    return RS_ERROR(ndbObject->getNdbError(), "Failed to start transaction.");
+    return RS_ERROR(ndbObject->getNdbError(), ERR000);
   }
   return RS_OK;
 }
@@ -71,9 +62,14 @@ RS_Status PKROperation::setupTransaction() {
  * @return status
  */
 RS_Status PKROperation::setupReadOperation() {
+
+  if (operation != NULL) {
+    return RS_ERROR(ERR001);
+  }
+
   operation = transaction->getNdbOperation(tableDic);
   if (operation == nullptr) {
-    return RS_ERROR(transaction->getNdbError(), "Failed to start read operation.");
+    return RS_ERROR(transaction->getNdbError(), ERR002);
   }
 
   operation->readTuple(NdbOperation::LM_CommittedRead);
@@ -81,15 +77,48 @@ RS_Status PKROperation::setupReadOperation() {
 
     char *data;
     if (request.pkValueNDBStr(i, tableDic->getColumn(request.pkName(i)), &data) != 0) {
-      return RS_ERROR(-1, "Invalid data for column \"" + string(request.pkName(i)) + "\"");
+      return RS_ERROR(ERR003 + string(" Column: ") + string(request.pkName(i)));
     }
     operation->equal(request.pkName(i), data);
-    // operation->equal(pkName(i),  pkValue(i));
   }
 
-  rec = operation->getValue("value", NULL);
-  if (rec == nullptr) {
-    return RS_ERROR(operation->getNdbError(), "Failed to create operation.");
+  std::unordered_map<std::string, std::string> nonPkCols;
+  std::unordered_map<std::string, std::string> pkCols;
+
+  for (int i = 0; i < tableDic->getNoOfPrimaryKeys(); i++) {
+    const char *priName     = tableDic->getPrimaryKey(i);
+    pkCols[string(priName)] = "";
+  }
+
+  for (int i = 0; i < tableDic->getNoOfColumns(); i++) {
+    const NdbDictionary::Column *col = tableDic->getColumn(i);
+    string colNameStr(col->getName());
+    std::unordered_map<std::string, std::string>::const_iterator got = pkCols.find(colNameStr);
+    if (got == pkCols.end()) { // not found
+      nonPkCols[string(col->getName())] = "";
+    }
+  }
+
+  if (request.readColumnsCount() > 0) {
+    for (uint32_t i = 0; i < request.readColumnsCount(); i++) {
+      NdbRecAttr *rec = operation->getValue(request.readColumnName(i), NULL);
+      if (rec == nullptr) {
+        return RS_ERROR(operation->getNdbError(),
+                        ERR004 + string(" Column: ") + string(request.readColumnName(i)));
+      }
+      recs.insert(recs.begin(), rec);
+    }
+  } else {
+    std::unordered_map<std::string, std::string>::const_iterator it = pkCols.begin();
+    while (it != pkCols.end()) {
+      NdbRecAttr *rec = operation->getValue(it->first.c_str(), NULL);
+      if (rec == nullptr) {
+        return RS_ERROR(operation->getNdbError(),
+                        ERR004 + string(" Column: ") + string(it->first.c_str()));
+      }
+      it++;
+      recs.insert(recs.begin(), rec);
+    }
   }
 
   return RS_OK;
@@ -97,7 +126,7 @@ RS_Status PKROperation::setupReadOperation() {
 
 RS_Status PKROperation::execute() {
   if (transaction->execute(NdbTransaction::Commit) != 0) {
-    return RS_ERROR(transaction->getNdbError(), "Failed to execute transaction");
+    return RS_ERROR(transaction->getNdbError(), ERR005);
   }
 
   return RS_OK;
@@ -109,8 +138,17 @@ RS_Status PKROperation::createResponse() {
     memcpy(response.getResponseBuffer(), message, sizeof(message));
     response.getResponseBuffer()[strlen(message)] = 0x00;
   } else {
-    copyString(rec, 0);
+
+    // iterate over all columns
+    int head = 0;
+    for (std::vector<NdbRecAttr *>::iterator it = std::begin(recs); it != std::end(recs); ++it) {
+      head = copyString(*it, head);
+      if (head == -1) {
+        return RS_ERROR(ERR006);
+      }
+    }
   }
+
   return RS_OK;
 }
 
@@ -177,7 +215,69 @@ int PKROperation::copyString(const NdbRecAttr *attr, int start) {
     response.getResponseBuffer()[start + attr_bytes] = 0x00;
     return start + attr_bytes + 1;
   }
-  return 0;
+  return -1;
+}
+
+RS_Status PKROperation::init() {
+  if (tableDic == NULL) {
+    if (ndbObject->setCatalogName(request.db()) != 0) {
+      return RS_ERROR(ERR007 + string(" Database: ") + string(request.db()));
+    }
+    const NdbDictionary::Dictionary *dict = ndbObject->getDictionary();
+    tableDic                              = dict->getTable(request.table());
+
+    if (tableDic == nullptr) {
+      return RS_ERROR(ERR008 + string(" Table: ") + string(request.table()));
+    }
+  }
+
+  return RS_OK;
+}
+
+RS_Status PKROperation::validateRequest() {
+  for (int i = 0; i < tableDic->getNoOfPrimaryKeys(); i++) {
+    const char *priName     = tableDic->getPrimaryKey(i);
+    pkCols[string(priName)] = tableDic->getColumn(priName);
+  }
+
+  for (int i = 0; i < tableDic->getNoOfColumns(); i++) {
+    const NdbDictionary::Column *col = tableDic->getColumn(i);
+    string colNameStr(col->getName());
+    std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
+        pkCols.find(colNameStr);
+    if (got == pkCols.end()) { // not found
+      nonPkCols[string(col->getName())] = tableDic->getColumn(col->getName());
+    }
+  }
+
+  // check that all columns exist
+  if (request.readColumnsCount() > 0) {
+    for (uint32_t i = 0; i < request.readColumnsCount(); i++) {
+      std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
+          nonPkCols.find(string(request.readColumnName(i)));
+      if (got == nonPkCols.end()) { // not found
+        return RS_ERROR(ERR009 + string(" Column: ") + string(request.readColumnName(i)));
+      }
+    }
+  }
+
+  if (request.pkColumnsCount() != pkCols.size()) {
+    return RS_ERROR(ERR010 + string(" Expecting: ") + to_string(pkCols.size()) +
+                            " Got: " + to_string(request.pkColumnsCount()));
+  }
+
+  for (uint32_t i = 0; i < request.pkColumnsCount(); i++) {
+    std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
+        pkCols.find(string(request.pkName(i)));
+    if (got == pkCols.end()) { // not found
+      return RS_ERROR(ERR011 + string(" Column: ") + string(request.pkName(i)));
+    }
+  }
+
+  // check data types
+  // TODO
+
+  return RS_OK;
 }
 
 void PKROperation::closeTransaction() {
@@ -185,24 +285,33 @@ void PKROperation::closeTransaction() {
 }
 
 RS_Status PKROperation::performOperation() {
+  RS_Status status = init();
+  if (status.rs_code != 0) {
+    return status;
+  }
 
-  RS_Status status = setupTransaction();
-  if (status.ret_code != 0) {
+  status = validateRequest();
+  if (status.rs_code != 0) {
+    return status;
+  }
+
+  status = setupTransaction();
+  if (status.rs_code != 0) {
     return status;
   }
 
   status = setupReadOperation();
-  if (status.ret_code != 0) {
+  if (status.rs_code != 0) {
     return status;
   }
 
   status = execute();
-  if (status.ret_code != 0) {
+  if (status.rs_code != 0) {
     return status;
   }
 
   status = createResponse();
-  if (status.ret_code != 0) {
+  if (status.rs_code != 0) {
     return status;
   }
 

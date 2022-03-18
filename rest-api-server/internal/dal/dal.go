@@ -38,7 +38,7 @@ func InitRonDBConnection(connStr string) error {
 	defer C.free(unsafe.Pointer(cs))
 	ret := C.init(cs)
 
-	if ret.ret_code != 0 {
+	if ret.rs_code != 0 {
 		defer C.free(unsafe.Pointer(ret.message))
 		return fmt.Errorf(C.GoString(ret.message))
 	}
@@ -48,7 +48,7 @@ func InitRonDBConnection(connStr string) error {
 
 func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) error {
 	ret := C.pkRead((*C.char)(request), (*C.char)(response))
-	if ret.ret_code != 0 {
+	if ret.rs_code != 0 {
 		defer C.free(unsafe.Pointer(ret.message))
 		return fmt.Errorf(C.GoString(ret.message))
 	}

@@ -25,8 +25,12 @@ extern "C" {
 #define RDRSLIB_H
 
 typedef struct RS_Status {
-  int   ret_code;
-  char *message;
+  int rs_code; // rest server return code. 0 for successful operation and 1 for failed operation
+  int status;  // NdbError.ndberror_status_enum
+  int classification; // NdbError.ndberror_classification_enum
+  int code;           // NdbError.code
+  int mysql_code;     // NdbError.mysql_code
+  char *message;      // REST server message. NOTE: receiver's responsibility to free this memory
 } RS_Status;
 
 /**
@@ -37,7 +41,7 @@ RS_Status init(const char *connection_string);
 /**
  * Primary key read operation
  */
-RS_Status pkRead(char *reqBuff, char *respBuff) ; 
+RS_Status pkRead(char *reqBuff, char *respBuff);
 
 #endif
 

@@ -1,6 +1,7 @@
 #include "logger.hpp"
 #include "pk-read/pkr-operation.hpp"
 #include "status.hpp"
+#include "error-strs.h"
 #include <NdbApi.hpp>
 #include <chrono>
 #include <cstdlib>
@@ -38,18 +39,18 @@ RS_Status init(const char *connection_string) {
 
   retCode = ndb_init();
   if (retCode != 0) {
-    return RS_ERROR(retCode, "ndb_init() failed");
+    return RS_ERROR(retCode, ERR012);
   }
 
   ndb_connection = new Ndb_cluster_connection(connection_string);
   retCode        = ndb_connection->connect();
   if (retCode != 0) {
-    return RS_ERROR(retCode, "failed to connect to RonDB mgm server");
+    return RS_ERROR(retCode, ERR013);
   }
 
   retCode = ndb_connection->wait_until_ready(30, 0);
   if (retCode != 0) {
-    return RS_ERROR(retCode, "Cluster was not ready within 30 secs");
+    return RS_ERROR(retCode, ERR014);
   }
 
   INFO("Connected.")
@@ -68,7 +69,7 @@ RS_Status getNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) 
   *ndbObject  = new Ndb(ndb_connection);
   int retCode = (*ndbObject)->init();
   if (retCode != 0) {
-    return RS_ERROR(retCode, "Failed to initialize ndb object");
+    return RS_ERROR(retCode, ERR015);
   }
   return RS_OK;
 }
@@ -77,14 +78,14 @@ RS_Status pkRead(char *reqBuff, char *respBuff) {
 
   Ndb *ndbObject   = nullptr;
   RS_Status status = getNDBObject(ndb_connection, &ndbObject);
-  if (status.ret_code != 0) {
+  if (status.rs_code != 0) {
     return status;
   }
 
   PKROperation pkread(reqBuff, respBuff, ndbObject);
 
   status = pkread.performOperation();
-  if (status.ret_code != 0) {
+  if (status.rs_code != 0) {
     return status;
   }
 

@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	"hopsworks.ai/rdrs/internal/router/handler/batchops"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
@@ -70,10 +71,10 @@ func (rc *RouterConext) StartRouter() error {
 
 func CreateRouterContext() Router {
 	router := RouterConext{
-		Ip:         "localhost",
-		Port:       8080,
-		APIVersion: "1.0.0",
-		ConnStr:    "localhost:1186",
+		Ip:         config.RestAPIIP(),
+		Port:       config.RestAPIPort(),
+		APIVersion: config.RestAPIVersion(),
+		ConnStr:    config.ConnectionString(),
 	}
 	return &router
 }

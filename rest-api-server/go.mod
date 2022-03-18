@@ -36,4 +36,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
-require zappem.net/pub/debug/xxd v0.5.0 // indirect
+require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	zappem.net/pub/debug/xxd v0.5.0 // indirect
+)

@@ -18,6 +18,7 @@
 package pkread
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,9 +26,46 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
+	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
+
+func withDBs(t *testing.T, setup [][]string, fn func(router *gin.Engine)) {
+	t.Helper()
+
+	//user:password@tcp(IP:Port)/
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
+		config.SqlServerIP(), config.SqlServerPort())
+	db, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		t.Fatalf("failed to connect to db. %v", err)
+	}
+
+	if len(setup) != 2 {
+		t.Fatal("expecting the setup array to contain two sub arrays where the first " +
+			"sub array contains commands to setup the DBs, " +
+			"and the second sub array contains commands to clean up the DBs")
+	}
+
+	defer runSQLQueries(t, db, setup[1])
+	runSQLQueries(t, db, setup[0])
+
+	router := initRouter(t)
+
+	fn(router)
+}
+
+func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
+	t.Helper()
+	for _, command := range setup {
+		_, err := db.Exec(command)
+		if err != nil {
+			t.Fatalf("failed to run command. %s. Error: %v", command, err)
+		}
+	}
+}
 
 func initRouter(t *testing.T) *gin.Engine {
 	t.Helper()
@@ -36,16 +74,45 @@ func initRouter(t *testing.T) *gin.Engine {
 
 	group := router.Group(DB_OPS_EP_GROUP)
 	group.POST(DB_OPERATION, PkReadHandler)
-	err := dal.InitRonDBConnection("localhost:1186")
+	err := dal.InitRonDBConnection(config.ConnectionString())
 	if err != nil {
 		t.Errorf("Failed to connect to RonDB. Error: %v", err)
 	}
 	return router
 }
 
+var setup = [][]string{{"create database testdb",
+	"use testdb",
+	"create table test(id varchar(10), description varchar(100), primary key(id))",
+	"insert into test values('1', 'some_description')"},
+	// clean up commands
+	{"drop database testdb"}}
+
+func TestMysql(t *testing.T) {
+
+	withDBs(t, setup, func(router *gin.Engine) {
+		pkCol := "id"
+		pkVal := "1"
+		param := PKReadBody{
+			Filters:     NewFilter(t, &pkCol, &pkVal),
+			ReadColumns: NewReadColumn(t, "description"),
+			OperationID: NewOperationID(t, 64),
+		}
+
+		body, _ := json.MarshalIndent(param, "", "\t")
+
+		for i := 0; i < 1; i++ {
+			url := NewPKReadURL("testdb", "test")
+			tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
+		}
+
+		time.Sleep(1 * time.Second)
+
+	})
+}
+
 func TestPKNative(t *testing.T) {
 
-	initRouter(t)
 	router := initRouter(t)
 
 	pkCol := "id"
