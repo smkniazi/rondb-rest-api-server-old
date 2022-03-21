@@ -333,6 +333,12 @@ func TestERROR_001(t *testing.T) {
 	})
 }
 
+// database connection failed
+func TestDataTypes(t *testing.T) {
+	withDBs(t, [][][]string{common.DB003}, func(router *gin.Engine) {
+	})
+}
+
 func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
 	t.Helper()
 
