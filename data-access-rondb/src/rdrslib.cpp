@@ -39,18 +39,18 @@ RS_Status init(const char *connection_string) {
 
   retCode = ndb_init();
   if (retCode != 0) {
-    return RS_ERROR(SERVER_ERROR, ERR012 + string(" RetCode: ") + to_string(retCode));
+    return RS_ERROR(SERVER_ERROR, ERROR_001 + string(" RetCode: ") + to_string(retCode));
   }
 
   ndb_connection = new Ndb_cluster_connection(connection_string);
   retCode        = ndb_connection->connect();
   if (retCode != 0) {
-    return RS_ERROR(SERVER_ERROR, ERR013 + string(" RetCode: ") + to_string(retCode));
+    return RS_ERROR(SERVER_ERROR, ERROR_002 + string(" RetCode: ") + to_string(retCode));
   }
 
   retCode = ndb_connection->wait_until_ready(30, 0);
   if (retCode != 0) {
-    return RS_ERROR(SERVER_ERROR, ERR014 + string(" RetCode: ") + to_string(retCode));
+    return RS_ERROR(SERVER_ERROR, ERROR_003 + string(" RetCode: ") + to_string(retCode));
   }
 
   INFO("Connected.")
@@ -69,7 +69,7 @@ RS_Status getNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) 
   *ndbObject  = new Ndb(ndb_connection);
   int retCode = (*ndbObject)->init();
   if (retCode != 0) {
-    return RS_ERROR(SERVER_ERROR, ERR015 + string(" RetCode: ") + to_string(retCode));
+    return RS_ERROR(SERVER_ERROR, ERROR_004 + string(" RetCode: ") + to_string(retCode));
 
   }
   return RS_OK;

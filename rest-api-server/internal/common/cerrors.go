@@ -25,22 +25,22 @@ package common
 */
 import "C"
 
-func ERR007() string {
-	return C.ERR007
+func ERROR_011() string {
+	return C.ERROR_011
 }
 
-func ERR009() string {
-	return C.ERR009
+func ERROR_012() string {
+	return C.ERROR_012
 }
 
-func ERR010() string {
-	return C.ERR010
+func ERROR_013() string {
+	return C.ERROR_013
 }
 
-func ERR011() string {
-	return C.ERR011
+func ERROR_014() string {
+	return C.ERROR_014
 }
 
-func ERR012() string {
-	return C.ERR012
+func ERROR_001() string {
+	return C.ERROR_001
 }

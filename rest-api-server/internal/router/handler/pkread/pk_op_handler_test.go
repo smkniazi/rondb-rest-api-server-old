@@ -236,7 +236,7 @@ func TestPKUniqueParams(t *testing.T) {
 }
 
 // DB/Table does not exist
-func TestERR007(t *testing.T) {
+func TestERROR_011(t *testing.T) {
 
 	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
 		pkCol := "id0"
@@ -250,15 +250,15 @@ func TestERR007(t *testing.T) {
 		body, _ := json.MarshalIndent(param, "", "\t")
 
 		url := NewPKReadURL("DB001_XXX", "table_1")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR007())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
 
 		url = NewPKReadURL("DB001", "table_1_XXX")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR007())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
 	})
 }
 
 // column does not exist
-func TestERR009(t *testing.T) {
+func TestERROR_012(t *testing.T) {
 
 	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
 		pkCol := "id0"
@@ -272,12 +272,12 @@ func TestERR009(t *testing.T) {
 		body, _ := json.MarshalIndent(param, "", "\t")
 
 		url := NewPKReadURL("DB001", "table_1")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR009())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_012())
 	})
 }
 
 // Primary key test.
-func TestERR010_ERR011(t *testing.T) {
+func TestERROR_013_ERROR_014(t *testing.T) {
 
 	withDBs(t, [][][]string{common.DB002}, func(router *gin.Engine) {
 		// every thing is fine
@@ -299,7 +299,7 @@ func TestERR010_ERR011(t *testing.T) {
 		}
 		body, _ = json.MarshalIndent(param, "", "\t")
 		url = NewPKReadURL("DB002", "table_1")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR010())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_013())
 
 		// send an other request with two pk cols but wrong names
 		param = PKReadBody{
@@ -309,14 +309,14 @@ func TestERR010_ERR011(t *testing.T) {
 		}
 		body, _ = json.MarshalIndent(param, "", "\t")
 		url = NewPKReadURL("DB002", "table_1")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR011())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_014())
 
 		// no of pk cols matches but the column names are different
 	})
 }
 
 // database connection failed
-func TestERR012(t *testing.T) {
+func TestERROR_001(t *testing.T) {
 
 	config.SetConnectionString("localhost:1234")
 	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
@@ -329,7 +329,7 @@ func TestERR012(t *testing.T) {
 		body, _ := json.MarshalIndent(param, "", "\t")
 
 		url := NewPKReadURL("DB001", "table_1")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR012())
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_001())
 	})
 }
 
