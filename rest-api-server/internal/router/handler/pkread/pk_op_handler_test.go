@@ -23,119 +23,21 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-func withDBs(t *testing.T, setup [][]string, fn func(router *gin.Engine)) {
-	t.Helper()
-
-	//user:password@tcp(IP:Port)/
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
-		config.SqlServerIP(), config.SqlServerPort())
-	db, err := sql.Open("mysql", connectionString)
-	if err != nil {
-		t.Fatalf("failed to connect to db. %v", err)
-	}
-
-	if len(setup) != 2 {
-		t.Fatal("expecting the setup array to contain two sub arrays where the first " +
-			"sub array contains commands to setup the DBs, " +
-			"and the second sub array contains commands to clean up the DBs")
-	}
-
-	defer runSQLQueries(t, db, setup[1])
-	runSQLQueries(t, db, setup[0])
-
-	router := initRouter(t)
-
-	fn(router)
-}
-
-func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
-	t.Helper()
-	for _, command := range setup {
-		_, err := db.Exec(command)
-		if err != nil {
-			t.Fatalf("failed to run command. %s. Error: %v", command, err)
-		}
-	}
-}
-
-func initRouter(t *testing.T) *gin.Engine {
-	t.Helper()
-	//router := gin.Default()
-	router := gin.New()
-
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
-	err := dal.InitRonDBConnection(config.ConnectionString())
-	if err != nil {
-		t.Errorf("Failed to connect to RonDB. Error: %v", err)
-	}
-	return router
-}
-
-var setup = [][]string{{"create database testdb",
-	"use testdb",
-	"create table test(id varchar(10), description varchar(100), primary key(id))",
-	"insert into test values('1', 'some_description')"},
-	// clean up commands
-	{"drop database testdb"}}
-
-func TestMysql(t *testing.T) {
-
-	withDBs(t, setup, func(router *gin.Engine) {
-		pkCol := "id"
-		pkVal := "1"
-		param := PKReadBody{
-			Filters:     NewFilter(t, &pkCol, &pkVal),
-			ReadColumns: NewReadColumn(t, "description"),
-			OperationID: NewOperationID(t, 64),
-		}
-
-		body, _ := json.MarshalIndent(param, "", "\t")
-
-		for i := 0; i < 1; i++ {
-			url := NewPKReadURL("testdb", "test")
-			tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-		}
-
-		time.Sleep(1 * time.Second)
-
-	})
-}
-
-func TestPKNative(t *testing.T) {
-
-	router := initRouter(t)
-
-	pkCol := "id"
-	pkVal := "1"
-	param := PKReadBody{
-		Filters:     NewFilter(t, &pkCol, &pkVal),
-		ReadColumns: NewReadColumn(t, "value"),
-		OperationID: NewOperationID(t, 64),
-	}
-
-	body, _ := json.MarshalIndent(param, "", "\t")
-
-	for i := 0; i < 1; i++ {
-		url := NewPKReadURL("db", "table")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-	}
-
-	time.Sleep(1 * time.Second)
-}
-
 // Simple test with all parameters correctly supplied
 func TestPKReadTest(t *testing.T) {
-	router := initRouter(t)
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	param := PKReadBody{
 		Filters:     NewFilters(t, "filter_col_", 3),
@@ -155,7 +57,10 @@ func TestPKReadTest(t *testing.T) {
 }
 
 func TestPKReadOmitRequired(t *testing.T) {
-	router := initRouter(t)
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	// Test. Omitting filter should result in 400 error
 	param := PKReadBody{
@@ -186,7 +91,10 @@ func TestPKReadOmitRequired(t *testing.T) {
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
-	router := initRouter(t)
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	// Test. Large filter column names.
 	col := RandString(65)
@@ -233,7 +141,10 @@ func TestPKReadLargeColumns(t *testing.T) {
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
-	router := initRouter(t)
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	//Valid chars [ U+0001 .. U+007F] and [ U+0080 .. U+FFFF]
 
@@ -278,7 +189,10 @@ func TestPKInvalidIdentifier(t *testing.T) {
 }
 
 func TestPKUniqueParams(t *testing.T) {
-	router := initRouter(t)
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 
 	// Test. unique read columns
 	readColumns := make([]string, 2)
@@ -319,4 +233,155 @@ func TestPKUniqueParams(t *testing.T) {
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
 		fmt.Sprintf("field validation for read columns faild. '%s' already included in filter", col))
+}
+
+// DB/Table does not exist
+func TestERR007(t *testing.T) {
+
+	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+		pkCol := "id0"
+		pkVal := "1"
+		param := PKReadBody{
+			Filters:     NewFilter(t, &pkCol, &pkVal),
+			ReadColumns: NewReadColumn(t, "col_0"),
+			OperationID: NewOperationID(t, 64),
+		}
+
+		body, _ := json.MarshalIndent(param, "", "\t")
+
+		url := NewPKReadURL("DB001_XXX", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR007())
+
+		url = NewPKReadURL("DB001", "table_1_XXX")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR007())
+	})
+}
+
+// column does not exist
+func TestERR009(t *testing.T) {
+
+	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+		pkCol := "id0"
+		pkVal := "1"
+		param := PKReadBody{
+			Filters:     NewFilter(t, &pkCol, &pkVal),
+			ReadColumns: NewReadColumn(t, "col_0_XXX"),
+			OperationID: NewOperationID(t, 64),
+		}
+
+		body, _ := json.MarshalIndent(param, "", "\t")
+
+		url := NewPKReadURL("DB001", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR009())
+	})
+}
+
+// Primary key test.
+func TestERR010_ERR011(t *testing.T) {
+
+	withDBs(t, [][][]string{common.DB002}, func(router *gin.Engine) {
+		// every thing is fine
+		param := PKReadBody{
+			Filters:     NewFilters(t, "id", 2),
+			ReadColumns: NewReadColumn(t, "col_0"),
+			OperationID: NewOperationID(t, 64),
+		}
+		body, _ := json.MarshalIndent(param, "", "\t")
+		url := NewPKReadURL("DB002", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
+
+		// send an other request with one column missing from def
+		// //		// one PK col is missing
+		param = PKReadBody{
+			Filters:     NewFilters(t, "id", 1), // PK has two cols. should thow an exception as we have define only one col in PK
+			ReadColumns: NewReadColumn(t, "col_0"),
+			OperationID: NewOperationID(t, 64),
+		}
+		body, _ = json.MarshalIndent(param, "", "\t")
+		url = NewPKReadURL("DB002", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR010())
+
+		// send an other request with two pk cols but wrong names
+		param = PKReadBody{
+			Filters:     NewFilters(t, "idx", 2),
+			ReadColumns: NewReadColumn(t, "col_0"),
+			OperationID: NewOperationID(t, 64),
+		}
+		body, _ = json.MarshalIndent(param, "", "\t")
+		url = NewPKReadURL("DB002", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR011())
+
+		// no of pk cols matches but the column names are different
+	})
+}
+
+// database connection failed
+func TestERR012(t *testing.T) {
+
+	config.SetConnectionString("localhost:1234")
+	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+		param := PKReadBody{
+			Filters:     NewFilters(t, "id", 1),
+			ReadColumns: NewReadColumn(t, "col_0"),
+			OperationID: NewOperationID(t, 64),
+		}
+
+		body, _ := json.MarshalIndent(param, "", "\t")
+
+		url := NewPKReadURL("DB001", "table_1")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERR012())
+	})
+}
+
+func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
+	t.Helper()
+
+	//user:password@tcp(IP:Port)/
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
+		config.SqlServerIP(), config.SqlServerPort())
+	dbConnection, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		t.Fatalf("failed to connect to db. %v", err)
+	}
+
+	for _, db := range dbs {
+		if len(db) != 2 {
+			t.Fatal("expecting the setup array to contain two sub arrays where the first " +
+				"sub array contains commands to setup the DBs, " +
+				"and the second sub array contains commands to clean up the DBs")
+		}
+		defer runSQLQueries(t, dbConnection, db[1])
+		runSQLQueries(t, dbConnection, db[0])
+	}
+
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	fn(router)
+}
+
+func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
+	t.Helper()
+	for _, command := range setup {
+		_, err := db.Exec(command)
+		if err != nil {
+			t.Fatalf("failed to run command. %s. Error: %v", command, err)
+		}
+	}
+}
+
+func initRouter(t *testing.T) (*gin.Engine, error) {
+	t.Helper()
+	//router := gin.Default()
+	router := gin.New()
+
+	group := router.Group(DB_OPS_EP_GROUP)
+	group.POST(DB_OPERATION, PkReadHandler)
+	err := dal.InitRonDBConnection(config.ConnectionString())
+	if err != nil {
+		return nil, err
+	}
+	return router, nil
 }

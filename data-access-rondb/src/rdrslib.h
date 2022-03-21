@@ -24,8 +24,14 @@ extern "C" {
 #ifndef RDRSLIB_H
 #define RDRSLIB_H
 
+  typedef enum HTTP_CODE {
+    SUCCESS = 200,
+    CLIENT_ERROR = 400,
+    SERVER_ERROR = 500
+  } HTTP_CODE;
+
 typedef struct RS_Status {
-  int rs_code; // rest server return code. 0 for successful operation and 1 for failed operation
+  HTTP_CODE http_code; // rest server return code. 200 for successful operation
   int status;  // NdbError.ndberror_status_enum
   int classification; // NdbError.ndberror_classification_enum
   int code;           // NdbError.code

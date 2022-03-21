@@ -28,29 +28,38 @@ package dal
 */
 import "C"
 import (
-	"fmt"
+	"net/http"
 	"unsafe"
 )
 
-func InitRonDBConnection(connStr string) error {
+type DalError struct {
+	HttpCode int
+	Message  string
+}
+
+func (e *DalError) Error() string {
+	return e.Message
+}
+
+func InitRonDBConnection(connStr string) *DalError {
 
 	cs := C.CString(connStr)
 	defer C.free(unsafe.Pointer(cs))
 	ret := C.init(cs)
 
-	if ret.rs_code != 0 {
+	if ret.http_code != http.StatusOK {
 		defer C.free(unsafe.Pointer(ret.message))
-		return fmt.Errorf(C.GoString(ret.message))
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
 	}
 
 	return nil
 }
 
-func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) error {
+func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) *DalError {
 	ret := C.pkRead((*C.char)(request), (*C.char)(response))
-	if ret.rs_code != 0 {
+	if ret.http_code != http.StatusOK {
 		defer C.free(unsafe.Pointer(ret.message))
-		return fmt.Errorf(C.GoString(ret.message))
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
 	}
 
 	return nil

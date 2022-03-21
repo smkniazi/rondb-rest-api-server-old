@@ -88,9 +88,9 @@ func PkReadHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 	}
 
-	err = dal.RonDBPKRead(request, response)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
+	dalErr := dal.RonDBPKRead(request, response)
+	if dalErr != nil {
+		c.JSON(dalErr.HttpCode, gin.H{"OK": false, "msg": fmt.Sprintf("%v", dalErr.Message)})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"OK": true, "msg": processResponse(response)})
 	}

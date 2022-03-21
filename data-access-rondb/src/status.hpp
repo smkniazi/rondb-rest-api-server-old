@@ -38,27 +38,27 @@ inline char *__strToCharArr(std::string msg) {
   return charArr;
 }
 
-inline RS_Status __RS_ERROR(const int rs_code, int status, int classification, int code,
+inline RS_Status __RS_ERROR(const HTTP_CODE http_code, int status, int classification, int code,
                             int mysql_code, char *msg) {
-  RS_Status ret = {rs_code, status, classification, code, mysql_code, msg};
+  RS_Status ret = {http_code, status, classification, code, mysql_code, msg};
   return ret;
 }
 
-inline RS_Status RS_ERROR(const int rs_code, std::string msg) {
-  return __RS_ERROR(rs_code, -1, -1, -1, -1, __strToCharArr(msg));
+inline RS_Status RS_ERROR(const HTTP_CODE http_code, std::string msg) {
+  return __RS_ERROR(http_code, -1, -1, -1, -1, __strToCharArr(msg));
 }
 
 inline RS_Status RS_ERROR(std::string msg) {
-  return RS_ERROR(1, msg);
+  return RS_ERROR(CLIENT_ERROR, msg);
 }
 
 inline RS_Status RS_ERROR(const struct NdbError &error, std::string msg) {
   std::string userMsg = "Error: " + msg + " Error: code:" + std::to_string(error.code) +
                    " MySQL Code: " + std::to_string(error.mysql_code) + " Message: " + error.message;
-  return __RS_ERROR(1, error.status, error.classification, error.code, error.mysql_code,
+  return __RS_ERROR(SERVER_ERROR, error.status, error.classification, error.code, error.mysql_code,
                     __strToCharArr(msg));
 }
 
-#define RS_OK RS_ERROR(0, "")
+#define RS_OK RS_ERROR(SUCCESS, "")
 
 #endif

@@ -1,7 +1,7 @@
+#include "error-strs.h"
 #include "logger.hpp"
 #include "pk-read/pkr-operation.hpp"
 #include "status.hpp"
-#include "error-strs.h"
 #include <NdbApi.hpp>
 #include <chrono>
 #include <cstdlib>
@@ -39,18 +39,18 @@ RS_Status init(const char *connection_string) {
 
   retCode = ndb_init();
   if (retCode != 0) {
-    return RS_ERROR(retCode, ERR012);
+    return RS_ERROR(SERVER_ERROR, ERR012 + string(" RetCode: ") + to_string(retCode));
   }
 
   ndb_connection = new Ndb_cluster_connection(connection_string);
   retCode        = ndb_connection->connect();
   if (retCode != 0) {
-    return RS_ERROR(retCode, ERR013);
+    return RS_ERROR(SERVER_ERROR, ERR013 + string(" RetCode: ") + to_string(retCode));
   }
 
   retCode = ndb_connection->wait_until_ready(30, 0);
   if (retCode != 0) {
-    return RS_ERROR(retCode, ERR014);
+    return RS_ERROR(SERVER_ERROR, ERR014 + string(" RetCode: ") + to_string(retCode));
   }
 
   INFO("Connected.")
@@ -69,7 +69,8 @@ RS_Status getNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) 
   *ndbObject  = new Ndb(ndb_connection);
   int retCode = (*ndbObject)->init();
   if (retCode != 0) {
-    return RS_ERROR(retCode, ERR015);
+    return RS_ERROR(SERVER_ERROR, ERR015 + string(" RetCode: ") + to_string(retCode));
+
   }
   return RS_OK;
 }
@@ -78,14 +79,14 @@ RS_Status pkRead(char *reqBuff, char *respBuff) {
 
   Ndb *ndbObject   = nullptr;
   RS_Status status = getNDBObject(ndb_connection, &ndbObject);
-  if (status.rs_code != 0) {
+  if (status.http_code != SUCCESS) {
     return status;
   }
 
   PKROperation pkread(reqBuff, respBuff, ndbObject);
 
   status = pkread.performOperation();
-  if (status.rs_code != 0) {
+  if (status.http_code != SUCCESS) {
     return status;
   }
 

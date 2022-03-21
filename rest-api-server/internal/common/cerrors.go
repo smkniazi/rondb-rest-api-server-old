@@ -15,42 +15,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package config
+package common
 
-var ronDBConnString = "localhost:1186"
+/*
+#cgo CFLAGS: -g -Wall
+#cgo LDFLAGS: -L./../../../data-access-rondb/build/ -lrdrclient
+#cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
+#include "./../../../data-access-rondb/src/error-strs.h"
+*/
+import "C"
 
-func RestAPIIP() string {
-	return "localhost"
+func ERR007() string {
+	return C.ERR007
 }
 
-func RestAPIPort() int32 {
-	return 8080
+func ERR009() string {
+	return C.ERR009
 }
 
-func RestAPIVersion() string {
-	return "1.0.0"
+func ERR010() string {
+	return C.ERR010
 }
 
-func SetConnectionString(conStr string) {
-	ronDBConnString = conStr
+func ERR011() string {
+	return C.ERR011
 }
 
-func ConnectionString() string {
-	return ronDBConnString
-}
-
-func SqlUser() string {
-	return "hop"
-}
-
-func SqlPassword() string {
-	return "hop"
-}
-
-func SqlServerIP() string {
-	return "localhost"
-}
-
-func SqlServerPort() int32 {
-	return 3306
+func ERR012() string {
+	return C.ERR012
 }

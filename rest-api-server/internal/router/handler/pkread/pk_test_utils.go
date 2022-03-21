@@ -28,7 +28,7 @@ func NewFilters(t *testing.T, prefix string, numFilters int) *[]Filter {
 	filters := make([]Filter, numFilters)
 	for i := 0; i < numFilters; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
-		val := "value_" + fmt.Sprintf("%d", i)
+		val := col + "_data"
 		filters[i] = Filter{Column: &col, Value: &val}
 	}
 	return &filters
