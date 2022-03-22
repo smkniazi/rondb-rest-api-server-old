@@ -1,4 +1,5 @@
 /*
+
  * This file is part of the RonDB REST API Server
  * Copyright (c) 2022 Hopsworks AB
  *
@@ -17,34 +18,16 @@
 
 package common
 
-/*
-#cgo CFLAGS: -g -Wall
-#cgo LDFLAGS: -L./../../../data-access-rondb/build/ -lrdrclient
-#cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
-#include "./../../../data-access-rondb/src/error-strs.h"
-*/
 import "C"
+import (
+	"unsafe"
+)
 
-func ERROR_011() string {
-	return C.ERROR_011
+type Response struct {
+	OK      bool   `json:"OK"   form:"OK"   binding:"required"`
+	Message string `json:"message"    form:"message"    binding:"required"`
 }
 
-func ERROR_012() string {
-	return C.ERROR_012
-}
-
-func ERROR_013() string {
-	return C.ERROR_013
-}
-
-func ERROR_014() string {
-	return C.ERROR_014
-}
-
-func ERROR_001() string {
-	return C.ERROR_001
-}
-
-func ERROR_015() string {
-	return C.ERROR_015
+func ProcessResponse(buffer unsafe.Pointer) string {
+	return C.GoString((*C.char)(buffer))
 }

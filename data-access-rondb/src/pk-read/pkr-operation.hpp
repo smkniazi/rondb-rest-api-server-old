@@ -73,7 +73,24 @@ private:
    *
    * @return status
    */
+  RS_Status setOperationPKCols(const NdbDictionary::Column *col, uint32_t colIdx);
+
+  /**
+   * setup pk read operation
+   * @returns status
+   */
   RS_Status setupReadOperation();
+
+  /**
+   * Set primary key column values
+   * @returns status
+   */
+  RS_Status setOperationPKCols();
+
+  /**
+   * it stores the data read from the DB into the response buffer
+   */
+  RS_Status writeColToRespBuff(const NdbRecAttr *attr, bool appendComma);
 
   /**
    * Execute transaction
@@ -98,7 +115,7 @@ private:
    * initialize data structures
    * @return status
    */
-RS_Status init();
+  RS_Status init();
 
   /**
    * Validate request

@@ -1,10 +1,15 @@
 package pkread
 
 import (
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/config"
+	"hopsworks.ai/rdrs/internal/dal"
 )
 
 func NewPKReadReqBody(t *testing.T) PKReadBody {
@@ -41,6 +46,22 @@ func NewFilter(t *testing.T, column *string, value *string) *[]Filter {
 	return &filter
 }
 
+func NewFiltersKVs(t *testing.T, vals ...string) *[]Filter {
+	t.Helper()
+	if len(vals)%2 != 0 {
+		t.Fatal("Expecting key value pairs")
+	}
+
+	filters := make([]Filter, len(vals)/2)
+	fidx := 0
+	for i := 0; i < len(vals); {
+		filters[fidx] = Filter{Column: &vals[i], Value: &vals[i+1]}
+		fidx++
+		i += 2
+	}
+	return &filters
+}
+
 func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]string {
 	t.Helper()
 	readColumns := make([]string, numReadColumns)
@@ -72,4 +93,57 @@ func RandString(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
+	t.Helper()
+
+	//user:password@tcp(IP:Port)/
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
+		config.SqlServerIP(), config.SqlServerPort())
+	dbConnection, err := sql.Open("mysql", connectionString)
+	if err != nil {
+		t.Fatalf("failed to connect to db. %v", err)
+	}
+
+	for _, db := range dbs {
+		if len(db) != 2 {
+			t.Fatal("expecting the setup array to contain two sub arrays where the first " +
+				"sub array contains commands to setup the DBs, " +
+				"and the second sub array contains commands to clean up the DBs")
+		}
+		defer runSQLQueries(t, dbConnection, db[1])
+		runSQLQueries(t, dbConnection, db[0])
+	}
+
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	fn(router)
+}
+
+func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
+	t.Helper()
+	for _, command := range setup {
+		_, err := db.Exec(command)
+		if err != nil {
+			t.Fatalf("failed to run command. %s. Error: %v", command, err)
+		}
+	}
+}
+
+func initRouter(t *testing.T) (*gin.Engine, error) {
+	t.Helper()
+	//router := gin.Default()
+	router := gin.New()
+
+	group := router.Group(DB_OPS_EP_GROUP)
+	group.POST(DB_OPERATION, PkReadHandler)
+	err := dal.InitRonDBConnection(config.ConnectionString())
+	if err != nil {
+		return nil, err
+	}
+	return router, nil
 }

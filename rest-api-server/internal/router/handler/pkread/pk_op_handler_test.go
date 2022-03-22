@@ -18,7 +18,6 @@
 package pkread
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,7 +27,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/config"
-	"hopsworks.ai/rdrs/internal/dal"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
@@ -333,61 +331,17 @@ func TestERROR_001(t *testing.T) {
 	})
 }
 
-// database connection failed
 func TestDataTypes(t *testing.T) {
 	withDBs(t, [][][]string{common.DB003}, func(router *gin.Engine) {
+		param := PKReadBody{
+			Filters: NewFiltersKVs(t, "id0", "1"),
+			// Filters:     NewFilters(t, "id", 1),
+			ReadColumns: NewReadColumns(t, "col", 9),
+		}
+
+		body, _ := json.MarshalIndent(param, "", "\t")
+
+		url := NewPKReadURL("DB003", "number_table")
+		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
 	})
-}
-
-func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
-	t.Helper()
-
-	//user:password@tcp(IP:Port)/
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
-		config.SqlServerIP(), config.SqlServerPort())
-	dbConnection, err := sql.Open("mysql", connectionString)
-	if err != nil {
-		t.Fatalf("failed to connect to db. %v", err)
-	}
-
-	for _, db := range dbs {
-		if len(db) != 2 {
-			t.Fatal("expecting the setup array to contain two sub arrays where the first " +
-				"sub array contains commands to setup the DBs, " +
-				"and the second sub array contains commands to clean up the DBs")
-		}
-		defer runSQLQueries(t, dbConnection, db[1])
-		runSQLQueries(t, dbConnection, db[0])
-	}
-
-	router, err := initRouter(t)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	fn(router)
-}
-
-func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
-	t.Helper()
-	for _, command := range setup {
-		_, err := db.Exec(command)
-		if err != nil {
-			t.Fatalf("failed to run command. %s. Error: %v", command, err)
-		}
-	}
-}
-
-func initRouter(t *testing.T) (*gin.Engine, error) {
-	t.Helper()
-	//router := gin.Default()
-	router := gin.New()
-
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
-	err := dal.InitRonDBConnection(config.ConnectionString())
-	if err != nil {
-		return nil, err
-	}
-	return router, nil
 }

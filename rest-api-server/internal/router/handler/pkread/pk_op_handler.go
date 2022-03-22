@@ -19,11 +19,14 @@
 package pkread
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
 	"hopsworks.ai/rdrs/version"
 )
@@ -72,17 +75,10 @@ func PkReadHandler(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v", err)
 		c.AbortWithError(http.StatusBadRequest, err)
-		c.JSON(http.StatusBadRequest, gin.H{"OK": false, "msg": fmt.Sprintf("%-v", err)})
+		setResponseError(c, http.StatusBadRequest, common.Response{OK: false, Message: fmt.Sprintf("%-v", err)})
 		return
 	}
 
-	// t := rand.Int63n(500)
-	// time.Sleep(time.Duration(t) * time.Millisecond)
-	// fmt.Printf("Full URI: %s\n", c.Request.URL)
-	// msg, _ := json.MarshalIndent(pkReadParams, "", "\t")
-	// fmt.Printf("Request Params: %s\n", msg)
-
-	// createNativeRequest(&pkReadParams)
 	request, response, err := createNativeRequest(&pkReadParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
@@ -90,10 +86,21 @@ func PkReadHandler(c *gin.Context) {
 
 	dalErr := dal.RonDBPKRead(request, response)
 	if dalErr != nil {
-		c.JSON(dalErr.HttpCode, gin.H{"OK": false, "msg": fmt.Sprintf("%v", dalErr.Message)})
+		setResponseError(c, dalErr.HttpCode, common.Response{OK: false, Message: fmt.Sprintf("%v", dalErr.Message)})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"OK": true, "msg": processResponse(response)})
+		setResponseBodyUnsafe(c, http.StatusOK, response)
 	}
+}
+
+func setResponseError(c *gin.Context, code int, resp common.Response) {
+	b, _ := json.Marshal(resp) // only used in case of errors so not terrible for performance
+	c.String(code, string(b))
+}
+
+func setResponseBodyUnsafe(c *gin.Context, code int, resp unsafe.Pointer) {
+	res := common.Response{OK: true, Message: common.ProcessResponse(resp)} // TODO XXX Fix this. Use response writer. Benchmark this part
+	b, _ := json.Marshal(res)
+	c.String(code, string(b))
 }
 
 func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {
