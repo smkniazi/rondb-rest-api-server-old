@@ -91,6 +91,16 @@ public:
   RS_Status append_iu8(unsigned char num, bool appendComma);
 
   /**
+   * Append to response buffer
+   */
+  RS_Status append_i16(short int num, bool appendComma);
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append_iu16(unsigned short int num, bool appendComma);
+
+  /**
    * Append null. Used to terminate string response message
    */
   RS_Status appendNULL();

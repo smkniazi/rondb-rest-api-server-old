@@ -355,13 +355,13 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Smallint: {
     ///< 16 bit. 2 byte signed integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Smallint")
-    return RS_ERROR("Not Implemented");
+    status = response.append_i16(attr->short_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Smallunsigned: {
     ///< 16 bit. 2 byte unsigned integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Smallunsigned")
-    return RS_ERROR("Not Implemented");
+    status = response.append_iu16(attr->u_short_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Mediumint: {
     ///< 24 bit. 3 byte signed integer, can be used in array
@@ -570,13 +570,39 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Smallint: {
     ///< 16 bit. 2 byte signed integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Smallint")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= -32768 && num <= 32767) {
+        operation->equal(request.pkName(colIdx), (short int)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting SMALLINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Smallunsigned: {
     ///< 16 bit. 2 byte unsigned integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Smallunsigned")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= 0 && num <= 65535) {
+        operation->equal(request.pkName(colIdx), (unsigned short int)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Mediumint: {
     ///< 24 bit. 3 byte signed integer, can be used in array

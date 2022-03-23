@@ -57,19 +57,27 @@ RS_Status PKRResponse::appendCStr(const char *str, bool appendComma) {
 }
 
 RS_Status PKRResponse::append_i8(char num, bool appendComma) {
-	return append_i64(num, appendComma);
+  return append_i64(num, appendComma);
 }
 
 RS_Status PKRResponse::append_iu8(unsigned char num, bool appendComma) {
-	return append_iu64(num, appendComma);
+  return append_iu64(num, appendComma);
+}
+
+RS_Status PKRResponse::append_i16(short int num, bool appendComma) {
+  return append_i64(num, appendComma);
+}
+
+RS_Status PKRResponse::append_iu16(unsigned short int num, bool appendComma) {
+  return append_iu64(num, appendComma);
 }
 
 RS_Status PKRResponse::append_iu32(uint32_t num, bool appendComma) {
-	return append_iu64(num, appendComma);
+  return append_iu64(num, appendComma);
 }
 
 RS_Status PKRResponse::append_i32(int num, bool appendComma) {
-	return append_i64(num, appendComma);
+  return append_i64(num, appendComma);
 }
 
 RS_Status PKRResponse::appendNULL() {
@@ -77,7 +85,6 @@ RS_Status PKRResponse::appendNULL() {
   writeHeader += 1;
   return RS_OK;
 }
-
 
 RS_Status PKRResponse::append_iu64(unsigned long long num, bool appendComma) {
   try {
