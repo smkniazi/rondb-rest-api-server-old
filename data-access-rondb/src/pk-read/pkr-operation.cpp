@@ -258,7 +258,6 @@ RS_Status PKROperation::validateRequest() {
       return RS_ERROR(ERROR_014 + string(" Column: ") + string(request.pkName(i)));
     }
   }
-  // TODO check pk col data type
 
   // Check non primary key columns
   // check that all columns exist
@@ -271,9 +270,6 @@ RS_Status PKROperation::validateRequest() {
       }
     }
   }
-
-  // check data types
-  // TODO
 
   return RS_OK;
 }
@@ -295,25 +291,41 @@ RS_Status PKROperation::performOperation() {
 
   status = setupTransaction();
   if (status.http_code != SUCCESS) {
+    abort();
     return status;
   }
 
   status = setupReadOperation();
   if (status.http_code != SUCCESS) {
+    abort();
     return status;
   }
 
   status = execute();
   if (status.http_code != SUCCESS) {
+    abort();
     return status;
   }
 
   status = createResponse();
   if (status.http_code != SUCCESS) {
+    abort();
     return status;
   }
 
   closeTransaction();
+  return RS_OK;
+}
+
+RS_Status PKROperation::abort() {
+  if (transaction != NULL) {
+    NdbTransaction::CommitStatusType status = transaction->commitStatus();
+    if (status == NdbTransaction::CommitStatusType::Started) {
+      transaction->execute(NdbTransaction::Rollback);
+    }
+    ndbObject->closeTransaction(transaction);
+  }
+
   return RS_OK;
 }
 

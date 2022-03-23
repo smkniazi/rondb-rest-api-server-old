@@ -105,6 +105,11 @@ private:
   void closeTransaction();
 
   /**
+   * abort operation 
+   */
+  RS_Status abort();
+
+  /**
    * create response
    *
    * @return status

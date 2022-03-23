@@ -102,6 +102,7 @@ func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
 		config.SqlServerIP(), config.SqlServerPort())
 	dbConnection, err := sql.Open("mysql", connectionString)
+	defer dbConnection.Close()
 	if err != nil {
 		t.Fatalf("failed to connect to db. %v", err)
 	}
@@ -120,8 +121,8 @@ func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-
 	defer shutDownRouter(t, router)
+
 	fn(router)
 }
 

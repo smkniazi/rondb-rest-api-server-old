@@ -47,10 +47,12 @@ RS_Status init(const char *connection_string) {
 }
 
 RS_Status shutdown() {
-	// TODO FIXME
-  cout << "-->SHUTDOWN NOT IMPLENTED. bUG IN pk READ THAT IS PREVENTING FROM SHUTDOWN" << endl;
-  /* ndb_end(0); */
-  /* delete ndb_connection; */
+  try {
+    ndb_end(0);
+    delete ndb_connection;
+  } catch (...) {
+    cout << "------> Exception in Shutdown <------" << endl;
+  }
   return RS_OK;
 }
 
@@ -94,11 +96,10 @@ RS_Status pkRead(char *reqBuff, char *respBuff) {
   PKROperation pkread(reqBuff, respBuff, ndbObject);
 
   status = pkread.performOperation();
+  closeNDBObject(&ndbObject);
   if (status.http_code != SUCCESS) {
     return status;
   }
-
-  closeNDBObject(&ndbObject);
 
   return RS_OK;
 }
