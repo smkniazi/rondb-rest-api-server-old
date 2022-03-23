@@ -83,10 +83,11 @@ func init() {
 		},
 	}
 
+	// signed and unsigned number data types
 	databases["DB004"] = [][]string{
 		{
-			// signed and unsigned int
 			// setup commands
+			"DROP DATABASE IF EXISTS DB004",
 			"CREATE DATABASE DB004",
 			"USE DB004",
 			"CREATE TABLE int_table(id0 INT, id1 INT UNSIGNED, col0 INT, col1 INT UNSIGNED, PRIMARY KEY(id0, id1))",
@@ -100,6 +101,13 @@ func init() {
 			"INSERT INTO  bigint_table VALUES(-9223372036854775808,0,-9223372036854775808,0)",
 			"INSERT INTO  bigint_table VALUES(0,0,0,0)",
 			"INSERT INTO  bigint_table set id0=1, id1=1", // NULL values for non primary columns
+
+			"CREATE TABLE tinyint_table(id0 TINYINT, id1 TINYINT UNSIGNED, col0 TINYINT, col1 TINYINT UNSIGNED, PRIMARY KEY(id0, id1))",
+			"INSERT INTO  tinyint_table VALUES(127,255,127,255)",
+			"INSERT INTO  tinyint_table VALUES(-128,0,-128,0)",
+			"INSERT INTO  tinyint_table VALUES(0,0,0,0)",
+			"INSERT INTO  tinyint_table set id0=1, id1=1", // NULL values for non primary columns
+
 		},
 
 		{ // clean up commands

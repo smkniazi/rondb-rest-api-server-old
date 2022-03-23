@@ -45,6 +45,11 @@ typedef struct RS_Status {
 RS_Status init(const char *connection_string);
 
 /**
+ * Shutdown connection 
+ */
+RS_Status shutdown();
+
+/**
  * Primary key read operation
  */
 RS_Status pkRead(char *reqBuff, char *respBuff);

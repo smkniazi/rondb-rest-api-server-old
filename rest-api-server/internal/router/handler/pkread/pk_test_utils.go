@@ -121,6 +121,7 @@ func withDBs(t *testing.T, dbs [][][]string, fn func(router *gin.Engine)) {
 		t.Fatalf("%v", err)
 	}
 
+	defer shutDownRouter(t, router)
 	fn(router)
 }
 
@@ -146,4 +147,13 @@ func initRouter(t *testing.T) (*gin.Engine, error) {
 		return nil, err
 	}
 	return router, nil
+}
+
+func shutDownRouter(t *testing.T, router *gin.Engine) error {
+	t.Helper()
+	err := dal.ShutdownConnection()
+	if err != nil {
+		return err
+	}
+	return nil
 }

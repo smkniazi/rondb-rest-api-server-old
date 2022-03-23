@@ -18,17 +18,6 @@ using namespace std;
 Ndb_cluster_connection *ndb_connection;
 
 /**
- * only for testing
- */
-int main(int argc, char **argv) {
-  char connection_string[] = "localhost:1186";
-  init(connection_string);
-  /* pkRead(nullptr); */
-  this_thread::sleep_for(chrono::milliseconds(1000));
-  return 0;
-}
-
-/**
  * Initialize NDB connection
  * @param connection_string NDB connection string {url}:{port}
  * @return status
@@ -57,6 +46,14 @@ RS_Status init(const char *connection_string) {
   return RS_OK;
 }
 
+RS_Status shutdown() {
+	// TODO FIXME
+  cout << "-->SHUTDOWN NOT IMPLENTED. bUG IN pk READ THAT IS PREVENTING FROM SHUTDOWN" << endl;
+  /* ndb_end(0); */
+  /* delete ndb_connection; */
+  return RS_OK;
+}
+
 /**
  * Creats a new NDB Object
  *
@@ -70,8 +67,19 @@ RS_Status getNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) 
   int retCode = (*ndbObject)->init();
   if (retCode != 0) {
     return RS_ERROR(SERVER_ERROR, ERROR_004 + string(" RetCode: ") + to_string(retCode));
-
   }
+  return RS_OK;
+}
+
+/**
+ * Closes a NDB Object
+ *
+ * @param[int] ndbObject
+ *
+ * @return status
+ */
+RS_Status closeNDBObject(Ndb **ndbObject) {
+  delete *ndbObject;
   return RS_OK;
 }
 
@@ -90,27 +98,26 @@ RS_Status pkRead(char *reqBuff, char *respBuff) {
     return status;
   }
 
-  return RS_OK;
-}
-
-RS_Status pkRead2(const char *request) {
-  //  /* int tid =  pthread_self(); */
-  //  /* INFO("Hello World! " << tid ) */
-  //  PKRead pkread(request);
-  //  INFO("Type:  \"" << pkread.operationType() << "\"")
-  //  INFO("DB:  \"" << pkread.db() << "\"")
-  //  INFO("Table:  \"" << pkread.table() << "\"")
-  //  uint32_t count = pkread.pkColumnsCount();
-  //  for (uint32_t i = 0; i < count; i++) {
-  //    INFO("PK Name:  \"" << pkread.pkName(i) << "\"")
-  //    INFO("PK Value:  \"" << pkread.pkValue(i) << "\"")
-  //  }
-  //
-  //  uint32_t rcols = pkread.readColumnsCount();
-  //  for (uint32_t i = 0; i < rcols; i++) {
-  //    INFO("Read Column:  \"" << pkread.readColumnName(i) << "\"")
-  //  }
-  //  INFO("Operation ID:  \"" << pkread.operationId() << "\"")
+  closeNDBObject(&ndbObject);
 
   return RS_OK;
 }
+
+/**
+ * only for testing
+ */
+int main(int argc, char **argv) {
+  for (int i = 0; i < 10; i++) {
+    char connection_string[] = "localhost:1186";
+    init(connection_string);
+
+    Ndb *ndbObject   = nullptr;
+    RS_Status status = getNDBObject(ndb_connection, &ndbObject);
+    closeNDBObject(&ndbObject);
+    shutdown();
+    /* pkRead(nullptr); */
+    this_thread::sleep_for(chrono::milliseconds(1000));
+  }
+  return 0;
+}
+

@@ -39,12 +39,12 @@ public:
   /**
    * Append to response buffer
    */
-  RS_Status append(string str, bool appendComma); 
+  RS_Status appendStr(string str, bool appendComma); 
 
   /**
    * Append to response buffer
    */
-  RS_Status append(const char* str, bool appendComma); 
+  RS_Status appendCStr(const char* str, bool appendComma); 
 
   PKRResponse(char *respBuff);
 
@@ -63,22 +63,32 @@ public:
   /**
    * Append to response buffer
    */
-  RS_Status append(uint32_t num, bool appendComma);
+  RS_Status append_iu32(uint32_t num, bool appendComma);
 
   /**
    * Append to response buffer
    */
-  RS_Status append(int num, bool appendComma);
+  RS_Status append_i32(int num, bool appendComma);
 
   /**
    * Append to response buffer
    */
-  RS_Status append(long long num, bool appendComma);
+  RS_Status append_i64(long long num, bool appendComma);
 
   /**
    * Append to response buffer
    */
-  RS_Status append(unsigned long long num, bool appendComma);
+  RS_Status append_iu64(unsigned long long num, bool appendComma);
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append_i8(char num, bool appendComma);
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append_iu8(unsigned char num, bool appendComma);
 
   /**
    * Append null. Used to terminate string response message

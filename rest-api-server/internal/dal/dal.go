@@ -55,6 +55,16 @@ func InitRonDBConnection(connStr string) *DalError {
 	return nil
 }
 
+func ShutdownConnection() *DalError {
+	ret := C.shutdown()
+
+	if ret.http_code != http.StatusOK {
+		defer C.free(unsafe.Pointer(ret.message))
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
+	}
+	return nil
+}
+
 func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) *DalError {
 	ret := C.pkRead((*C.char)(request), (*C.char)(response))
 	if ret.http_code != http.StatusOK {

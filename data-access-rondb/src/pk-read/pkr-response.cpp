@@ -35,37 +35,11 @@ void PKRResponse::setWriteHeader(uint32_t writeHeader) {
   this->writeHeader = writeHeader;
 }
 
-RS_Status PKRResponse::append(uint32_t num, bool appendComma) {
-  try {
-    string numStr = to_string(num);
-    append(numStr, appendComma);
-  } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
-  }
-  return RS_OK;
+RS_Status PKRResponse::appendStr(string str, bool appendComma) {
+  return appendCStr(str.c_str(), appendComma);
 }
 
-RS_Status PKRResponse::append(int num, bool appendComma) {
-  try {
-    string numStr = to_string(num);
-    append(numStr, appendComma);
-  } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
-  }
-  return RS_OK;
-}
-
-RS_Status PKRResponse::appendNULL() {
-  respBuff[writeHeader] = 0x00;
-  writeHeader += 1;
-  return RS_OK;
-}
-
-RS_Status PKRResponse::append(string str, bool appendComma) {
-  return append(str.c_str(), appendComma);
-}
-
-RS_Status PKRResponse::append(const char *str, bool appendComma) {
+RS_Status PKRResponse::appendCStr(const char *str, bool appendComma) {
   int strl = strlen(str);
   if (strl + writeHeader >= capacity) {
     return RS_ERROR(SERVER_ERROR, ERROR_016);
@@ -82,22 +56,46 @@ RS_Status PKRResponse::append(const char *str, bool appendComma) {
   return RS_OK;
 }
 
-RS_Status PKRResponse::append(unsigned long long num, bool appendComma) {
-  try {
-    string numStr = to_string(num);
-    append(numStr, appendComma);
-  } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
-  }
-	return RS_OK;
+RS_Status PKRResponse::append_i8(char num, bool appendComma) {
+	return append_i64(num, appendComma);
 }
 
-RS_Status PKRResponse::append(long long num, bool appendComma) {
+RS_Status PKRResponse::append_iu8(unsigned char num, bool appendComma) {
+	return append_iu64(num, appendComma);
+}
+
+RS_Status PKRResponse::append_iu32(uint32_t num, bool appendComma) {
+	return append_iu64(num, appendComma);
+}
+
+RS_Status PKRResponse::append_i32(int num, bool appendComma) {
+	return append_i64(num, appendComma);
+}
+
+RS_Status PKRResponse::appendNULL() {
+  respBuff[writeHeader] = 0x00;
+  writeHeader += 1;
+  return RS_OK;
+}
+
+
+RS_Status PKRResponse::append_iu64(unsigned long long num, bool appendComma) {
   try {
     string numStr = to_string(num);
-    append(numStr, appendComma);
+    appendStr(numStr, appendComma);
   } catch (...) {
     return RS_ERROR(SERVER_ERROR, ERROR_015);
   }
-	return RS_OK;
+  return RS_OK;
 }
+
+RS_Status PKRResponse::append_i64(long long num, bool appendComma) {
+  try {
+    string numStr = to_string(num);
+    appendStr(numStr, appendComma);
+  } catch (...) {
+    return RS_ERROR(SERVER_ERROR, ERROR_015);
+  }
+  return RS_OK;
+}
+

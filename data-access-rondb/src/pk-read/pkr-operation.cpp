@@ -115,17 +115,17 @@ RS_Status PKROperation::createResponse() {
   } else {
 
     // iterate over all columns
-    response.append("{", false);
+    response.appendStr("{", false);
     if (request.operationId() != NULL) {
-      response.append("\"OperationID\": ", false);
-      response.append(string("\"") + request.operationId() + string("\""), true);
+      response.appendStr("\"OperationID\": ", false);
+      response.appendStr(string("\"") + request.operationId() + string("\""), true);
     }
-    response.append("\"Data\": {", false);
+    response.appendStr("\"Data\": {", false);
 
     for (uint32_t i = 0; i < recs.size(); i++) {
 
       RS_Status status =
-          response.append(string("\"") + recs[i]->getColumn()->getName() + string("\":"), false);
+          response.appendStr(string("\"") + recs[i]->getColumn()->getName() + string("\":"), false);
       if (status.http_code != SUCCESS) {
         return status;
       }
@@ -135,7 +135,7 @@ RS_Status PKROperation::createResponse() {
         return status;
       }
     }
-    response.append("} } ", false);
+    response.appendStr("} } ", false);
     response.appendNULL();
   }
 
@@ -322,8 +322,8 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   RS_Status status;
 
   if (attr->isNULL()) {
-    return response.append("null", appendComma);
-  } 
+    return response.appendStr("null", appendComma);
+  }
 
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
@@ -333,13 +333,13 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Tinyint")
-    return RS_ERROR("Not Implemented");
+    status = response.append_i8(attr->int8_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Tinyunsigned: {
     ///< 8 bit. 1 byte unsigned integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Tinyunsigned")
-    return RS_ERROR("Not Implemented");
+    status = response.append_iu8(attr->u_8_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Smallint: {
     ///< 16 bit. 2 byte signed integer, can be used in array
@@ -363,22 +363,22 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Int: {
     ///< 32 bit. 4 byte signed integer, can be used in array
-    status = response.append(attr->int32_value(), appendComma);
+    status = response.append_i32(attr->int32_value(), appendComma);
     break;
   }
   case NdbDictionary::Column::Unsigned: {
     ///< 32 bit. 4 byte unsigned integer, can be used in array
-    status = response.append(attr->u_32_value(), appendComma);
+    status = response.append_iu32(attr->u_32_value(), appendComma);
     break;
   }
   case NdbDictionary::Column::Bigint: {
     ///< 64 bit. 8 byte signed integer, can be used in array
-    status = response.append(attr->int64_value(), appendComma);
+    status = response.append_i64(attr->int64_value(), appendComma);
     break;
   }
   case NdbDictionary::Column::Bigunsigned: {
     ///< 64 Bit. 8 byte signed integer, can be used in array
-    status = response.append(attr->u_64_value(), appendComma);
+    status = response.append_iu64(attr->u_64_value(), appendComma);
     break;
   }
   case NdbDictionary::Column::Float: {
@@ -522,13 +522,39 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Tinyint")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= -128 && num <= 127) {
+        operation->equal(request.pkName(colIdx), (char)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Tinyunsigned: {
     ///< 8 bit. 1 byte unsigned integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Tinyunsigned")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= 0 && num <= 255) {
+        operation->equal(request.pkName(colIdx), (char)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Smallint: {
     ///< 16 bit. 2 byte signed integer, can be used in array
@@ -563,26 +589,30 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Unsigned: {
     ///< 32 bit. 4 byte unsigned integer, can be used in array
+    bool success = false;
     try {
       long long lresult   = stoll(request.pkValueCStr(colIdx));
       unsigned int result = lresult;
-      if (result != lresult) {
-        return RS_ERROR(ERROR_015 + string(" Expecting Unsigned Int. Column: ") +
-                        string(request.pkName(colIdx)));
+      if (result == lresult) {
+        operation->equal(request.pkName(colIdx), result);
+        success = true;
       }
-      operation->equal(request.pkName(colIdx), result);
     } catch (...) {
+    }
+
+    if (!success) {
       return RS_ERROR(ERROR_015 + string(" Expecting Unsigned Int. Column: ") +
                       string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
     }
-    return RS_OK;
   }
   case NdbDictionary::Column::Bigint: {
     ///< 64 bit. 8 byte signed integer, can be used in array
     try {
       long long num = stoll(request.pkValueCStr(colIdx));
       operation->equal(request.pkName(colIdx), num);
-      cout<<"Setting big int to " << num<< endl;
+      cout << "Setting big int to " << num << endl;
     } catch (...) {
       return RS_ERROR(ERROR_015 + string(" Expecting BIGINT. Column: ") +
                       string(request.pkName(colIdx)));
@@ -591,22 +621,23 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Bigunsigned: {
     ///< 64 Bit. 8 byte signed integer, can be used in array
+    bool success = false;
     try {
       const char *numCStr = request.pkValueCStr(colIdx);
       const string numStr = string(numCStr);
-      if (numStr.find('-') != string::npos) {
-        return RS_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
-                        string(request.pkName(colIdx)));
+      if (numStr.find('-') == string::npos) {
+        unsigned long long num = stoul(numCStr);
+        operation->equal(request.pkName(colIdx), num);
+        success = true;
       }
-
-      unsigned long long num = stoul(numCStr);
-      operation->equal(request.pkName(colIdx), num);
-      cout<<"Setting big int unsigned to " << num<< endl;
     } catch (...) {
+    }
+    if (!success) {
       return RS_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
     }
-    return RS_OK;
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array

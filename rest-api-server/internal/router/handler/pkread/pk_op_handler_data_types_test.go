@@ -39,7 +39,7 @@ type TestInfo struct {
 
 // INT TESTS
 // Test signed and unsigned int data type
-func TestIntDataType(t *testing.T) {
+func TestDataTypesInt(t *testing.T) {
 
 	tests := map[string]TestInfo{
 		// "xxxxxx": {
@@ -138,7 +138,7 @@ func TestIntDataType(t *testing.T) {
 	test(t, tests)
 }
 
-func TestBigIntDataType(t *testing.T) {
+func TestDataTypesBigInt(t *testing.T) {
 
 	tests := map[string]TestInfo{
 		"simple": {
@@ -147,7 +147,7 @@ func TestBigIntDataType(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "int_table",
+			table:        "bigint_table",
 			db:           "DB004",
 			httpCode:     http.StatusOK,
 			bodyContains: "",
@@ -201,7 +201,7 @@ func TestBigIntDataType(t *testing.T) {
 		},
 		"assigningSmallerVals": {
 			pkReq: PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808
+				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
 			table:        "bigint_table",
@@ -217,6 +217,94 @@ func TestBigIntDataType(t *testing.T) {
 				OperationID: NewOperationID(t, 64),
 			},
 			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+	test(t, tests)
+}
+
+func TestDataTypesTinyInt(t *testing.T) {
+
+	tests := map[string]TestInfo{
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"maxValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "255"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "127", "col1", "255"},
+		},
+
+		"minValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-128", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-128", "col1", "0"},
+		},
+		"assignNegativeValToUnsignedCol": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningBiggerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "256"), //255+1
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningSmallerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-129", "id1", "0"), //-128-1
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "tinyint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "tinyint_table",
 			db:           "DB004",
 			httpCode:     http.StatusOK,
 			bodyContains: "",
