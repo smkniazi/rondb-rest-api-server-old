@@ -330,18 +330,3 @@ func TestERROR_001(t *testing.T) {
 		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_001())
 	})
 }
-
-func TestDataTypes(t *testing.T) {
-	withDBs(t, [][][]string{common.Database("DB003")}, func(router *gin.Engine) {
-		param := PKReadBody{
-			Filters: NewFiltersKVs(t, "id0", "1"),
-			// Filters:     NewFilters(t, "id", 1),
-			ReadColumns: NewReadColumns(t, "col", 9),
-		}
-
-		body, _ := json.MarshalIndent(param, "", "\t")
-
-		url := NewPKReadURL("DB003", "number_table")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-	})
-}

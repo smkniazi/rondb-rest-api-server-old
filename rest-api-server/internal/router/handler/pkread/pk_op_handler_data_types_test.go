@@ -41,11 +41,13 @@ type TestInfo struct {
 // Test signed and unsigned int data type
 func TestDataTypesInt(t *testing.T) {
 
+	testTable := "int_table"
+	testDb := "DB004"
 	tests := map[string]TestInfo{
 		// "xxxxxx": {
 		// pkReq:        PKReadBody{},
-		// table:        "int_table",
-		// db:           "DB004",
+		// table: testTable,
+		// db: testDb,
 		// httpCode:     http.StatusOK,
 		// bodyContains: "",
 		// respKVs:      []string{},
@@ -55,8 +57,8 @@ func TestDataTypesInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
@@ -66,8 +68,8 @@ func TestDataTypesInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "2147483647", "col1", "4294967295"},
@@ -77,8 +79,8 @@ func TestDataTypesInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "-2147483648", "col1", "0"},
@@ -90,8 +92,8 @@ func TestDataTypesInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -102,8 +104,8 @@ func TestDataTypesInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "2147483648", "id1", "4294967295"), //bigger than the range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -114,8 +116,8 @@ func TestDataTypesInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-2147483649", "id1", "0"), //smaller than range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -127,8 +129,8 @@ func TestDataTypesInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "int_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "null", "col1", "null"},
@@ -140,6 +142,9 @@ func TestDataTypesInt(t *testing.T) {
 
 func TestDataTypesBigInt(t *testing.T) {
 
+	testTable := "bigint_table"
+	testDb := "DB005"
+
 	tests := map[string]TestInfo{
 		"simple": {
 			pkReq: PKReadBody{
@@ -147,8 +152,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
@@ -158,8 +163,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551615"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "9223372036854775807", "col1", "18446744073709551615"},
@@ -170,8 +175,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775808", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "-9223372036854775808", "col1", "0"},
@@ -182,8 +187,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -193,8 +198,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551616"), //18446744073709551615+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -204,8 +209,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -216,8 +221,8 @@ func TestDataTypesBigInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "bigint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "null", "col1", "null"},
@@ -228,6 +233,8 @@ func TestDataTypesBigInt(t *testing.T) {
 
 func TestDataTypesTinyInt(t *testing.T) {
 
+	testTable := "tinyint_table"
+	testDb := "DB006"
 	tests := map[string]TestInfo{
 		"simple": {
 			pkReq: PKReadBody{
@@ -235,8 +242,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
@@ -246,8 +253,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "255"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "127", "col1", "255"},
@@ -258,8 +265,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-128", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "-128", "col1", "0"},
@@ -270,8 +277,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -281,8 +288,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "256"), //255+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -292,8 +299,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-129", "id1", "0"), //-128-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -304,8 +311,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "tinyint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "null", "col1", "null"},
@@ -316,6 +323,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 
 func TestDataTypesSmallInt(t *testing.T) {
 
+	testTable := "smallint_table"
+	testDb := "DB007"
 	tests := map[string]TestInfo{
 		"simple": {
 			pkReq: PKReadBody{
@@ -323,8 +332,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
@@ -334,8 +343,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "32767", "id1", "65535"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "32767", "col1", "65535"},
@@ -346,8 +355,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-32768", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "-32768", "col1", "0"},
@@ -358,8 +367,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -369,8 +378,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "32768", "id1", "256"), //32767+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -380,8 +389,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				Filters:     NewFiltersKVs(t, "id0", "-32769", "id1", "0"), //-32768-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
@@ -392,8 +401,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "smallint_table",
-			db:           "DB004",
+			table:        testTable,
+			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
 			respKVs:      []string{"col0", "null", "col1", "null"},

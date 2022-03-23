@@ -95,18 +95,57 @@ func init() {
 			"INSERT INTO  int_table VALUES(-2147483648,0,-2147483648,0)",
 			"INSERT INTO  int_table VALUES(0,0,0,0)",
 			"INSERT INTO  int_table set id0=1, id1=1", // NULL values for non primary columns
+		},
+
+		{ // clean up commands
+			"DROP DATABASE DB004",
+		},
+	}
+
+	databases["DB005"] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS DB005",
+			"CREATE DATABASE DB005",
+			"USE DB005",
 
 			"CREATE TABLE bigint_table(id0 BIGINT, id1 BIGINT UNSIGNED, col0 BIGINT, col1 BIGINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  bigint_table VALUES(9223372036854775807,18446744073709551615,9223372036854775807,18446744073709551615)",
 			"INSERT INTO  bigint_table VALUES(-9223372036854775808,0,-9223372036854775808,0)",
 			"INSERT INTO  bigint_table VALUES(0,0,0,0)",
 			"INSERT INTO  bigint_table set id0=1, id1=1", // NULL values for non primary columns
+		},
+
+		{ // clean up commands
+			"DROP DATABASE DB005",
+		},
+	}
+
+	databases["DB006"] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS DB006",
+			"CREATE DATABASE DB006",
+			"USE DB006",
 
 			"CREATE TABLE tinyint_table(id0 TINYINT, id1 TINYINT UNSIGNED, col0 TINYINT, col1 TINYINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  tinyint_table VALUES(127,255,127,255)",
 			"INSERT INTO  tinyint_table VALUES(-128,0,-128,0)",
 			"INSERT INTO  tinyint_table VALUES(0,0,0,0)",
 			"INSERT INTO  tinyint_table set id0=1, id1=1", // NULL values for non primary columns
+		},
+
+		{ // clean up commands
+			"DROP DATABASE DB006",
+		},
+	}
+
+	databases["DB007"] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS DB007",
+			"CREATE DATABASE DB007",
+			"USE DB007",
 
 			"CREATE TABLE smallint_table(id0 SMALLINT, id1 SMALLINT UNSIGNED, col0 SMALLINT, col1 SMALLINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  smallint_table VALUES(32767,65535,32767,65535)",
@@ -117,7 +156,7 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB004",
+			"DROP DATABASE DB007",
 		},
 	}
 }
