@@ -29,6 +29,8 @@ import (
 
 func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	url string, body string, expectedStatus int, expectedMsg string) common.Response {
+
+	t.Helper()
 	req, _ := http.NewRequest(httpVerb, url, strings.NewReader(body))
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)

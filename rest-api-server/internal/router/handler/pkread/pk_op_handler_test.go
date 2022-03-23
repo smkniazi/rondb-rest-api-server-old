@@ -236,7 +236,7 @@ func TestPKUniqueParams(t *testing.T) {
 // DB/Table does not exist
 func TestERROR_011(t *testing.T) {
 
-	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+	withDBs(t, [][][]string{common.Database("DB001")}, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := PKReadBody{
@@ -258,7 +258,7 @@ func TestERROR_011(t *testing.T) {
 // column does not exist
 func TestERROR_012(t *testing.T) {
 
-	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+	withDBs(t, [][][]string{common.Database("DB001")}, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := PKReadBody{
@@ -277,7 +277,7 @@ func TestERROR_012(t *testing.T) {
 // Primary key test.
 func TestERROR_013_ERROR_014(t *testing.T) {
 
-	withDBs(t, [][][]string{common.DB002}, func(router *gin.Engine) {
+	withDBs(t, [][][]string{common.Database("DB002")}, func(router *gin.Engine) {
 		// every thing is fine
 		param := PKReadBody{
 			Filters:     NewFilters(t, "id", 2),
@@ -317,7 +317,7 @@ func TestERROR_013_ERROR_014(t *testing.T) {
 func TestERROR_001(t *testing.T) {
 
 	config.SetConnectionString("localhost:1234")
-	withDBs(t, [][][]string{common.DB001}, func(router *gin.Engine) {
+	withDBs(t, [][][]string{common.Database("DB001")}, func(router *gin.Engine) {
 		param := PKReadBody{
 			Filters:     NewFilters(t, "id", 1),
 			ReadColumns: NewReadColumn(t, "col_0"),
@@ -332,7 +332,7 @@ func TestERROR_001(t *testing.T) {
 }
 
 func TestDataTypes(t *testing.T) {
-	withDBs(t, [][][]string{common.DB003}, func(router *gin.Engine) {
+	withDBs(t, [][][]string{common.Database("DB003")}, func(router *gin.Engine) {
 		param := PKReadBody{
 			Filters: NewFiltersKVs(t, "id0", "1"),
 			// Filters:     NewFilters(t, "id", 1),

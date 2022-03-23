@@ -62,17 +62,17 @@ RS_Status PKRResponse::appendNULL() {
 }
 
 RS_Status PKRResponse::append(string str, bool appendComma) {
-  return append(str.c_str(), appendComma); 
+  return append(str.c_str(), appendComma);
 }
 
-RS_Status PKRResponse::append(const char * str, bool appendComma) {
+RS_Status PKRResponse::append(const char *str, bool appendComma) {
   int strl = strlen(str);
   if (strl + writeHeader >= capacity) {
     return RS_ERROR(SERVER_ERROR, ERROR_016);
   }
 
   std::memcpy(respBuff + writeHeader, str, strl);
-  writeHeader += strl; 
+  writeHeader += strl;
 
   if (appendComma) {
     respBuff[writeHeader] = ',';
@@ -80,4 +80,24 @@ RS_Status PKRResponse::append(const char * str, bool appendComma) {
   }
 
   return RS_OK;
+}
+
+RS_Status PKRResponse::append(unsigned long long num, bool appendComma) {
+  try {
+    string numStr = to_string(num);
+    append(numStr, appendComma);
+  } catch (...) {
+    return RS_ERROR(SERVER_ERROR, ERROR_015);
+  }
+	return RS_OK;
+}
+
+RS_Status PKRResponse::append(long long num, bool appendComma) {
+  try {
+    string numStr = to_string(num);
+    append(numStr, appendComma);
+  } catch (...) {
+    return RS_ERROR(SERVER_ERROR, ERROR_015);
+  }
+	return RS_OK;
 }

@@ -71,6 +71,16 @@ public:
   RS_Status append(int num, bool appendComma);
 
   /**
+   * Append to response buffer
+   */
+  RS_Status append(long long num, bool appendComma);
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append(unsigned long long num, bool appendComma);
+
+  /**
    * Append null. Used to terminate string response message
    */
   RS_Status appendNULL();

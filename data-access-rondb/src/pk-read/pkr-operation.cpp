@@ -320,6 +320,11 @@ RS_Status PKROperation::performOperation() {
 RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendComma) {
   const NdbDictionary::Column *col = attr->getColumn();
   RS_Status status;
+
+  if (attr->isNULL()) {
+    return response.append("null", appendComma);
+  } 
+
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
     ///< 4 bytes + 0-3 fraction
@@ -368,13 +373,13 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Bigint: {
     ///< 64 bit. 8 byte signed integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Bigint")
-    return RS_ERROR("Not Implemented");
+    status = response.append(attr->int64_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Bigunsigned: {
     ///< 64 Bit. 8 byte signed integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Bigunsigned")
-    return RS_ERROR("Not Implemented");
+    status = response.append(attr->u_64_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array
@@ -574,13 +579,34 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Bigint: {
     ///< 64 bit. 8 byte signed integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Bigint")
-    return RS_ERROR("Not Implemented");
+    try {
+      long long num = stoll(request.pkValueCStr(colIdx));
+      operation->equal(request.pkName(colIdx), num);
+      cout<<"Setting big int to " << num<< endl;
+    } catch (...) {
+      return RS_ERROR(ERROR_015 + string(" Expecting BIGINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Bigunsigned: {
     ///< 64 Bit. 8 byte signed integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Bigunsigned")
-    return RS_ERROR("Not Implemented");
+    try {
+      const char *numCStr = request.pkValueCStr(colIdx);
+      const string numStr = string(numCStr);
+      if (numStr.find('-') != string::npos) {
+        return RS_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
+                        string(request.pkName(colIdx)));
+      }
+
+      unsigned long long num = stoul(numCStr);
+      operation->equal(request.pkName(colIdx), num);
+      cout<<"Setting big int unsigned to " << num<< endl;
+    } catch (...) {
+      return RS_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
+                      string(request.pkName(colIdx)));
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array

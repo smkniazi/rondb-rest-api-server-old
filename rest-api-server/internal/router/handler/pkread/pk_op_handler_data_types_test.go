@@ -28,72 +28,217 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-// Test signed and unsigned int data type
-func TestIntDataType(t *testing.T) {
-	withDBs(t, [][][]string{common.DB004}, func(router *gin.Engine) {
-		url := NewPKReadURL("DB004", "int_table")
-
-		// simple
-		param := PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
-			ReadColumns: NewReadColumns(t, "col", 2),
-			OperationID: NewOperationID(t, 64),
-		}
-		body, _ := json.MarshalIndent(param, "", "\t")
-		res := tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-		fmt.Printf("Response %v\n", res)
-		tu.ValidateResponse(t, res, "col0", "1", "col1", "1")
-
-		// max vlaues
-		param = PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
-			ReadColumns: NewReadColumns(t, "col", 2),
-		}
-		body, _ = json.MarshalIndent(param, "", "\t")
-		res = tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-		fmt.Printf("Response %v\n", res)
-		tu.ValidateResponse(t, res, "col0", "2147483647", "col1", "4294967295")
-
-		//min values
-		param = PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
-			ReadColumns: NewReadColumns(t, "col", 2),
-		}
-		body, _ = json.MarshalIndent(param, "", "\t")
-		res = tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-		fmt.Printf("Response %v\n", res)
-		tu.ValidateResponse(t, res, "col0", "-2147483648", "col1", "0")
-	})
+type TestInfo struct {
+	pkReq        PKReadBody
+	table        string
+	db           string
+	httpCode     int
+	bodyContains string
+	respKVs      []string
 }
 
-func TestIntDataTypeErrors(t *testing.T) {
-	withDBs(t, [][][]string{common.DB004}, func(router *gin.Engine) {
-		url := NewPKReadURL("DB004", "int_table")
+// INT TESTS
+// Test signed and unsigned int data type
+func TestIntDataType(t *testing.T) {
 
-		// assigning signed value to unsigned column
-		param := PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "1", "id1", "-1"), //id1 is unsigned
-			ReadColumns: NewReadColumns(t, "col", 2),
-			OperationID: NewOperationID(t, 64),
-		}
-		body, _ := json.MarshalIndent(param, "", "\t")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_015())
+	tests := map[string]TestInfo{
+		// "xxxxxx": {
+		// pkReq:        PKReadBody{},
+		// table:        "int_table",
+		// db:           "DB004",
+		// httpCode:     http.StatusOK,
+		// bodyContains: "",
+		// respKVs:      []string{},
+		// },
+		"simple": {
+			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"maxValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "2147483647", "col1", "4294967295"},
+		},
+		"minValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-2147483648", "col1", "0"},
+		},
 
-		// assigning bigger values
-		param = PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "2147483648", "id1", "4294967295"),
-			ReadColumns: NewReadColumns(t, "col", 2),
-		}
-		body, _ = json.MarshalIndent(param, "", "\t")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_015())
+		"assignNegativeValToUnsignedCol": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "-1"), //id1 is unsigned
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
 
-		// assigning smaller values
-		param = PKReadBody{
-			Filters:     NewFiltersKVs(t, "id0", "-2147483649", "id1", "0"),
-			ReadColumns: NewReadColumns(t, "col", 2),
-		}
-		body, _ = json.MarshalIndent(param, "", "\t")
-		tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_015())
+		"assigningBiggerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2147483648", "id1", "4294967295"), //bigger than the range
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
 
-	})
+		"assigningSmallerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-2147483649", "id1", "0"), //smaller than range
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+
+	test(t, tests)
+}
+
+func TestBigIntDataType(t *testing.T) {
+
+	tests := map[string]TestInfo{
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "int_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"maxValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551615"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "9223372036854775807", "col1", "18446744073709551615"},
+		},
+
+		"minValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775808", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-9223372036854775808", "col1", "0"},
+		},
+		"assignNegativeValToUnsignedCol": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningBiggerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551616"), //18446744073709551615+1
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningSmallerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "bigint_table",
+			db:           "DB004",
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+	test(t, tests)
+}
+
+func test(t *testing.T, tests map[string]TestInfo) {
+	for name, testInfo := range tests {
+		t.Run(name, func(t *testing.T) {
+			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
+				url := NewPKReadURL(testInfo.db, testInfo.table)
+				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
+				res := tu.ProcessRequest(t, router, HTTP_VERB, url,
+					string(body), testInfo.httpCode, testInfo.bodyContains)
+				fmt.Printf("Response %v\n", res)
+				if len(testInfo.respKVs) > 0 {
+					tu.ValidateResponse(t, res, testInfo.respKVs...)
+				}
+			})
+		})
+	}
 }

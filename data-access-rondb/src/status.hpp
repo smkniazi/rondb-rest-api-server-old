@@ -59,6 +59,6 @@ inline RS_Status RS_ERROR(const struct NdbError &error, std::string msg) {
                     __strToCharArr(msg));
 }
 
-#define RS_OK RS_ERROR(SUCCESS, "")
+#define RS_OK RS_ERROR(SUCCESS, "");
 
 #endif
