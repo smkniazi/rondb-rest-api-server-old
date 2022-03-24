@@ -40,6 +40,7 @@ extern "C" {
 #define ERROR_014 "Wrong primay-key column."
 #define ERROR_015 "Wrong data type."
 #define ERROR_016 "Response buffer overflow."
+#define ERROR_017 "Hash indexes on float and double; and indexes on Blob types are not supported."
 //#define ERROR_017 ""
 //#define ERROR_018 ""
 //#define ERROR_019 ""

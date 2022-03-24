@@ -195,6 +195,48 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB009"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			"CREATE TABLE float_table1(id0 INT, col0 FLOAT, col1 FLOAT UNSIGNED, PRIMARY KEY(id0))",
+			"INSERT INTO  float_table1 VALUES(1,-123.123,123.123)",
+			"INSERT INTO  float_table1 VALUES(0,0,0)",
+			"INSERT INTO  float_table1 set id0=2", // NULL values for non primary columns
+
+			"CREATE TABLE float_table2(id0 FLOAT, col0 FLOAT, col1 FLOAT UNSIGNED, PRIMARY KEY(id0))",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
+
+	db = "DB010"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			"CREATE TABLE double_table1(id0 INT, col0 DOUBLE, col1 DOUBLE UNSIGNED, PRIMARY KEY(id0))",
+			"INSERT INTO  double_table1 VALUES(1,-123.123,123.123)",
+			"INSERT INTO  double_table1 VALUES(0,0,0)",
+			"INSERT INTO  double_table1 set id0=2", // NULL values for non primary columns
+
+			"CREATE TABLE double_table2(id0 DOUBLE, col0 DOUBLE, col1 DOUBLE UNSIGNED, PRIMARY KEY(id0))",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
 }
 
 func Database(name string) [][]string {

@@ -48,3 +48,7 @@ func ERROR_001() string {
 func ERROR_015() string {
 	return C.ERROR_015
 }
+
+func ERROR_017() string {
+	return C.ERROR_017
+}

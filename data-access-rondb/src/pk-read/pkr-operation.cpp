@@ -395,13 +395,13 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Float")
-    return RS_ERROR("Not Implemented");
+    status = response.append_f32(attr->float_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Double: {
     ///< 64-bit float. 8 byte float, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Double")
-    return RS_ERROR("Not Implemented");
+    status = response.append_d64(attr->double_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
@@ -705,13 +705,11 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Float")
-    return RS_ERROR("Not Implemented");
+    return RS_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Double: {
     ///< 64-bit float. 8 byte float, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Double")
-    return RS_ERROR("Not Implemented");
+    return RS_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale

@@ -439,7 +439,6 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "8388607", "col1", "16777215"},
 		},
-
 		"minValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388608", "id1", "0"),
@@ -501,6 +500,113 @@ func TestDataTypesMediumInt(t *testing.T) {
 	test(t, tests)
 }
 
+func TestDataTypesFloat(t *testing.T) {
+
+	// testTable := "float_table"
+	testDb := "DB009"
+	tests := map[string]TestInfo{
+		"floatPK": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "float_table2",
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_017(),
+		},
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "float_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"simple2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "float_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
+		},
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "float_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+	test(t, tests)
+}
+
+func TestDataTypesDouble(t *testing.T) {
+
+	// testTable := "float_table"
+	testDb := "DB010"
+	tests := map[string]TestInfo{
+		"floatPK": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "double_table2",
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_017(),
+		},
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "double_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"simple2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        "double_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
+		},
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "double_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+	test(t, tests)
+}
 func test(t *testing.T, tests map[string]TestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {

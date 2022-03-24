@@ -111,6 +111,16 @@ public:
   RS_Status append_iu24(unsigned int num, bool appendComma);
 
   /**
+   * Append to response buffer
+   */
+  RS_Status append_f32(float num, bool appendComma);
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append_d64(double num, bool appendComma);
+
+  /**
    * Append null. Used to terminate string response message
    */
   RS_Status appendNULL();
