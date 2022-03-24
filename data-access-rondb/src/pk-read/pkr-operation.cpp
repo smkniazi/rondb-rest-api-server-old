@@ -340,8 +340,7 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
     ///< 4 bytes + 0-3 fraction
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Undefined");
-    return RS_OK;
+    return RS_ERROR(ERROR_018 + string(" Column: ") + string(col->getName()));
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
@@ -529,8 +528,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
     ///< 4 bytes + 0-3 fraction
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Undefined");
-    return RS_OK;
+    return RS_ERROR(ERROR_018 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
