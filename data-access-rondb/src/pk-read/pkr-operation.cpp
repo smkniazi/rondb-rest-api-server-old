@@ -365,13 +365,13 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Mediumint: {
     ///< 24 bit. 3 byte signed integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Mediumint")
-    return RS_ERROR("Not Implemented");
+    status = response.append_i24(attr->medium_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Mediumunsigned: {
     ///< 24 bit. 3 byte unsigned integer, can be used in array
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Mediumunsigned")
-    return RS_ERROR("Not Implemented");
+    status = response.append_iu24(attr->u_medium_value(), appendComma);
+    break;
   }
   case NdbDictionary::Column::Int: {
     ///< 32 bit. 4 byte signed integer, can be used in array
@@ -598,7 +598,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -606,13 +606,39 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Mediumint: {
     ///< 24 bit. 3 byte signed integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Mediumint")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= -8388608 && num <= 8388607) {
+        operation->equal(request.pkName(colIdx), (int)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting MEDIUMINT. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Mediumunsigned: {
     ///< 24 bit. 3 byte unsigned integer, can be used in array
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Mediumunsigned")
-    return RS_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      int num = stoi(request.pkValueCStr(colIdx));
+      if (num >= 0 && num <= 16777215) {
+        operation->equal(request.pkName(colIdx), (unsigned int)num);
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_ERROR(ERROR_015 + string(" Expecting MEDIUMINT UNSIGNED. Column: ") +
+                      string(request.pkName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Int: {
     ///< 32 bit. 4 byte signed integer, can be used in array

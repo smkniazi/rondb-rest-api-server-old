@@ -411,6 +411,96 @@ func TestDataTypesSmallInt(t *testing.T) {
 	test(t, tests)
 }
 
+func TestDataTypesMediumInt(t *testing.T) {
+
+	testTable := "mediumint_table"
+	testDb := "DB008"
+	tests := map[string]TestInfo{
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+		"maxValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "8388607", "id1", "16777215"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "8388607", "col1", "16777215"},
+		},
+
+		"minValues": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-8388608", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-8388608", "col1", "0"},
+		},
+		"assignNegativeValToUnsignedCol": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningBiggerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "8388608", "id1", "256"), //8388607+1
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningSmallerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-8388609", "id1", "0"), //-8388608-1
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+	}
+	test(t, tests)
+}
+
 func test(t *testing.T, tests map[string]TestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {

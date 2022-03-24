@@ -20,38 +20,48 @@ package common
 var databases map[string][][]string = make(map[string][][]string)
 
 func init() {
-	databases["DB001"] = [][]string{
+	db := "DB001"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"CREATE DATABASE DB001",
-			"USE DB001",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
 			"CREATE TABLE table_1(id0 VARCHAR(10), col_0 VARCHAR(100), col_1 VARCHAR(100), col_2 VARCHAR(100), PRIMARY KEY(id0))",
 			"INSERT INTO table_1 VALUES('id0_data', 'col_0_data', 'col_1_data', 'col_2_data')",
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB001",
+			"DROP DATABASE " + db,
 		},
 	}
-	databases["DB002"] = [][]string{
+
+	db = "DB002"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"CREATE DATABASE DB002",
-			"USE DB002",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
 			"CREATE TABLE table_1(id0 VARCHAR(10), id1 VARCHAR(10), col_0 VARCHAR(100), col_1 VARCHAR(100), col_2 VARCHAR(100), PRIMARY KEY(id0, id1))",
 			"INSERT INTO table_1 VALUES('id0_data', 'id1_data', 'col_0_data', 'col_1_data', 'col_2_data')",
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB002",
+			"DROP DATABASE " + db,
 		},
 	}
 
-	databases["DB003"] = [][]string{
+	db = "DB003"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"CREATE DATABASE DB003",
-			"USE DB003",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
 			"CREATE TABLE `date_table` ( `id0` int NOT NULL, `col0` date DEFAULT NULL, `col1` time DEFAULT NULL, `col2` datetime DEFAULT NULL, `col3` timestamp NULL DEFAULT NULL, `col4` year DEFAULT NULL, PRIMARY KEY (`id0`))",
 			"insert into date_table values(1, \"1111-11-11\", \"11:11:11\", \"1111-11-11 11:11:11\", \"1970-11-11 11:11:11\", \"11\")",
 			"insert into date_table set id0=2",
@@ -79,17 +89,19 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB003",
+			"DROP DATABASE " + db,
 		},
 	}
 
 	// signed and unsigned number data types
-	databases["DB004"] = [][]string{
+	db = "DB004"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"DROP DATABASE IF EXISTS DB004",
-			"CREATE DATABASE DB004",
-			"USE DB004",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
 			"CREATE TABLE int_table(id0 INT, id1 INT UNSIGNED, col0 INT, col1 INT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  int_table VALUES(2147483647,4294967295,2147483647,4294967295)",
 			"INSERT INTO  int_table VALUES(-2147483648,0,-2147483648,0)",
@@ -98,16 +110,17 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB004",
+			"DROP DATABASE " + db,
 		},
 	}
 
-	databases["DB005"] = [][]string{
+	db = "DB005"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"DROP DATABASE IF EXISTS DB005",
-			"CREATE DATABASE DB005",
-			"USE DB005",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
 
 			"CREATE TABLE bigint_table(id0 BIGINT, id1 BIGINT UNSIGNED, col0 BIGINT, col1 BIGINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  bigint_table VALUES(9223372036854775807,18446744073709551615,9223372036854775807,18446744073709551615)",
@@ -117,16 +130,17 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB005",
+			"DROP DATABASE " + db,
 		},
 	}
 
-	databases["DB006"] = [][]string{
+	db = "DB006"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"DROP DATABASE IF EXISTS DB006",
-			"CREATE DATABASE DB006",
-			"USE DB006",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
 
 			"CREATE TABLE tinyint_table(id0 TINYINT, id1 TINYINT UNSIGNED, col0 TINYINT, col1 TINYINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  tinyint_table VALUES(127,255,127,255)",
@@ -136,16 +150,17 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB006",
+			"DROP DATABASE " + db,
 		},
 	}
 
-	databases["DB007"] = [][]string{
+	db = "DB007"
+	databases[db] = [][]string{
 		{
 			// setup commands
-			"DROP DATABASE IF EXISTS DB007",
-			"CREATE DATABASE DB007",
-			"USE DB007",
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
 
 			"CREATE TABLE smallint_table(id0 SMALLINT, id1 SMALLINT UNSIGNED, col0 SMALLINT, col1 SMALLINT UNSIGNED, PRIMARY KEY(id0, id1))",
 			"INSERT INTO  smallint_table VALUES(32767,65535,32767,65535)",
@@ -156,7 +171,28 @@ func init() {
 		},
 
 		{ // clean up commands
-			"DROP DATABASE DB007",
+			"DROP DATABASE " + db,
+		},
+	}
+
+	db = "DB008"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			"CREATE TABLE mediumint_table(id0 MEDIUMINT, id1 MEDIUMINT UNSIGNED, col0 MEDIUMINT, col1 MEDIUMINT UNSIGNED, PRIMARY KEY(id0, id1))",
+			"INSERT INTO  mediumint_table VALUES(8388607,16777215,8388607,16777215)",
+			"INSERT INTO  mediumint_table VALUES(-8388608,0,-8388608,0)",
+			"INSERT INTO  mediumint_table VALUES(0,0,0,0)",
+			"INSERT INTO  mediumint_table set id0=1, id1=1", // NULL values for non primary columns
+
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
 		},
 	}
 }

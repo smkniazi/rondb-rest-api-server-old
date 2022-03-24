@@ -72,6 +72,15 @@ RS_Status PKRResponse::append_iu16(unsigned short int num, bool appendComma) {
   return append_iu64(num, appendComma);
 }
 
+
+RS_Status PKRResponse::append_i24(int num, bool appendComma){
+  return append_i64(num, appendComma);
+}
+
+RS_Status PKRResponse::append_iu24(unsigned int num, bool appendComma){
+  return append_iu64(num, appendComma);
+}
+
 RS_Status PKRResponse::append_iu32(uint32_t num, bool appendComma) {
   return append_iu64(num, appendComma);
 }
