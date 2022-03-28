@@ -17,24 +17,19 @@
 
 package pkread
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"testing"
+import(
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "testing"
 
-	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rdrs/internal/common"
-	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
-)
+    "github.com/gin-gonic/gin"
+    "hopsworks.ai/rdrs/internal/common" tu
+    "hopsworks.ai/rdrs/internal/router/handler/utils")
 
-type TestInfo struct {
-	pkReq        PKReadBody
-	table        string
-	db           string
-	httpCode     int
-	bodyContains string
-	respKVs      []string
+    type TestInfo struct {
+  pkReq PKReadBody table string db string httpCode int bodyContains string
+      respKVs[] string
 }
 
 // INT TESTS
@@ -607,19 +602,84 @@ func TestDataTypesDouble(t *testing.T) {
 	}
 	test(t, tests)
 }
-func test(t *testing.T, tests map[string]TestInfo) {
-	for name, testInfo := range tests {
-		t.Run(name, func(t *testing.T) {
-			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
-				url := NewPKReadURL(testInfo.db, testInfo.table)
-				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
-				res := tu.ProcessRequest(t, router, HTTP_VERB, url,
-					string(body), testInfo.httpCode, testInfo.bodyContains)
-				fmt.Printf("Response %v\n", res)
-				if len(testInfo.respKVs) > 0 {
-					tu.ValidateResponse(t, res, testInfo.respKVs...)
-				}
-			})
-		})
+
+func TestDataTypesDecimal(t *testing.T) {
+
+	testTable := "decimal_table"
+	testDb := "DB011"
+	tests := map[string]TestInfo{
+
+		"simple": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "12345.12345"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "-12345.12345", "col1", "12345.12345"},
+		},
+
+		"nullVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-67890.12345", "id1", "67890.12345"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null", "col1", "null"},
+		},
+
+		"assignNegativeValToUnsignedCol": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "-12345.12345"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
+		"assigningBiggerVals": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "123456789.12345"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusBadRequest,
+			bodyContains: common.ERROR_015(),
+			respKVs:      []string{},
+		},
 	}
+	test(t, tests)
+}
+func test(t *testing.T, tests map[string]TestInfo) {
+	for
+	  name, testInfo : = range tests {
+	    t.Run(
+		name,
+		func(t * testing.T){withDBs(
+		    t, [][][] string{common.Database(testInfo.db)},
+		    func(router * gin.Engine) {
+		      url:
+			= NewPKReadURL(testInfo.db, testInfo.table) body, _
+			    : = json.MarshalIndent(testInfo.pkReq, "", "\t") res
+			    : = tu.ProcessRequest(
+				      t, router, HTTP_VERB, url, string(body),
+				      testInfo.httpCode, testInfo.bodyContains)
+				    fmt.Printf("Response %v\n",
+					       res) if len (testInfo.respKVs) >
+				0 {
+			  tu.ValidateResponse(t, res, testInfo.respKVs...)
+			}
+		    })})
+	  }
 }

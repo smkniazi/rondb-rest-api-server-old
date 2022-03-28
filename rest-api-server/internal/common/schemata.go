@@ -237,6 +237,24 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB011"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			"CREATE TABLE decimal_table(id0 DECIMAL(10,5), id1 DECIMAL(10,5) UNSIGNED, col0 DECIMAL(10,5), col1 DECIMAL(10,5) UNSIGNED, PRIMARY KEY(id0, id1))",
+			"INSERT INTO  decimal_table VALUES(-12345.12345,12345.12345,-12345.12345,12345.12345)",
+			"INSERT INTO  decimal_table set id0=-67890.12345, id1=67890.12345",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
 }
 
 func Database(name string) [][]string {

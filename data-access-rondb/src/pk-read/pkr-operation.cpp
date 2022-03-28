@@ -20,12 +20,17 @@
 #include "pkr-operation.hpp"
 #include "pkr-request.hpp"
 #include "pkr-response.hpp"
+#include "src/decimal_utils.hpp"
 #include "src/error-strs.h"
 #include "src/logger.hpp"
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
 
 using namespace std;
+
+/* Three MySQL defs duplicated here : */
+static const int MaxMySQLDecimalPrecision = 65;
+static const int MaxDecimalStrLen         = MaxMySQLDecimalPrecision + 3;
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -411,14 +416,17 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Olddecimalunsigned")
     return RS_ERROR("Not Implemented");
   }
-  case NdbDictionary::Column::Decimal: {
+  case NdbDictionary::Column::Decimal:
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Decimal")
-    return RS_ERROR("Not Implemented");
-  }
+    [[fallthrough]];
   case NdbDictionary::Column::Decimalunsigned: {
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Decimalunsigned")
-    return RS_ERROR("Not Implemented");
+    char decStr[MaxDecimalStrLen];
+    int precision = attr->getColumn()->getPrecision();
+    int scale     = attr->getColumn()->getScale();
+    void *bin     = attr->aRef();
+    int bin_len   = attr->get_size_in_bytes();
+    decimal_bin2str(bin, bin_len, precision, scale, decStr, MaxDecimalStrLen);
+    return response.appendStr(decStr, appendComma);
   }
   case NdbDictionary::Column::Char: {
     ///< Len. A fixed array of 1-byte chars
@@ -712,20 +720,33 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Olddecimal")
-    return RS_ERROR("Not Implemented");
+    return RS_ERROR("Not Implemented. Type: Olddecimal");
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Olddecimalunsigned")
-    return RS_ERROR("Not Implemented");
-  }
-  case NdbDictionary::Column::Decimal: {
-    ///< MySQL >= 5.0 signed decimal,  Precision, Scale
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Decimal")
-    return RS_ERROR("Not Implemented");
+    return RS_ERROR("Not Implemented. Type: Olddecimalunsigned");
   }
   case NdbDictionary::Column::Decimalunsigned: {
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Decimalunsigned")
-    return RS_ERROR("Not Implemented");
+    ///< MySQL >= 5.0 signed decimal,  Precision, Scale
+    const string decStr = string(request.pkValueCStr(colIdx));
+    if (decStr.find('-') != string::npos) {
+      return RS_ERROR(ERROR_015 + string(" Expecting Decimalunsigned UNSIGNED. Column: ") +
+                      string(request.pkName(colIdx)));
+    }
+    [[fallthrough]];
+  }
+  case NdbDictionary::Column::Decimal: {
+    int precision      = col->getPrecision();
+    int scale          = col->getScale();
+    int bytesNeeded    = getDecimalColumnSpace(precision, scale);
+    const char *decStr = request.pkValueCStr(colIdx);
+    char decBin[bytesNeeded];
+    if (decimal_str2bin(decStr, strlen(decStr), precision, scale, decBin, bytesNeeded) != 0) {
+      return RS_ERROR(ERROR_015+string(" Expecting Decimal with Precision: ") + to_string(precision) +
+                      string(" and Scale: ") + to_string(scale));
+    }
+    operation->equal(request.pkName(colIdx), decBin, bytesNeeded);
+    return RS_OK;
   }
   case NdbDictionary::Column::Char: {
     ///< Len. A fixed array of 1-byte chars
@@ -825,3 +846,6 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   /* operation->equal(request.pkName(i), data); */
   return RS_OK;
 }
+
+// copy from here
+//"storage/ndb/src/common/util/decimal_utils.cpp"
