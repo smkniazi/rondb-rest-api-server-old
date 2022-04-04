@@ -28,9 +28,9 @@
 
 using namespace std;
 
-/* Three MySQL defs duplicated here : */
-static const int MaxMySQLDecimalPrecision = 65;
-static const int MaxDecimalStrLen         = MaxMySQLDecimalPrecision + 3;
+size_t convert_to_printable(char *to, size_t to_len, const char *from,
+                            size_t from_len, const CHARSET_INFO *from_cs,
+                            size_t nbytes = 0);
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -120,17 +120,17 @@ RS_Status PKROperation::createResponse() {
   } else {
 
     // iterate over all columns
-    response.appendStr("{", false);
+    response.append_string("{", false);
     if (request.operationId() != NULL) {
-      response.appendStr("\"OperationID\": ", false);
-      response.appendStr(string("\"") + request.operationId() + string("\""), true);
+      response.append_string("\"OperationID\": ", false);
+      response.append_string(string("\"") + request.operationId() + string("\""), true);
     }
-    response.appendStr("\"Data\": {", false);
+    response.append_string("\"Data\": {", false);
 
     for (uint32_t i = 0; i < recs.size(); i++) {
 
       RS_Status status =
-          response.appendStr(string("\"") + recs[i]->getColumn()->getName() + string("\":"), false);
+          response.append_string(string("\"") + recs[i]->getColumn()->getName() + string("\":"), false);
       if (status.http_code != SUCCESS) {
         return status;
       }
@@ -140,7 +140,7 @@ RS_Status PKROperation::createResponse() {
         return status;
       }
     }
-    response.appendStr("} } ", false);
+    response.append_string("} } ", false);
     response.appendNULL();
   }
 
@@ -339,7 +339,7 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   RS_Status status;
 
   if (attr->isNULL()) {
-    return response.appendStr("null", appendComma);
+    return response.append_string("null", appendComma);
   }
 
   switch (col->getType()) {
@@ -409,12 +409,11 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Olddecimal")
-    return RS_ERROR("Not Implemented");
+    return RS_ERROR("Not Implemented. MySQL < 5.0 Olddecimal.");
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Olddecimalunsigned")
-    return RS_ERROR("Not Implemented");
+    ///< MySQL < 5.0 signed decimal,  Precision, Scale
+    return RS_ERROR("Not Implemented. MySQL < 5.0 Olddecimalunsigned.");
   }
   case NdbDictionary::Column::Decimal:
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
@@ -426,12 +425,18 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
     void *bin     = attr->aRef();
     int bin_len   = attr->get_size_in_bytes();
     decimal_bin2str(bin, bin_len, precision, scale, decStr, MaxDecimalStrLen);
-    return response.appendStr(decStr, appendComma);
+    return response.append_string(decStr, appendComma);
   }
   case NdbDictionary::Column::Char: {
     ///< Len. A fixed array of 1-byte chars
-    TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Char")
-    return RS_ERROR("Not Implemented");
+    int attr_bytes;
+    const char *data_start = NULL;
+    if (get_byte_array(attr, data_start, &attr_bytes) != 0) {
+      return RS_ERROR(CLIENT_ERROR, string(ERROR_019)+
+                      string(" Char column. Column: ") + attr->getColumn()->getName());
+    } else {
+      return response.append_char(data_start, attr_bytes, attr->getColumn()->getCharset(), appendComma);
+    }
   }
   case NdbDictionary::Column::Varchar: {
     ///< Length bytes: 1, Max: 255
@@ -742,16 +747,28 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     const char *decStr = request.pkValueCStr(colIdx);
     char decBin[bytesNeeded];
     if (decimal_str2bin(decStr, strlen(decStr), precision, scale, decBin, bytesNeeded) != 0) {
-      return RS_ERROR(ERROR_015+string(" Expecting Decimal with Precision: ") + to_string(precision) +
-                      string(" and Scale: ") + to_string(scale));
+      return RS_ERROR(ERROR_015 + string(" Expecting Decimal with Precision: ") +
+                      to_string(precision) + string(" and Scale: ") + to_string(scale));
     }
     operation->equal(request.pkName(colIdx), decBin, bytesNeeded);
     return RS_OK;
   }
   case NdbDictionary::Column::Char: {
     ///< Len. A fixed array of 1-byte chars
-    TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Char")
-    return RS_ERROR("Not Implemented");
+    const char *charStr = request.pkValueCStr(colIdx);
+    const int len = strlen(charStr);
+    if (len >  col->getLength() ) {
+      return RS_ERROR(ERROR_020+ string(" Column: ")+request.pkName(colIdx));
+    }
+    char pk[col->getLength()];
+    for (int i = 0; i<col->getLength(); i++){
+      pk[i] = 0;
+    }
+    memcpy(pk, charStr, len);
+    /* cout<<"------> "<<" Req len "<<len<<"  PK len "<< col->getLength()<<endl; */
+    /* cout<<"------> "<<" Req str "<<charStr<<"  PK str "<< pk<<endl; */
+    operation->equal(request.pkName(colIdx), pk, col->getLength());
+    return RS_OK;
   }
   case NdbDictionary::Column::Varchar: {
     ///< Length bytes: 1, Max: 255

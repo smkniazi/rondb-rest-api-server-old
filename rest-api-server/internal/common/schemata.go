@@ -255,6 +255,31 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB012"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"ALTER DATABASE " + db + " CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci",
+			"USE " + db,
+
+			"CREATE TABLE char_table(id0 char(10), col0 char(100),  PRIMARY KEY(id0)) CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci",
+			// "INSERT INTO  char_table VALUES(\"1\",X'c080')", //invalid string
+			"INSERT INTO  char_table VALUES(\"1\",\"这是一个测验。 我不知道怎么读中文。\")",
+			"INSERT INTO  char_table VALUES(\"2\",0x660066)",
+			"INSERT INTO  char_table VALUES(\"3\",\"a\nb\")",
+			"INSERT INTO  char_table VALUES(\"这是一个测验\",\"12345\")",
+			"INSERT INTO  char_table VALUES(\"4\",\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\")",
+			"INSERT INTO  char_table set id0=5",
+			`INSERT INTO  char_table VALUES("6","\"\\\b\f\n\r\t$%_?")`, // in mysql \f is replaced by f
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
 }
 
 func Database(name string) [][]string {

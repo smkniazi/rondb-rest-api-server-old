@@ -48,7 +48,7 @@ RS_Status init(const char *connection_string) {
 
 RS_Status shutdown() {
   try {
-    ndb_end(0);
+    /* ndb_end(0); // causes seg faults when called repeated from unit tests*/ 
     delete ndb_connection;
   } catch (...) {
     cout << "------> Exception in Shutdown <------" << endl;

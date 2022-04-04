@@ -36,15 +36,30 @@ private:
   uint32_t writeHeader = 0;
 
 public:
+
   /**
-   * Append to response buffer
+   * Get maximum capacity of the response buffer 
+   *
+   * @return max capacity
    */
-  RS_Status appendStr(string str, bool appendComma); 
+  uint32_t getMaxCapacity();
+
+  /**
+   * Get remaining capacity of the response buffer 
+   *
+   * @return remaining capacity
+   */
+  uint32_t getRemainingCapacity();
 
   /**
    * Append to response buffer
    */
-  RS_Status appendCStr(const char* str, bool appendComma); 
+  RS_Status append_string(string str, bool appendComma); 
+
+  /**
+   * Append to response buffer
+   */
+  RS_Status append_cstring(const char* str, bool appendComma); 
 
   PKRResponse(char *respBuff);
 
@@ -54,11 +69,6 @@ public:
    * Get write header location
    */
   uint32_t getWriteHeader();
-
-  /**
-   * Set write header location
-   */
-  void setWriteHeader(uint32_t writeHeader);
 
   /**
    * Append to response buffer
@@ -119,6 +129,11 @@ public:
    * Append to response buffer
    */
   RS_Status append_d64(double num, bool appendComma);
+
+  /**
+   * Append to response buffer. Append 
+   */
+  RS_Status append_char(const char *from_buffer, uint32_t from_length, CHARSET_INFO *from_cs, bool appendComma);
 
   /**
    * Append null. Used to terminate string response message

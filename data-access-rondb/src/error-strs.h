@@ -42,22 +42,9 @@ extern "C" {
 #define ERROR_016 "Response buffer overflow."
 #define ERROR_017 "Hash indexes on float and double; and indexes on Blob types are not supported."
 #define ERROR_018 "Undefined data type."
-//#define ERROR_017 ""
-//#define ERROR_018 ""
-//#define ERROR_019 ""
-//#define ERROR_020 ""
-//#define ERROR_021 ""
-//#define ERROR_022 ""
-//#define ERROR_023 ""
-//#define ERROR_024 ""
-//#define ERROR_025 ""
-//#define ERROR_026 ""
-//#define ERROR_027 ""
-//#define ERROR_028 ""
-//#define ERROR_029 ""
-//#define ERROR_030 ""
-
-
+#define ERROR_019 "Unable to read data."
+#define ERROR_020 "Column length too big."
+#define ERROR_021 "Programming error buffer is too small."
 
 #endif
 

@@ -24,19 +24,15 @@ extern "C" {
 #ifndef RDRSLIB_H
 #define RDRSLIB_H
 
-  typedef enum HTTP_CODE {
-    SUCCESS = 200,
-    CLIENT_ERROR = 400,
-    SERVER_ERROR = 500
-  } HTTP_CODE;
+typedef enum HTTP_CODE { SUCCESS = 200, CLIENT_ERROR = 400, SERVER_ERROR = 500 } HTTP_CODE;
 
 typedef struct RS_Status {
   HTTP_CODE http_code; // rest server return code. 200 for successful operation
-  int status;  // NdbError.ndberror_status_enum
-  int classification; // NdbError.ndberror_classification_enum
-  int code;           // NdbError.code
-  int mysql_code;     // NdbError.mysql_code
-  char *message;      // REST server message. NOTE: receiver's responsibility to free this memory
+  int status;          // NdbError.ndberror_status_enum
+  int classification;  // NdbError.ndberror_classification_enum
+  int code;            // NdbError.code
+  int mysql_code;      // NdbError.mysql_code
+  char *message;       // REST server message. NOTE: receiver's responsibility to free this memory
 } RS_Status;
 
 /**
@@ -45,7 +41,7 @@ typedef struct RS_Status {
 RS_Status init(const char *connection_string);
 
 /**
- * Shutdown connection 
+ * Shutdown connection
  */
 RS_Status shutdown();
 

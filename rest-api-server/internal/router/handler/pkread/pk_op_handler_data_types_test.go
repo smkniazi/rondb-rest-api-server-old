@@ -17,19 +17,24 @@
 
 package pkread
 
-import(
-    "encoding/json"
-    "fmt"
-    "net/http"
-    "testing"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"testing"
 
-    "github.com/gin-gonic/gin"
-    "hopsworks.ai/rdrs/internal/common" tu
-    "hopsworks.ai/rdrs/internal/router/handler/utils")
+	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/common"
+	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
+)
 
-    type TestInfo struct {
-  pkReq PKReadBody table string db string httpCode int bodyContains string
-      respKVs[] string
+type TestInfo struct {
+	pkReq        PKReadBody
+	table        string
+	db           string
+	httpCode     int
+	bodyContains string
+	respKVs      []string
 }
 
 // INT TESTS
@@ -661,25 +666,133 @@ func TestDataTypesDecimal(t *testing.T) {
 	}
 	test(t, tests)
 }
+
+func TestDataTypesChar(t *testing.T) {
+
+	testTable := "char_table"
+	testDb := "DB012"
+	tests := map[string]TestInfo{
+
+		"notfound": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-1"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusNotFound,
+			bodyContains: "",
+			respKVs:      []string{},
+		},
+
+		"simple1": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "\"这是一个测验。 我不知道怎么读中文。\""},
+		},
+
+		"simple2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "\"f\\u0000f\""},
+		},
+
+		"simple3": { // new line char in string
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "3"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "\"a\\nb\""},
+		},
+
+		"simple4": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "4"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\""},
+		},
+
+		"simple5": { //unicode pk
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "这是一个测验"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "\"12345\""},
+		},
+
+		"nulltest": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "5"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "null"},
+		},
+
+		"escapedChars": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "6"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", `"\"\\\bf\n\r\t$%_?"`}, // in mysql \f is replaced by f
+		},
+	}
+
+	test(t, tests)
+}
 func test(t *testing.T, tests map[string]TestInfo) {
-	for
-	  name, testInfo : = range tests {
-	    t.Run(
-		name,
-		func(t * testing.T){withDBs(
-		    t, [][][] string{common.Database(testInfo.db)},
-		    func(router * gin.Engine) {
-		      url:
-			= NewPKReadURL(testInfo.db, testInfo.table) body, _
-			    : = json.MarshalIndent(testInfo.pkReq, "", "\t") res
-			    : = tu.ProcessRequest(
-				      t, router, HTTP_VERB, url, string(body),
-				      testInfo.httpCode, testInfo.bodyContains)
-				    fmt.Printf("Response %v\n",
-					       res) if len (testInfo.respKVs) >
-				0 {
-			  tu.ValidateResponse(t, res, testInfo.respKVs...)
-			}
-		    })})
-	  }
+	for name, testInfo := range tests {
+		t.Run(name, func(t *testing.T) {
+			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
+				url := NewPKReadURL(testInfo.db, testInfo.table)
+				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
+				res := tu.ProcessRequest(t, router, HTTP_VERB, url,
+					string(body), testInfo.httpCode, testInfo.bodyContains)
+				fmt.Printf("Response %v\n", res)
+				if len(testInfo.respKVs) > 0 {
+					tu.ValidateResponse(t, res, testInfo.respKVs...)
+				}
+			})
+		})
+	}
 }
