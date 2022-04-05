@@ -21,7 +21,7 @@
 
 #include "pkr-request.hpp"
 #include "pkr-response.hpp"
-#include "src/rdrslib.h"
+#include "src/rdrs-dal.h"
 #include <NdbApi.hpp>
 #include <stdint.h>
 #include <string>

@@ -18,9 +18,6 @@
 package common
 
 /*
-#cgo CFLAGS: -g -Wall
-#cgo LDFLAGS: -L./../../../data-access-rondb/build/ -lrdrclient
-#cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
 #include "./../../../data-access-rondb/src/error-strs.h"
 */
 import "C"

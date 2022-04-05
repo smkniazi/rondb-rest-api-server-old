@@ -26,6 +26,7 @@ package dal
 #include <stdlib.h>
 #include "./../../../data-access-rondb/src/rdrslib.h"
 #include "./../../../data-access-rondb/src/rdrs-const.h"
+#include "./../../../data-access-rondb/src/error-strs.h"
 */
 import "C"
 import (

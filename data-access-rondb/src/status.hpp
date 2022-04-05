@@ -20,7 +20,7 @@
 #ifndef STATUS_H 
 #define STATUS_H
 
-#include "rdrslib.h"
+#include "rdrs-dal.h"
 #include <NdbApi.hpp>
 #include <cstring>
 #include <string>

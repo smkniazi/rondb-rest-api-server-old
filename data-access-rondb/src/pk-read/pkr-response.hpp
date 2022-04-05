@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include <cstring>
 #include <string>
-#include "src/rdrslib.h"
+#include "src/rdrs-dal.h"
 #include "src/status.hpp"
 #include "src/error-strs.h"
 

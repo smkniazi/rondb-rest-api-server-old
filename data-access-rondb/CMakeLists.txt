@@ -46,5 +46,4 @@ file(GLOB_RECURSE SOURCE ${PROJECT_SOURCE_DIR}/src/*)
 #add_executable(rdrclient ${SOURCE})
 add_library(rdrclient SHARED ${SOURCE})
 
-
-target_link_libraries(rdrclient ndbclient pthread)
+target_link_libraries(rdrclient ndbclient rdrs_string pthread)
