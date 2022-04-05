@@ -24,7 +24,7 @@ package dal
 #cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
 #cgo LDFLAGS: -L/usr/local/mysql/lib -lrdrs_string
 #include <stdlib.h>
-#include "./../../../data-access-rondb/src/rdrslib.h"
+#include "./../../../data-access-rondb/src/rdrs-dal.h"
 #include "./../../../data-access-rondb/src/rdrs-const.h"
 #include "./../../../data-access-rondb/src/error-strs.h"
 */
@@ -35,8 +35,10 @@ import (
 )
 
 type DalError struct {
-	HttpCode int
-	Message  string
+	HttpCode    int
+	Message     string
+	ErrLineNo   int
+	ErrFileName string
 }
 
 func (e *DalError) Error() string {
@@ -48,10 +50,11 @@ func InitRonDBConnection(connStr string) *DalError {
 	cs := C.CString(connStr)
 	defer C.free(unsafe.Pointer(cs))
 	ret := C.init(cs)
+	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
-		defer C.free(unsafe.Pointer(ret.message))
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
+			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
 	}
 
 	return nil
@@ -59,20 +62,32 @@ func InitRonDBConnection(connStr string) *DalError {
 
 func ShutdownConnection() *DalError {
 	ret := C.shutdown()
+	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
-		defer C.free(unsafe.Pointer(ret.message))
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
+			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
 	}
 	return nil
 }
 
 func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) *DalError {
 	ret := C.pkRead((*C.char)(request), (*C.char)(response))
+	defer cleanUp(&ret)
 	if ret.http_code != http.StatusOK {
-		defer C.free(unsafe.Pointer(ret.message))
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message)}
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
+			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
 	}
 
 	return nil
+}
+
+func cleanUp(ret *C.RS_Status) {
+	if ret.message != nil {
+		defer C.free(unsafe.Pointer(ret.message))
+	}
+
+	if ret.errFileName != nil {
+		defer C.free(unsafe.Pointer(ret.errFileName))
+	}
 }

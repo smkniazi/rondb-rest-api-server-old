@@ -33,6 +33,8 @@ typedef struct RS_Status {
   int code;            // NdbError.code
   int mysql_code;      // NdbError.mysql_code
   char *message;       // REST server message. NOTE: receiver's responsibility to free this memory
+  int errLineNo;
+  char *errFileName;       //NOTE: receiver's responsibility to free this memory
 } RS_Status;
 
 /**

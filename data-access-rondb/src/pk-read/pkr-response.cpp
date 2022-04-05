@@ -50,7 +50,7 @@ RS_Status PKRResponse::append_string(string str, bool appendComma) {
 RS_Status PKRResponse::append_cstring(const char *str, bool appendComma) {
   int strl = strlen(str);
   if (strl + writeHeader >= capacity) {
-    return RS_ERROR(SERVER_ERROR, ERROR_016);
+    return RS_SERVER_ERROR(ERROR_016);
   }
 
   std::memcpy(respBuff + writeHeader, str, strl);
@@ -106,7 +106,7 @@ RS_Status PKRResponse::append_d64(double num, bool appendComma) {
     ss << num;
     append_string(ss.str(), appendComma);
   } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
+    return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
@@ -122,7 +122,7 @@ RS_Status PKRResponse::append_iu64(unsigned long long num, bool appendComma) {
     string numStr = to_string(num);
     append_string(numStr, appendComma);
   } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
+    return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
@@ -132,7 +132,7 @@ RS_Status PKRResponse::append_i64(long long num, bool appendComma) {
     string numStr = to_string(num);
     append_string(numStr, appendComma);
   } catch (...) {
-    return RS_ERROR(SERVER_ERROR, ERROR_015);
+    return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
@@ -148,7 +148,7 @@ RS_Status PKRResponse::append_char(const char *fromBuff, uint32_t fromBuffLen, C
   uint32_t estimatedBytes = fromBuffLen + extraSpace;
 
   if (estimatedBytes > getRemainingCapacity()) {
-    return RS_ERROR(SERVER_ERROR, ERROR_010 + string(" Response buffer remaining capacity: ") +
+    return RS_SERVER_ERROR(ERROR_010 + string(" Response buffer remaining capacity: ") +
                                       to_string(getRemainingCapacity()) + string(" Required: ") +
                                       to_string(estimatedBytes));
   }
@@ -170,12 +170,12 @@ RS_Status PKRResponse::append_char(const char *fromBuff, uint32_t fromBuffLen, C
     char printable_buff[32];
     convert_to_printable(printable_buff, sizeof(printable_buff), error_pos,
                          fromBuff + fromBuffLen - error_pos, fromCS, 6);
-    return RS_ERROR(SERVER_ERROR, ERROR_008 + string(" Invalid string: ") + string(printable_buff));
+    return RS_SERVER_ERROR(ERROR_008 + string(" Invalid string: ") + string(printable_buff));
   } else if (from_end_pos < fromBuff + fromBuffLen) {
     /*
       result is longer than UINT_MAX32 and doesn't fit into String
     */
-    return RS_ERROR(SERVER_ERROR, ERROR_021 + string(" Buffer size: ") + to_string(estimatedBytes) +
+    return RS_SERVER_ERROR(ERROR_021 + string(" Buffer size: ") + to_string(estimatedBytes) +
                                       string(". Bytes left to copy: ") +
                                       to_string((fromBuff + fromBuffLen) - from_end_pos));
   }
@@ -188,7 +188,7 @@ RS_Status PKRResponse::append_char(const char *fromBuff, uint32_t fromBuffLen, C
 
   string escapedstr = escape_string(wellFormedString);
   if ((escapedstr.length() + extraSpace) >= getRemainingCapacity()) { // +2 for quotation marks
-    return RS_ERROR(SERVER_ERROR, ERROR_010);
+    return RS_SERVER_ERROR(ERROR_010);
   }
 
   append_string("\"", appendComma);

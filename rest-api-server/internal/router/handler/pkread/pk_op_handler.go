@@ -86,7 +86,8 @@ func PkReadHandler(c *gin.Context) {
 
 	dalErr := dal.RonDBPKRead(request, response)
 	if dalErr != nil {
-		setResponseError(c, dalErr.HttpCode, common.Response{OK: false, Message: fmt.Sprintf("%v", dalErr.Message)})
+		setResponseError(c, dalErr.HttpCode, common.Response{OK: false,
+			Message: fmt.Sprintf("%v. File: %v, Line: %v ", dalErr.Message, dalErr.ErrFileName, dalErr.ErrLineNo)})
 	} else {
 		setResponseBodyUnsafe(c, http.StatusOK, response)
 	}

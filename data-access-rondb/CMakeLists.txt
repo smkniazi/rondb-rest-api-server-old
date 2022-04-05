@@ -39,7 +39,7 @@ message(STATUS "Using RONDB_DIR installed at ${RONDB_DIR} ")
 include_directories(${RONDB_DIR}/include ${RONDB_DIR}/include/storage/ndb ${RONDB_DIR}/include/storage/ndb/ndbapi ${RONDB_DIR}/include/storage/ndb/mgmapi /usr/lib64)
 link_directories(${RONDB_DIR}/lib)
 
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wformat-security  -Woverloaded-virtual -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-strict-aliasing -Wno-switch -O3 -DDBUG_OFF" )
+SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wformat-security  -Woverloaded-virtual -Wno-unused-variable -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-strict-aliasing -Wno-switch -O3 -DDBUG_OFF -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'" )
 
 file(GLOB_RECURSE SOURCE ${PROJECT_SOURCE_DIR}/src/*)
 

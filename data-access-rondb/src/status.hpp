@@ -17,19 +17,22 @@
  * USA.
  */
 
-#ifndef STATUS_H 
+#ifndef STATUS_H
 #define STATUS_H
 
 #include "rdrs-dal.h"
 #include <NdbApi.hpp>
 #include <cstring>
+#include <iostream>
 #include <string>
+
+using namespace std;
 
 /**
  * create an object of RS_Status.
- * Note it is the receiver responsibility to free the memory for msg character array
+ * Note it is the receiver responsibility to free the memory for msg and fileName character array
  */
-inline char *__strToCharArr(std::string msg) {
+inline char *__strToCharArr(string msg) {
   char *charArr = nullptr;
   if (!msg.empty()) {
     charArr = new char[msg.length() + 1];
@@ -39,26 +42,25 @@ inline char *__strToCharArr(std::string msg) {
 }
 
 inline RS_Status __RS_ERROR(const HTTP_CODE http_code, int status, int classification, int code,
-                            int mysql_code, char *msg) {
-  RS_Status ret = {http_code, status, classification, code, mysql_code, msg};
+                            int mysql_code, char *msg, int lineNo, char *fileName) {
+  RS_Status ret = {http_code, status, classification, code, mysql_code, msg, lineNo, fileName};
   return ret;
 }
 
-inline RS_Status RS_ERROR(const HTTP_CODE http_code, std::string msg) {
-  return __RS_ERROR(http_code, -1, -1, -1, -1, __strToCharArr(msg));
-}
-
-inline RS_Status RS_ERROR(std::string msg) {
-  return RS_ERROR(CLIENT_ERROR, msg);
-}
-
-inline RS_Status RS_ERROR(const struct NdbError &error, std::string msg) {
-  std::string userMsg = "Error: " + msg + " Error: code:" + std::to_string(error.code) +
-                   " MySQL Code: " + std::to_string(error.mysql_code) + " Message: " + error.message;
+inline RS_Status __RS_ERROR_RONDB(const struct NdbError &error, string msg, int lineNo,
+                                  char *fileName) {
+  string userMsg = "Error: " + msg + " Error: code:" + to_string(error.code) +
+                   " MySQL Code: " + to_string(error.mysql_code) + " Message: " + error.message;
   return __RS_ERROR(SERVER_ERROR, error.status, error.classification, error.code, error.mysql_code,
-                    __strToCharArr(msg));
+                    __strToCharArr(msg), 0, __strToCharArr(""));
 }
 
-#define RS_OK RS_ERROR(SUCCESS, "");
+#define RS_OK __RS_ERROR(SUCCESS, -1, -1, -1, -1, NULL, 0, NULL);
+#define RS_CLIENT_ERROR(msg)                                                                       \
+  __RS_ERROR(CLIENT_ERROR, -1, -1, -1, -1, __strToCharArr(msg), __LINE__, __strToCharArr(__FILENAME__));
+#define RS_SERVER_ERROR(msg)                                                                       \
+  __RS_ERROR(SERVER_ERROR, -1, -1, -1, -1, __strToCharArr(msg), __LINE__, __strToCharArr(__FILENAME__));
+#define RS_RONDB_SERVER_ERROR(ndberror, msg)                                                       \
+  __RS_ERROR_RONDB(ndberror, msg, __LINE__, __strToCharArr(__FILE__));
 
 #endif

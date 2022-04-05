@@ -51,7 +51,7 @@ PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
 RS_Status PKROperation::setupTransaction() {
   transaction = ndbObject->startTransaction(tableDic);
   if (transaction == nullptr) {
-    return RS_ERROR(ndbObject->getNdbError(), ERROR_005);
+    return RS_RONDB_SERVER_ERROR(ndbObject->getNdbError(), ERROR_005);
   }
   return RS_OK;
 }
@@ -69,12 +69,12 @@ RS_Status PKROperation::setupTransaction() {
 RS_Status PKROperation::setupReadOperation() {
 
   if (operation != NULL) {
-    return RS_ERROR(ERROR_006);
+    return RS_CLIENT_ERROR(ERROR_006);
   }
 
   operation = transaction->getNdbOperation(tableDic);
   if (operation == nullptr) {
-    return RS_ERROR(transaction->getNdbError(), ERROR_007);
+    return RS_RONDB_SERVER_ERROR(transaction->getNdbError(), ERROR_007);
   }
 
   operation->readTuple(NdbOperation::LM_CommittedRead);
@@ -106,7 +106,7 @@ RS_Status PKROperation::setupReadOperation() {
 
 RS_Status PKROperation::execute() {
   if (transaction->execute(NdbTransaction::Commit) != 0) {
-    return RS_ERROR(transaction->getNdbError(), ERROR_009);
+    return RS_RONDB_SERVER_ERROR(transaction->getNdbError(), ERROR_009);
   }
 
   return RS_OK;
@@ -216,14 +216,14 @@ int PKROperation::copyString(const NdbRecAttr *attr, int start) {
 RS_Status PKROperation::init() {
   if (tableDic == NULL) {
     if (ndbObject->setCatalogName(request.db()) != 0) {
-      return RS_ERROR(ERROR_011 + string(" Database: ") + string(request.db()) +
+      return RS_CLIENT_ERROR(ERROR_011 + string(" Database: ") + string(request.db()) +
                       " Table: " + request.table());
     }
     const NdbDictionary::Dictionary *dict = ndbObject->getDictionary();
     tableDic                              = dict->getTable(request.table());
 
     if (tableDic == nullptr) {
-      return RS_ERROR(ERROR_011 + string(" Database: ") + string(request.db()) +
+      return RS_CLIENT_ERROR(ERROR_011 + string(" Database: ") + string(request.db()) +
                       " Table: " + request.table());
     }
   }
@@ -252,7 +252,7 @@ RS_Status PKROperation::validateRequest() {
 
   // Check primary key columns
   if (request.pkColumnsCount() != pkCols.size()) {
-    return RS_ERROR(ERROR_013 + string(" Expecting: ") + to_string(pkCols.size()) +
+    return RS_CLIENT_ERROR(ERROR_013 + string(" Expecting: ") + to_string(pkCols.size()) +
                     " Got: " + to_string(request.pkColumnsCount()));
   }
 
@@ -260,7 +260,7 @@ RS_Status PKROperation::validateRequest() {
     std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
         pkCols.find(string(request.pkName(i)));
     if (got == pkCols.end()) { // not found
-      return RS_ERROR(ERROR_014 + string(" Column: ") + string(request.pkName(i)));
+      return RS_CLIENT_ERROR(ERROR_014 + string(" Column: ") + string(request.pkName(i)));
     }
   }
 
@@ -271,7 +271,7 @@ RS_Status PKROperation::validateRequest() {
       std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
           nonPkCols.find(string(request.readColumnName(i)));
       if (got == nonPkCols.end()) { // not found
-        return RS_ERROR(ERROR_012 + string(" Column: ") + string(request.readColumnName(i)));
+        return RS_CLIENT_ERROR(ERROR_012 + string(" Column: ") + string(request.readColumnName(i)));
       }
     }
   }
@@ -345,7 +345,7 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
     ///< 4 bytes + 0-3 fraction
-    return RS_ERROR(ERROR_018 + string(" Column: ") + string(col->getName()));
+    return RS_CLIENT_ERROR(ERROR_018 + string(" Column: ") + string(col->getName()));
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
@@ -409,11 +409,11 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    return RS_ERROR("Not Implemented. MySQL < 5.0 Olddecimal.");
+    return RS_CLIENT_ERROR("Not Implemented. MySQL < 5.0 Olddecimal.");
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    return RS_ERROR("Not Implemented. MySQL < 5.0 Olddecimalunsigned.");
+    return RS_CLIENT_ERROR("Not Implemented. MySQL < 5.0 Olddecimalunsigned.");
   }
   case NdbDictionary::Column::Decimal:
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
@@ -432,7 +432,7 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
     int attr_bytes;
     const char *data_start = NULL;
     if (get_byte_array(attr, data_start, &attr_bytes) != 0) {
-      return RS_ERROR(CLIENT_ERROR, string(ERROR_019)+
+      return RS_CLIENT_ERROR(string(ERROR_019)+
                       string(" Char column. Column: ") + attr->getColumn()->getName());
     } else {
       return response.append_char(data_start, attr_bytes, attr->getColumn()->getCharset(), appendComma);
@@ -441,67 +441,67 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Varchar: {
     ///< Length bytes: 1, Max: 255
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Varchar")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Binary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Varbinary: {
     ///< Length bytes: 1, Max: 255
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Varbinary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Datetime")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Date")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Blob")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Text: {
     ///< Text blob
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Text")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Bit")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarchar: {
     ///< Length bytes: 2, little-endian
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Longvarchar")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarbinary: {
     ///< Length bytes: 2, little-endian
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Longvarbinary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Time: {
     ///< Time without date
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Time")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Year")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Timestamp")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   ///**
   // * Time types in MySQL 5.6 add microsecond fraction.
@@ -513,17 +513,17 @@ RS_Status PKROperation::writeColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Time2: {
     ///< 3 bytes + 0-3 fraction
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Time2")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Datetime2")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Timestamp2: {
     ///< 4 bytes + 0-3 fraction
     TRACE(string("Getting PK Column: ") + string(col->getName()) + " Type: Timestamp2");
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   }
 
@@ -541,7 +541,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   switch (col->getType()) {
   case NdbDictionary::Column::Undefined: {
     ///< 4 bytes + 0-3 fraction
-    return RS_ERROR(ERROR_018 + string(" Column: ") + string(request.pkName(colIdx)));
+    return RS_CLIENT_ERROR(ERROR_018 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
@@ -555,7 +555,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -573,7 +573,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting TINYINT. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -591,7 +591,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting SMALLINT. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting SMALLINT. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -609,7 +609,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting TINYINT UNSIGNED. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting TINYINT UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -627,7 +627,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting MEDIUMINT. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting MEDIUMINT. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -645,7 +645,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting MEDIUMINT UNSIGNED. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting MEDIUMINT UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -657,7 +657,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
       int num = stoi(request.pkValueCStr(colIdx));
       operation->equal(request.pkName(colIdx), num);
     } catch (...) {
-      return RS_ERROR(ERROR_015 + string(" Expecting Int. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting Int. Column: ") +
                       string(request.pkName(colIdx)));
     }
     return RS_OK;
@@ -676,7 +676,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     }
 
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting Unsigned Int. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting Unsigned Int. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -689,7 +689,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
       operation->equal(request.pkName(colIdx), num);
       cout << "Setting big int to " << num << endl;
     } catch (...) {
-      return RS_ERROR(ERROR_015 + string(" Expecting BIGINT. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting BIGINT. Column: ") +
                       string(request.pkName(colIdx)));
     }
     return RS_OK;
@@ -708,7 +708,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     } catch (...) {
     }
     if (!success) {
-      return RS_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting BIGINT UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
     } else {
       return RS_OK;
@@ -716,26 +716,26 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array
-    return RS_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
+    return RS_CLIENT_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Double: {
     ///< 64-bit float. 8 byte float, can be used in array
-    return RS_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
+    return RS_CLIENT_ERROR(ERROR_017 + string(" Column: ") + string(request.pkName(colIdx)));
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Olddecimal")
-    return RS_ERROR("Not Implemented. Type: Olddecimal");
+    return RS_CLIENT_ERROR("Not Implemented. Type: Olddecimal");
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Olddecimalunsigned")
-    return RS_ERROR("Not Implemented. Type: Olddecimalunsigned");
+    return RS_CLIENT_ERROR("Not Implemented. Type: Olddecimalunsigned");
   }
   case NdbDictionary::Column::Decimalunsigned: {
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
     const string decStr = string(request.pkValueCStr(colIdx));
     if (decStr.find('-') != string::npos) {
-      return RS_ERROR(ERROR_015 + string(" Expecting Decimalunsigned UNSIGNED. Column: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting Decimalunsigned UNSIGNED. Column: ") +
                       string(request.pkName(colIdx)));
     }
     [[fallthrough]];
@@ -747,7 +747,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     const char *decStr = request.pkValueCStr(colIdx);
     char decBin[bytesNeeded];
     if (decimal_str2bin(decStr, strlen(decStr), precision, scale, decBin, bytesNeeded) != 0) {
-      return RS_ERROR(ERROR_015 + string(" Expecting Decimal with Precision: ") +
+      return RS_CLIENT_ERROR(ERROR_015 + string(" Expecting Decimal with Precision: ") +
                       to_string(precision) + string(" and Scale: ") + to_string(scale));
     }
     operation->equal(request.pkName(colIdx), decBin, bytesNeeded);
@@ -758,7 +758,7 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
     const char *charStr = request.pkValueCStr(colIdx);
     const int len = strlen(charStr);
     if (len >  col->getLength() ) {
-      return RS_ERROR(ERROR_020+ string(" Column: ")+request.pkName(colIdx));
+      return RS_CLIENT_ERROR(ERROR_020+ string(" Column: ")+request.pkName(colIdx));
     }
     char pk[col->getLength()];
     for (int i = 0; i<col->getLength(); i++){
@@ -773,67 +773,67 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   case NdbDictionary::Column::Varchar: {
     ///< Length bytes: 1, Max: 255
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Varchar")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Binary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Varbinary: {
     ///< Length bytes: 1, Max: 255
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Varbinary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Datetime")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Date")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Blob")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Text: {
     ///< Text blob
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Text")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Bit")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarchar: {
     ///< Length bytes: 2, little-endian
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Longvarchar")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarbinary: {
     ///< Length bytes: 2, little-endian
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Longvarbinary")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Time: {
     ///< Time without date
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Time")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Year")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Timestamp")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   ///**
   // * Time types in MySQL 5.6 add microsecond fraction.
@@ -845,17 +845,17 @@ RS_Status PKROperation::setOperationPKCols(const NdbDictionary::Column *col, uin
   case NdbDictionary::Column::Time2: {
     ///< 3 bytes + 0-3 fraction
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Time2")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Datetime2")
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Timestamp2: {
     ///< 4 bytes + 0-3 fraction
     TRACE(string("Setting PK Column: ") + string(col->getName()) + " Type: Timestamp2");
-    return RS_ERROR("Not Implemented");
+    return RS_CLIENT_ERROR("Not Implemented");
   }
   }
 
