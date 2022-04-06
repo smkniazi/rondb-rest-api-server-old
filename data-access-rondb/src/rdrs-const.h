@@ -17,8 +17,8 @@
  * USA.
  */
 
-#ifndef RDRS_CONST
-#define RDRS_CONST
+#ifndef DATA_ACCESS_RONDB_SRC_RDRS_CONST_H_
+#define DATA_ACCESS_RONDB_SRC_RDRS_CONST_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif
+#endif  // DATA_ACCESS_RONDB_SRC_RDRS_CONST_H_

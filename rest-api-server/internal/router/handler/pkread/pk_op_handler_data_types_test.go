@@ -44,14 +44,6 @@ func TestDataTypesInt(t *testing.T) {
 	testTable := "int_table"
 	testDb := "DB004"
 	tests := map[string]TestInfo{
-		// "xxxxxx": {
-		// pkReq:        PKReadBody{},
-		// table: testTable,
-		// db: testDb,
-		// httpCode:     http.StatusOK,
-		// bodyContains: "",
-		// respKVs:      []string{},
-		// },
 		"simple": {
 			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
@@ -780,6 +772,7 @@ func TestDataTypesChar(t *testing.T) {
 
 	test(t, tests)
 }
+
 func test(t *testing.T, tests map[string]TestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {

@@ -16,15 +16,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
-#ifndef LOGGER_H 
-#define LOGGER_H
+#ifndef DATA_ACCESS_RONDB_SRC_LOGGER_HPP_
+#define DATA_ACCESS_RONDB_SRC_LOGGER_HPP_
 
 #include <iostream>
 
-
-#define WARN(msg) std::cout << msg << std::endl;
+#define WARN(msg)  std::cout << msg << std::endl;
 #define ERROR(msg) std::cout << msg << std::endl;
-#define INFO(msg) std::cout << msg << std::endl;
+#define INFO(msg)  std::cout << msg << std::endl;
 #define TRACE(msg) std::cout << msg << std::endl;
 
-#endif
+#endif  // DATA_ACCESS_RONDB_SRC_LOGGER_HPP_

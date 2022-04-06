@@ -17,26 +17,22 @@
  * USA.
  */
 
-#ifndef RDRS_STRING_H
-#define RDRS_STRING_H
+#ifndef DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_
+#define DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_
 
-#include <NdbApi.hpp>
-#include <cstring>
 #include <stdint.h>
+#include <cstring>
 #include <string>
+#include <NdbApi.hpp>
 
-using namespace std;
 // function defined in RonDB lib
 size_t convert_to_printable(char *to, size_t to_len, const char *from, size_t from_len,
                             const CHARSET_INFO *from_cs, size_t nbytes = 0);
 
-size_t well_formed_copy_nchars(const CHARSET_INFO *to_cs, char *to,
-                               size_t to_length, const CHARSET_INFO *from_cs,
-                               const char *from, size_t from_length,
-                               size_t nchars,
-                               const char **well_formed_error_pos,
-                               const char **cannot_convert_error_pos,
-                               const char **from_end_pos);
+size_t well_formed_copy_nchars(const CHARSET_INFO *to_cs, char *to, size_t to_length,
+                               const CHARSET_INFO *from_cs, const char *from, size_t from_length,
+                               size_t nchars, const char **well_formed_error_pos,
+                               const char **cannot_convert_error_pos, const char **from_end_pos);
 
 /*!
     @brief calculates the extra space to escape a JSON string
@@ -44,7 +40,7 @@ size_t well_formed_copy_nchars(const CHARSET_INFO *to_cs, char *to,
     @return the number of characters required to escape string @a s
     @complexity Linear in the length of string @a s.
     */
-std::size_t extra_space(const string &s) noexcept {
+std::size_t extra_space(const std::string &s) noexcept {
   std::size_t result = 0;
 
   for (const auto &c : s) {
@@ -62,7 +58,7 @@ std::size_t extra_space(const string &s) noexcept {
     }
 
     default: {
-      if (c >= 0x00 and c <= 0x1f) {
+      if (c >= 0x00 && c <= 0x1f) {
         // from c (1 byte) to \uxxxx (6 bytes)
         result += 5;
       }
@@ -74,7 +70,7 @@ std::size_t extra_space(const string &s) noexcept {
   return result;
 }
 
-//https://github.com/nlohmann/json/blob/ec7a1d834773f9fee90d8ae908a0c9933c5646fc/src/json.hpp#L4604-L4697
+// https://github.com/nlohmann/json/blob/ec7a1d834773f9fee90d8ae908a0c9933c5646fc/src/json.hpp#L4604-L4697
 /*!
     @brief escape a string
     Escape a string by replacing certain special characters by a sequence of an
@@ -85,14 +81,14 @@ std::size_t extra_space(const string &s) noexcept {
     @return  the escaped string
     @complexity Linear in the length of string @a s.
     */
-string escape_string(const string &s) noexcept {
+std::string escape_string(const std::string &s) noexcept {
   const auto space = extra_space(s);
   if (space == 0) {
     return s;
   }
 
   // create a result string of necessary size
-  string result(s.size() + space, '\\');
+  std::string result(s.size() + space, '\\');
   std::size_t pos = 0;
 
   for (const auto &c : s) {
@@ -147,9 +143,9 @@ string escape_string(const string &s) noexcept {
     }
 
     default: {
-      if (c >= 0x00 and c <= 0x1f) {
-        // print character c as \uxxxx
-        sprintf(&result[pos + 1], "u%04x", int(c));
+      if (c >= 0x00 && c <= 0x1f) {
+        int len = 7;  // print character c as \uxxxx. +1 or null character
+        snprintf(&result[pos + 1], len, "u%04x", static_cast<int>(c));
         pos += 6;
         // overwrite trailing null character
         result[pos] = '\\';
@@ -165,5 +161,4 @@ string escape_string(const string &s) noexcept {
   return result;
 }
 
-
-#endif
+#endif  // DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_

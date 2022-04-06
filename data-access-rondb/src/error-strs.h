@@ -17,12 +17,12 @@
  * USA.
  */
 
+#ifndef DATA_ACCESS_RONDB_SRC_ERROR_STRS_H_
+#define DATA_ACCESS_RONDB_SRC_ERROR_STRS_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef ERROR_STRS_H 
-#define ERROR_STRS_H
 
 #define ERROR_001 "ndb_init() failed"
 #define ERROR_002 "failed to connect to RonDB mgm server"
@@ -46,8 +46,8 @@ extern "C" {
 #define ERROR_020 "Column length too big."
 #define ERROR_021 "Programming error buffer is too small."
 
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // DATA_ACCESS_RONDB_SRC_ERROR_STRS_H_

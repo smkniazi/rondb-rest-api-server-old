@@ -16,41 +16,41 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
-#ifndef PKR_OPERATION
-#define PKR_OPERATION
+#ifndef DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_
+#define DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_
 
-#include "pkr-request.hpp"
-#include "pkr-response.hpp"
-#include "src/rdrs-dal.h"
-#include <NdbApi.hpp>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <NdbApi.hpp>
+#include "src/pk-read/pkr-request.hpp"
+#include "src/pk-read/pkr-response.hpp"
+#include "src/rdrs-dal.h"
 
 class PKROperation {
-private:
+ private:
   PKRRequest request;
   PKRResponse response;
 
-  const NdbDictionary::Table *tableDic = nullptr;
-  NdbTransaction *transaction          = nullptr;
-  NdbOperation *operation              = nullptr;
-  Ndb *ndbObject                       = nullptr;
+  const NdbDictionary::Table *table_dic = nullptr;
+  NdbTransaction *transaction           = nullptr;
+  NdbOperation *operation               = nullptr;
+  Ndb *ndb_object                       = nullptr;
 
-  std::vector<NdbRecAttr *> recs; // records that will be read from DB
-  std::unordered_map<std::string, const NdbDictionary::Column *> nonPkCols;
-  std::unordered_map<std::string, const NdbDictionary::Column *> pkCols;
+  std::vector<NdbRecAttr *> recs;  // records that will be read from DB
+  std::unordered_map<std::string, const NdbDictionary::Column *> non_pk_cols;
+  std::unordered_map<std::string, const NdbDictionary::Column *> pk_cols;
 
-public:
-  PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject);
+ public:
+  PKROperation(char *req_buff, char *resp_buff, Ndb *ndb_object);
 
   /**
    * perform the operation
    */
-  RS_Status performOperation();
+  RS_Status PerformOperation();
 
-private:
+ private:
   /**
    * start a transaction
    *
@@ -61,7 +61,7 @@ private:
    *
    * @return status
    */
-  RS_Status setupTransaction();
+  RS_Status SetupTransaction();
 
   /**
    * Set up read operation
@@ -73,63 +73,63 @@ private:
    *
    * @return status
    */
-  RS_Status setOperationPKCols(const NdbDictionary::Column *col, uint32_t colIdx);
+  RS_Status SetOperationPKCols(const NdbDictionary::Column *col, Uint32 colIdx);
 
   /**
    * setup pk read operation
    * @returns status
    */
-  RS_Status setupReadOperation();
+  RS_Status SetupReadOperation();
 
   /**
    * Set primary key column values
    * @returns status
    */
-  RS_Status setOperationPKCols();
+  RS_Status SetOperationPKCols();
 
   /**
    * it stores the data read from the DB into the response buffer
    */
-  RS_Status writeColToRespBuff(const NdbRecAttr *attr, bool appendComma);
+  RS_Status WriteColToRespBuff(const NdbRecAttr *attr, bool appendComma);
 
   /**
    * Execute transaction
    *
    * @return status
    */
-  RS_Status execute();
+  RS_Status Execute();
 
   /**
    * Close transaction
    */
-  void closeTransaction();
+  void CloseTransaction();
 
   /**
-   * abort operation 
+   * abort operation
    */
-  RS_Status abort();
+  RS_Status Abort();
 
   /**
    * create response
    *
    * @return status
    */
-  RS_Status createResponse();
+  RS_Status CreateResponse();
 
   /**
    * initialize data structures
    * @return status
    */
-  RS_Status init();
+  RS_Status Init();
 
   /**
    * Validate request
    * @return status
    */
-  RS_Status validateRequest();
+  RS_Status ValidateRequest();
 
-  int get_byte_array(const NdbRecAttr *attr, const char *&first_byte, int *bytes);
+  int GetByteArray(const NdbRecAttr *attr, const char **first_byte, int *bytes);
 
-  int copyString(const NdbRecAttr *attr, int start);
+  int CopyString(const NdbRecAttr *attr, int start);
 };
-#endif
+#endif  // DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_

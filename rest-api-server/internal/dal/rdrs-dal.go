@@ -49,34 +49,34 @@ func InitRonDBConnection(connStr string) *DalError {
 
 	cs := C.CString(connStr)
 	defer C.free(unsafe.Pointer(cs))
-	ret := C.init(cs)
+	ret := C.Init(cs)
 	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
 		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
+			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
 	}
 
 	return nil
 }
 
 func ShutdownConnection() *DalError {
-	ret := C.shutdown()
+	ret := C.Shutdown()
 	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
 		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
+			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
 	}
 	return nil
 }
 
 func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) *DalError {
-	ret := C.pkRead((*C.char)(request), (*C.char)(response))
+	ret := C.PKRead((*C.char)(request), (*C.char)(response))
 	defer cleanUp(&ret)
 	if ret.http_code != http.StatusOK {
 		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.errLineNo), ErrFileName: C.GoString(ret.errFileName)}
+			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
 	}
 
 	return nil
@@ -87,7 +87,7 @@ func cleanUp(ret *C.RS_Status) {
 		defer C.free(unsafe.Pointer(ret.message))
 	}
 
-	if ret.errFileName != nil {
-		defer C.free(unsafe.Pointer(ret.errFileName))
+	if ret.err_file_name != nil {
+		defer C.free(unsafe.Pointer(ret.err_file_name))
 	}
 }

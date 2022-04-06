@@ -36,6 +36,7 @@ rdrs: $(DIRS) $(FILES)
 		-o ./bin/server/$(VERSION)/$(SERVER_BIN) ./cmd/server/main.go 
 
 clean:
+	go clean -cache
 	rm -rf ./bin/*
 
 test: 

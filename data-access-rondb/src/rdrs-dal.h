@@ -21,40 +21,40 @@
 extern "C" {
 #endif
 
-#ifndef RDRSLIB_H
-#define RDRSLIB_H
+#ifndef DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
+#define DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 
 typedef enum HTTP_CODE { SUCCESS = 200, CLIENT_ERROR = 400, SERVER_ERROR = 500 } HTTP_CODE;
 
 typedef struct RS_Status {
-  HTTP_CODE http_code; // rest server return code. 200 for successful operation
-  int status;          // NdbError.ndberror_status_enum
-  int classification;  // NdbError.ndberror_classification_enum
-  int code;            // NdbError.code
-  int mysql_code;      // NdbError.mysql_code
-  char *message;       // REST server message. NOTE: receiver's responsibility to free this memory
-  int errLineNo;
-  char *errFileName;       //NOTE: receiver's responsibility to free this memory
+  HTTP_CODE http_code;  // rest server return code. 200 for successful operation
+  int status;           // NdbError.ndberror_status_enum
+  int classification;   // NdbError.ndberror_classification_enum
+  int code;             // NdbError.code
+  int mysql_code;       // NdbError.mysql_code
+  char *message;        // REST server message. NOTE: receiver's responsibility to free this memory
+  int err_line_no;
+  char *err_file_name;  // NOTE: receiver's responsibility to free this memory
 } RS_Status;
 
 /**
  * Initialize connection to the database
  */
-RS_Status init(const char *connection_string);
+RS_Status Init(const char *connection_string);
 
 /**
  * Shutdown connection
  */
-RS_Status shutdown();
+RS_Status Shutdown();
 
 /**
  * Primary key read operation
  */
-RS_Status pkRead(char *reqBuff, char *respBuff);
+RS_Status PKRead(char *reqBuff, char *respBuff);
 
 #endif
 
 #ifdef __cplusplus
 }
-#endif
+#endif  // DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 

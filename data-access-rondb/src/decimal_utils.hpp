@@ -24,10 +24,13 @@
 */
 /*
  * decimal_utils.hpp
+ * This is copied form storage/ndb/include/util/decimal_utils.hpp 
  */
 
-#ifndef decimal_utils_hpp
-#define decimal_utils_hpp
+
+#ifndef DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_
+#define DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_
+
 
 /* return values (redeclared here if to be mapped to Java) */
 #define E_DEC_OK        0
@@ -101,4 +104,4 @@ int getDecimalColumnSpace(int precision, int scale) {
   return result;
 }
 
-#endif // decimal_utils_hpp
+#endif  // DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_

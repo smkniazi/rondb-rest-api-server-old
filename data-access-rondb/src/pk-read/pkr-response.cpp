@@ -17,37 +17,38 @@
  * USA.
  */
 
-#include "pkr-response.hpp"
-#include "src/common/rdrs_string.hpp"
-#include <iostream>
+#include "src/pk-read/pkr-response.hpp"
+
 #include <mysql.h>
+#include <iostream>
 #include <sstream>
+#include "src/common/rdrs_string.hpp"
 
 PKRResponse::PKRResponse(char *respBuff) {
   this->respBuff = respBuff;
 }
 
-char *PKRResponse::getResponseBuffer() {
+char *PKRResponse::GetResponseBuffer() {
   return respBuff;
 }
 
-uint32_t PKRResponse::getMaxCapacity() {
+Uint32 PKRResponse::GetMaxCapacity() {
   return this->capacity;
 }
 
-uint32_t PKRResponse::getRemainingCapacity() {
-  return getMaxCapacity() - getWriteHeader();
+Uint32 PKRResponse::GetRemainingCapacity() {
+  return GetMaxCapacity() - GetWriteHeader();
 }
 
-uint32_t PKRResponse::getWriteHeader() {
+Uint32 PKRResponse::GetWriteHeader() {
   return this->writeHeader;
 }
 
-RS_Status PKRResponse::append_string(string str, bool appendComma) {
-  return append_cstring(str.c_str(), appendComma);
+RS_Status PKRResponse::Append_string(std::string str, bool appendComma) {
+  return Append_cstring(str.c_str(), appendComma);
 }
 
-RS_Status PKRResponse::append_cstring(const char *str, bool appendComma) {
+RS_Status PKRResponse::Append_cstring(const char *str, bool appendComma) {
   int strl = strlen(str);
   if (strl + writeHeader >= capacity) {
     return RS_SERVER_ERROR(ERROR_016);
@@ -64,93 +65,92 @@ RS_Status PKRResponse::append_cstring(const char *str, bool appendComma) {
   return RS_OK;
 }
 
-RS_Status PKRResponse::append_i8(char num, bool appendComma) {
-  return append_i64(num, appendComma);
+RS_Status PKRResponse::Append_i8(char num, bool appendComma) {
+  return Append_i64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_iu8(unsigned char num, bool appendComma) {
-  return append_iu64(num, appendComma);
+RS_Status PKRResponse::Append_iu8(unsigned char num, bool appendComma) {
+  return Append_iu64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_i16(short int num, bool appendComma) {
-  return append_i64(num, appendComma);
+RS_Status PKRResponse::Append_i16(Int16 num, bool appendComma) {
+  return Append_i64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_iu16(unsigned short int num, bool appendComma) {
-  return append_iu64(num, appendComma);
+RS_Status PKRResponse::Append_iu16(Uint16 num, bool appendComma) {
+  return Append_iu64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_i24(int num, bool appendComma) {
-  return append_i64(num, appendComma);
+RS_Status PKRResponse::Append_i24(int num, bool appendComma) {
+  return Append_i64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_iu24(unsigned int num, bool appendComma) {
-  return append_iu64(num, appendComma);
+RS_Status PKRResponse::Append_iu24(Uint32 num, bool appendComma) {
+  return Append_iu64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_iu32(uint32_t num, bool appendComma) {
-  return append_iu64(num, appendComma);
+RS_Status PKRResponse::Append_iu32(Uint32 num, bool appendComma) {
+  return Append_iu64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_i32(int num, bool appendComma) {
-  return append_i64(num, appendComma);
+RS_Status PKRResponse::Append_i32(Int32 num, bool appendComma) {
+  return Append_i64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_f32(float num, bool appendComma) {
-  return append_d64(num, appendComma);
+RS_Status PKRResponse::Append_f32(float num, bool appendComma) {
+  return Append_d64(num, appendComma);
 }
 
-RS_Status PKRResponse::append_d64(double num, bool appendComma) {
+RS_Status PKRResponse::Append_d64(double num, bool appendComma) {
   try {
-    stringstream ss;
+    std::stringstream ss;
     ss << num;
-    append_string(ss.str(), appendComma);
+    Append_string(ss.str(), appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
 
-RS_Status PKRResponse::appendNULL() {
+RS_Status PKRResponse::Append_NULL() {
   respBuff[writeHeader] = 0x00;
   writeHeader += 1;
   return RS_OK;
 }
 
-RS_Status PKRResponse::append_iu64(unsigned long long num, bool appendComma) {
+RS_Status PKRResponse::Append_iu64(Uint64 num, bool appendComma) {
   try {
-    string numStr = to_string(num);
-    append_string(numStr, appendComma);
+    std::string numStr = std::to_string(num);
+    Append_string(numStr, appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
 
-RS_Status PKRResponse::append_i64(long long num, bool appendComma) {
+RS_Status PKRResponse::Append_i64(Int64 num, bool appendComma) {
   try {
-    string numStr = to_string(num);
-    append_string(numStr, appendComma);
+    std::string numStr = std::to_string(num);
+    Append_string(numStr, appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
   return RS_OK;
 }
 
-RS_Status PKRResponse::append_char(const char *fromBuff, uint32_t fromBuffLen, CHARSET_INFO *fromCS,
+RS_Status PKRResponse::Append_char(const char *fromBuff, Uint32 fromBuffLen, CHARSET_INFO *fromCS,
                                    bool appendComma) {
-
-  int extraSpace = 3; // +2 for quotation marks and +1 for null character
+  int extraSpace = 3;  // +2 for quotation marks and +1 for null character
   if (appendComma) {
     extraSpace += 1;
   }
 
-  uint32_t estimatedBytes = fromBuffLen + extraSpace;
+  Uint32 estimatedBytes = fromBuffLen + extraSpace;
 
-  if (estimatedBytes > getRemainingCapacity()) {
-    return RS_SERVER_ERROR(ERROR_010 + string(" Response buffer remaining capacity: ") +
-                                      to_string(getRemainingCapacity()) + string(" Required: ") +
-                                      to_string(estimatedBytes));
+  if (estimatedBytes > GetRemainingCapacity()) {
+    return RS_SERVER_ERROR(ERROR_010 + std::string(" Response buffer remaining capacity: ") +
+                           std::to_string(GetRemainingCapacity()) + std::string(" Required: ") +
+                           std::to_string(estimatedBytes));
   }
 
   // from_buffer -> printable string  -> escaped string
@@ -170,30 +170,31 @@ RS_Status PKRResponse::append_char(const char *fromBuff, uint32_t fromBuffLen, C
     char printable_buff[32];
     convert_to_printable(printable_buff, sizeof(printable_buff), error_pos,
                          fromBuff + fromBuffLen - error_pos, fromCS, 6);
-    return RS_SERVER_ERROR(ERROR_008 + string(" Invalid string: ") + string(printable_buff));
+    return RS_SERVER_ERROR(ERROR_008 + std::string(" Invalid string: ") +
+                           std::string(printable_buff));
   } else if (from_end_pos < fromBuff + fromBuffLen) {
     /*
       result is longer than UINT_MAX32 and doesn't fit into String
     */
-    return RS_SERVER_ERROR(ERROR_021 + string(" Buffer size: ") + to_string(estimatedBytes) +
-                                      string(". Bytes left to copy: ") +
-                                      to_string((fromBuff + fromBuffLen) - from_end_pos));
+    return RS_SERVER_ERROR(ERROR_021 + std::string(" Buffer size: ") +
+                           std::to_string(estimatedBytes) + std::string(". Bytes left to copy: ") +
+                           std::to_string((fromBuff + fromBuffLen) - from_end_pos));
   }
-  string wellFormedString = string(tempBuff, bytesFormed);
+  std::string wellFormedString = std::string(tempBuff, bytesFormed);
   // remove blank spaces that are padded to the string
   size_t endpos = wellFormedString.find_last_not_of(" ");
-  if (string::npos != endpos) {
+  if (std::string::npos != endpos) {
     wellFormedString = wellFormedString.substr(0, endpos + 1);
   }
 
-  string escapedstr = escape_string(wellFormedString);
-  if ((escapedstr.length() + extraSpace) >= getRemainingCapacity()) { // +2 for quotation marks
+  std::string escapedstr = escape_string(wellFormedString);
+  if ((escapedstr.length() + extraSpace) >= GetRemainingCapacity()) {  // +2 for quotation marks
     return RS_SERVER_ERROR(ERROR_010);
   }
 
-  append_string("\"", appendComma);
-  append_string(escapedstr, appendComma);
-  append_string("\"", appendComma);
+  Append_string("\"", appendComma);
+  Append_string(escapedstr, appendComma);
+  Append_string("\"", appendComma);
 
   return RS_OK;
 }

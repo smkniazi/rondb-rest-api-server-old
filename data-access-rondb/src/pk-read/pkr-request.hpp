@@ -16,14 +16,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
  * USA.
  */
-#ifndef PKR_REQUEST
-#define PKR_REQUEST
+#ifndef DATA_ACCESS_RONDB_SRC_PK_READ_PKR_REQUEST_HPP_
+#define DATA_ACCESS_RONDB_SRC_PK_READ_PKR_REQUEST_HPP_
 
-#include <NdbApi.hpp>
 #include <stdint.h>
+#include <NdbApi.hpp>
 
 class PKRRequest {
-private:
+ private:
   char *buffer;
 
   /**
@@ -32,46 +32,46 @@ private:
    * @param n nth key/value pair
    * @return offset
    */
-  uint32_t pkTupleOffset(const int n);
+  Uint32 PKTupleOffset(const int n);
 
-public:
-  PKRRequest(char *request);
+ public:
+  explicit PKRRequest(char *request);
 
   /**
    * Opration type
    * @return Operation type
    */
-  uint32_t operationType();
+  Uint32 OperationType();
 
   /**
    * Get length of the data
    * @return data length
    */
-  uint32_t length();
+  Uint32 Length();
 
   /**
    * Get maximum capacity of the buffer
    * @return buffer capacity
    */
-  uint32_t capacity();
+  Uint32 Capacity();
 
   /**
    * Get database name
    * @return database name
    */
-  const char *db();
+  const char *DB();
 
   /**
    * Get table name
    * @return table name
    */
-  const char *table();
+  const char *Table();
 
   /**
    * Get number of PK columns
    * @return number of PK Columns
    */
-  uint32_t pkColumnsCount();
+  Uint32 PKColumnsCount();
 
   /**
    * Get PK column name
@@ -79,7 +79,7 @@ public:
    * @param n. index
    * @return PK column name
    */
-  const char *pkName(uint32_t n);
+  const char *PKName(Uint32 n);
 
   /**
    * Get PK column value.
@@ -87,7 +87,7 @@ public:
    * @param n. index
    * @return PK c-string for column value
    */
-  const char *pkValueCStr(uint32_t n);
+  const char *PKValueCStr(Uint32 n);
 
   /**
    * Get PK column value
@@ -97,13 +97,13 @@ public:
    * @param data[out]. data
    * @return 0 if successfull
    */
-  int pkValueNDBStr(uint32_t index, const NdbDictionary::Column *col, char **data);
+  int PKValueNDBStr(Uint32 index, const NdbDictionary::Column *col, char **data);
 
   /**
    * Get number of read columns
    * @return number of read columns
    */
-  uint32_t readColumnsCount();
+  Uint32 ReadColumnsCount();
 
   /**
    * Get read column name
@@ -111,13 +111,14 @@ public:
    * @param n. index
    * @return read column name
    */
-  const char *readColumnName(const uint32_t n);
+  const char *ReadColumnName(const Uint32 n);
 
   /**
    * Get operation ID
    *
    * @return operation ID
    */
-  const char *operationId();
+  const char *OperationId();
 };
-#endif
+
+#endif  // DATA_ACCESS_RONDB_SRC_PK_READ_PKR_REQUEST_HPP_
