@@ -18,6 +18,7 @@
  */
 
 #include "src/rdrs-dal.h"
+#include <mgmapi.h>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -25,7 +26,6 @@
 #include <iterator>
 #include <sstream>
 #include <NdbApi.hpp>
-#include <mgmapi.h>
 #include "src/error-strs.h"
 #include "src/logger.hpp"
 #include "src/pk-read/pkr-operation.hpp"
@@ -52,7 +52,7 @@ RS_Status Init(const char *connection_string, _Bool find_available_node_id) {
   }
 
   int node_id = -1;
-  if (find_available_node_id == true) {  
+  if (find_available_node_id == true) {
     node_id = GetAvailableAPINode(connection_string);
     if (node_id == -1) {
       return RS_SERVER_ERROR(ERROR_024);
@@ -135,7 +135,17 @@ RS_Status PKRead(char *reqBuff, char *respBuff) {
   return RS_OK;
 }
 
+
 static int LastConnectedInodeID = -1;
+/*
+ * NDB API does not support gracefull disconnection form the  
+ * cluster. All disconnections are treated as failures. When
+ * you disconnect, the API node is not able to accept new 
+ * connections until the filure recovery has completed for
+ * the API node. This can take upto ~5 sec, slowing down 
+ * unit tests which start/stop the NDB API multiple times.
+ * This function returns next available API node to connect to.
+ */
 int GetAvailableAPINode(const char *connection_string) {
   NdbMgmHandle h;
 
@@ -168,7 +178,7 @@ int GetAvailableAPINode(const char *connection_string) {
     }
 
     if (LastConnectedInodeID == max_node_id) {
-      LastConnectedInodeID = -1; 
+      LastConnectedInodeID = -1;
     }
 
     for (int i = 0; i < ret->no_of_nodes; i++) {
@@ -176,7 +186,7 @@ int GetAvailableAPINode(const char *connection_string) {
           ret->node_states[i].node_status == NDB_MGM_NODE_STATUS_NO_CONTACT) {
         LastConnectedInodeID = ret->node_states[i].node_id;
         free(ret);
-        return LastConnectedInodeID; 
+        return LastConnectedInodeID;
       }
     }
   }
