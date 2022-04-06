@@ -24,6 +24,7 @@ package dal
 #cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
 #cgo LDFLAGS: -L/usr/local/mysql/lib -lrdrs_string
 #include <stdlib.h>
+#include <stdbool.h>
 #include "./../../../data-access-rondb/src/rdrs-dal.h"
 #include "./../../../data-access-rondb/src/rdrs-const.h"
 #include "./../../../data-access-rondb/src/error-strs.h"
@@ -45,11 +46,11 @@ func (e *DalError) Error() string {
 	return e.Message
 }
 
-func InitRonDBConnection(connStr string) *DalError {
+func InitRonDBConnection(connStr string, find_available_node_id bool) *DalError {
 
 	cs := C.CString(connStr)
 	defer C.free(unsafe.Pointer(cs))
-	ret := C.Init(cs)
+	ret := C.Init(cs, C.bool(find_available_node_id))
 	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {

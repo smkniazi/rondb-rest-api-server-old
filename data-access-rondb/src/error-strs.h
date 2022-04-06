@@ -47,6 +47,7 @@ extern "C" {
 #define ERROR_021 "Programming error buffer is too small."
 #define ERROR_022 "Failed to set lock level."
 #define ERROR_023 "Failed to set NdbOperation::equal()."
+#define ERROR_024 "Failed to find free API node slot"
 
 #ifdef __cplusplus
 }

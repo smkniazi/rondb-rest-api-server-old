@@ -143,7 +143,7 @@ func initRouter(t *testing.T) (*gin.Engine, error) {
 
 	group := router.Group(DB_OPS_EP_GROUP)
 	group.POST(DB_OPERATION, PkReadHandler)
-	err := dal.InitRonDBConnection(config.ConnectionString())
+	err := dal.InitRonDBConnection(config.ConnectionString(), true)
 	if err != nil {
 		return nil, err
 	}

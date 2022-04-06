@@ -24,6 +24,8 @@ extern "C" {
 #ifndef DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 #define DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 
+#include <stdbool.h>
+
 typedef enum HTTP_CODE {
   SUCCESS      = 200,
   CLIENT_ERROR = 400,
@@ -45,7 +47,7 @@ typedef struct RS_Status {
 /**
  * Initialize connection to the database
  */
-RS_Status Init(const char *connection_string);
+RS_Status Init(const char *connection_string, _Bool find_available_node_id);
 
 /**
  * Shutdown connection
