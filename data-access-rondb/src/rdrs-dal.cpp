@@ -1,27 +1,21 @@
 /*
- Copyright 2010 Sun Microsystems, Inc.
- Use is subject to license terms.
-
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License, version 2.0,
- as published by the Free Software Foundation.
-
- This program is also distributed with certain software (including
- but not limited to OpenSSL) that is licensed under separate terms,
- as designated in a particular file or component or in included license
- documentation.  The authors of MySQL hereby grant you an additional
- permission to link the program and your derivative works with the
- separately licensed software that they have included with MySQL.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License, version 2.0, for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
-*/
+ * Copyright (C) 2022 Hopsworks AB
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
+ * USA.
+ */
 
 #include "src/rdrs-dal.h"
 #include <cstdlib>
@@ -129,57 +123,6 @@ RS_Status PKRead(char *reqBuff, char *respBuff) {
  */
 int main(int argc, char **argv) {
   char connection_string[] = "localhost:1186";
-  Init(connection_string);
-
-  Ndb *ndb_object  = nullptr;
-  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
-
-  ndb_object->setCatalogName("test");
-  const NdbDictionary::Dictionary *dict = ndb_object->getDictionary();
-  const NdbDictionary::Table *table     = dict->getTable("chartable");
-  const NdbDictionary::Column *col      = table->getColumn("id");
-
-  NdbTransaction *transaction = ndb_object->startTransaction(table);
-  if (transaction == nullptr) {
-    std::cout << "Tx Start failed" << std::endl;
-  }
-
-  NdbOperation *operation = transaction->getNdbOperation(table);
-  if (operation == nullptr) {
-    std::cout << "get operation failed" << std::endl;
-  }
-  operation->readTuple(NdbOperation::LM_CommittedRead);
-
-
-  // char pk[col->getLength()];
-  // for (int i = 0; i < col->getLength(); i++) {
-    // pk[i] = 0;
-  // }
-  std::string pkstr = "000000000000000000000000000000000000000000";
-  // std::memcpy(pk, pkstr.c_str(), pkstr.length());
-    // std::cout << "mem copy workd" << std::endl;
-
-
-  int ret = operation->equal("id", pkstr.c_str(), pkstr.length());
-  if (ret != 0) {
-    std::cout << "Op equal failed" << std::endl;
-  }
-
-  NdbRecAttr *val_rec = operation->getValue("value", NULL);
-
-  ret = transaction->execute(NdbTransaction::Commit);
-  if (ret != 0) {
-    std::cout << "execute failed" << std::endl;
-  }
-
-  if (transaction->getNdbError().classification == NdbError::NoDataFound) {
-    std::cout << "NOT FOUND" << std::endl;
-  } else {
-    std::cout << "data: " << val_rec->aRef() << std::endl;
-  }
-  ndb_object->closeTransaction(transaction);
-  CloseNDBObject(&ndb_object);
-  Shutdown();
   return 0;
 }
 
