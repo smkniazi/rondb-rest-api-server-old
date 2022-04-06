@@ -24,10 +24,10 @@
 extern "C" {
 #endif
 
-#define ERROR_001 "ndb_init() failed"
-#define ERROR_002 "failed to connect to RonDB mgm server"
-#define ERROR_003 "Cluster was not ready within 30 secs"
-#define ERROR_004 "Failed to initialize ndb object"
+#define ERROR_001 "ndb_init() failed."
+#define ERROR_002 "failed to connect to RonDB mgm server."
+#define ERROR_003 "Cluster was not ready within 30 secs."
+#define ERROR_004 "Failed to initialize ndb object."
 #define ERROR_005 "Failed to start transaction."
 #define ERROR_006 "An operation has already been created."
 #define ERROR_007 "Failed to start read operation."
@@ -45,6 +45,8 @@ extern "C" {
 #define ERROR_019 "Unable to read data."
 #define ERROR_020 "Column length too big."
 #define ERROR_021 "Programming error buffer is too small."
+#define ERROR_022 "Failed to set lock level."
+#define ERROR_023 "Failed to set NdbOperation::equal()."
 
 #ifdef __cplusplus
 }

@@ -24,7 +24,12 @@ extern "C" {
 #ifndef DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 #define DATA_ACCESS_RONDB_SRC_RDRS_DAL_H_
 
-typedef enum HTTP_CODE { SUCCESS = 200, CLIENT_ERROR = 400, SERVER_ERROR = 500 } HTTP_CODE;
+typedef enum HTTP_CODE {
+  SUCCESS      = 200,
+  CLIENT_ERROR = 400,
+  NOT_FOUND    = 404,
+  SERVER_ERROR = 500
+} HTTP_CODE;
 
 typedef struct RS_Status {
   HTTP_CODE http_code;  // rest server return code. 200 for successful operation

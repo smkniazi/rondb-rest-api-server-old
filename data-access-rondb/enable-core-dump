@@ -1,0 +1,4 @@
+ulimit -c unlimited
+sudo sysctl -w kernel.core_pattern=core.%u.%p.%t # to enable core generation
+dgb executable corefile
+then use where, bt commands

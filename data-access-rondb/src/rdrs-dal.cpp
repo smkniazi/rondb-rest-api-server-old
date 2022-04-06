@@ -81,13 +81,13 @@ RS_Status Shutdown() {
  * Creats a new NDB Object
  *
  * @param[in] ndb_connection
- * @param[out] ndbObject
+ * @param[out] ndb_object
  *
  * @return status
  */
-RS_Status GetNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) {
-  *ndbObject  = new Ndb(ndb_connection);
-  int retCode = (*ndbObject)->init();
+RS_Status GetNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndb_object) {
+  *ndb_object  = new Ndb(ndb_connection);
+  int retCode = (*ndb_object)->init();
   if (retCode != 0) {
     return RS_SERVER_ERROR(ERROR_004 + std::string(" RetCode: ") + std::to_string(retCode));
   }
@@ -97,26 +97,26 @@ RS_Status GetNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndbObject) 
 /**
  * Closes a NDB Object
  *
- * @param[int] ndbObject
+ * @param[int] ndb_object
  *
  * @return status
  */
-RS_Status CloseNDBObject(Ndb **ndbObject) {
-  delete *ndbObject;
+RS_Status CloseNDBObject(Ndb **ndb_object) {
+  delete *ndb_object;
   return RS_OK;
 }
 
 RS_Status PKRead(char *reqBuff, char *respBuff) {
-  Ndb *ndbObject   = nullptr;
-  RS_Status status = GetNDBObject(ndb_connection, &ndbObject);
+  Ndb *ndb_object   = nullptr;
+  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
 
-  PKROperation pkread(reqBuff, respBuff, ndbObject);
+  PKROperation pkread(reqBuff, respBuff, ndb_object);
 
   status = pkread.PerformOperation();
-  CloseNDBObject(&ndbObject);
+  CloseNDBObject(&ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
@@ -128,24 +128,58 @@ RS_Status PKRead(char *reqBuff, char *respBuff) {
  * only for testing
  */
 int main(int argc, char **argv) {
-  std::string number = "-2147483649";
-  try {
-    std::stoi(number.c_str());
-  } catch (...) {
-    std::cout << "exception caught" << std::endl;
+  char connection_string[] = "localhost:1186";
+  Init(connection_string);
+
+  Ndb *ndb_object  = nullptr;
+  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
+
+  ndb_object->setCatalogName("test");
+  const NdbDictionary::Dictionary *dict = ndb_object->getDictionary();
+  const NdbDictionary::Table *table     = dict->getTable("chartable");
+  const NdbDictionary::Column *col      = table->getColumn("id");
+
+  NdbTransaction *transaction = ndb_object->startTransaction(table);
+  if (transaction == nullptr) {
+    std::cout << "Tx Start failed" << std::endl;
   }
 
-  // for (int i = 0; i < 10; i++) {
-  // char connection_string[] = "localhost:1186";
-  // Init(connection_string);
+  NdbOperation *operation = transaction->getNdbOperation(table);
+  if (operation == nullptr) {
+    std::cout << "get operation failed" << std::endl;
+  }
+  operation->readTuple(NdbOperation::LM_CommittedRead);
 
-  // Ndb *ndbObject   = nullptr;
-  // RS_Status status = GetNDBObject(ndb_connection, &ndbObject);
-  // CloseNDBObject(&ndbObject);
-  // Shutdown();
-  // pkRead(nullptr); */
-  // this_thread::sleep_for(chrono::milliseconds(1000));
+
+  // char pk[col->getLength()];
+  // for (int i = 0; i < col->getLength(); i++) {
+    // pk[i] = 0;
   // }
+  std::string pkstr = "000000000000000000000000000000000000000000";
+  // std::memcpy(pk, pkstr.c_str(), pkstr.length());
+    // std::cout << "mem copy workd" << std::endl;
+
+
+  int ret = operation->equal("id", pkstr.c_str(), pkstr.length());
+  if (ret != 0) {
+    std::cout << "Op equal failed" << std::endl;
+  }
+
+  NdbRecAttr *val_rec = operation->getValue("value", NULL);
+
+  ret = transaction->execute(NdbTransaction::Commit);
+  if (ret != 0) {
+    std::cout << "execute failed" << std::endl;
+  }
+
+  if (transaction->getNdbError().classification == NdbError::NoDataFound) {
+    std::cout << "NOT FOUND" << std::endl;
+  } else {
+    std::cout << "data: " << val_rec->aRef() << std::endl;
+  }
+  ndb_object->closeTransaction(transaction);
+  CloseNDBObject(&ndb_object);
+  Shutdown();
   return 0;
 }
 

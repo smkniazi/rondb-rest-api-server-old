@@ -665,9 +665,22 @@ func TestDataTypesChar(t *testing.T) {
 	testDb := "DB012"
 	tests := map[string]TestInfo{
 
-		"notfound": {
+		"notfound1": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-1"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusNotFound,
+			bodyContains: "",
+			respKVs:      []string{},
+		},
+
+		"notfound2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", *NewOperationID(t, 256)),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},
