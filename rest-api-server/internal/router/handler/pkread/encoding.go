@@ -20,9 +20,12 @@ package pkread
 
 /*
 #include "./../../../../../data-access-rondb/src/rdrs-const.h"
+#include "./../../../../../data-access-rondb/src/rdrs-dal.h"
 */
 import "C"
 import (
+	"fmt"
+	"math"
 	"unsafe"
 
 	"hopsworks.ai/rdrs/internal/common"
@@ -51,18 +54,19 @@ import (
 //    Count     kv 1          kv n       key       value     key          val     val
 //            offset        offset     offset     offset                 size
 //                                      ^
-//              ________________________|
-//                                                                                            ^
+//              ________________________|                                                     ^
 //                           _________________________________________________________________|
 //
-//  [   4B   ][   bytes ... ] ....
-//    Count     null terminated column names
+//
+//  [   4B   ] [  4B     ] [  4B     ] ...
+//    Count   col1 offset   col2 offset
+//
+//  [  4B ] [   bytes ... ] [  4B ] [   bytes ... ] ...
+//  type     null terminated column names
 //
 //  [ bytes ... ] ...
 //    null terminated  operation Id
 //
-//  [ bytes ... ] ...
-//   null terminated transaction Id
 
 func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointer, error) {
 	response, respSize := dal.GetBuffer()
@@ -134,10 +138,25 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 		head = head + (uint32(len(*pkrParams.ReadColumns)) * C.ADDRESS_SIZE)
 
 		for _, col := range *pkrParams.ReadColumns {
+			head = common.AlignWord(head)
+
 			iBuf[rci] = head
 			rci++
-			// fmt.Printf("Read col offset %d\n", head)
-			head, err = common.CopyGoStrToCStr([]byte(col), bBuf, head, reqSize)
+
+			// return type
+			var drt uint32 = C.DEFAULT_DRT
+			if col.DataReturnType != nil {
+				drt, err = dataReturnType(col.DataReturnType)
+				if err != nil {
+					return nil, nil, err
+				}
+			}
+
+			iBuf[head/C.ADDRESS_SIZE] = drt
+			head += C.ADDRESS_SIZE
+
+			// col name
+			head, err = common.CopyGoStrToCStr([]byte(*col.Column), bBuf, head, reqSize)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -175,4 +194,12 @@ func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointe
 
 func processResponse(buffer unsafe.Pointer) string {
 	return C.GoString((*C.char)(buffer))
+}
+
+func dataReturnType(drt *string) (uint32, error) {
+	if *drt == DRT_DEFAULT {
+		return C.DEFAULT_DRT, nil
+	} else {
+		return math.MaxUint32, fmt.Errorf("Return data type is not supported. Data type: " + *drt)
+	}
 }

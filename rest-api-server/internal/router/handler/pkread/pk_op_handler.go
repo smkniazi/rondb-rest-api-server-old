@@ -43,11 +43,11 @@ const READ_COL_PARAM_NAME = "read-columns"
 const OPERATION_ID_PARAM_NAME = "operation-id"
 
 type PKReadParams struct {
-	DB          *string   `json:"db" `
-	Table       *string   `json:"table"`
-	Filters     *[]Filter `json:"filters"`
-	ReadColumns *[]string `json:"read-columns"`
-	OperationID *string   `json:"operation-id"`
+	DB          *string       `json:"db" `
+	Table       *string       `json:"table"`
+	Filters     *[]Filter     `json:"filters"`
+	ReadColumns *[]ReadColumn `json:"readColumns"`
+	OperationID *string       `json:"operationId"`
 }
 
 // Path parameters
@@ -57,14 +57,32 @@ type PKReadPP struct {
 }
 
 type PKReadBody struct {
-	Filters     *[]Filter `json:"filters"         form:"filters"         binding:"required,min=1,max=4096,dive"`
-	ReadColumns *[]string `json:"read-columns"    form:"read-columns"    binding:"omitempty,min=1,max=4096,unique"`
-	OperationID *string   `json:"operation-id"    form:"operation-id"    binding:"omitempty,min=1,max=64"`
+	Filters     *[]Filter     `json:"filters"         form:"filters"         binding:"required,min=1,max=4096,dive"`
+	ReadColumns *[]ReadColumn `json:"readColumns"    form:"read-columns"    binding:"omitempty,min=1,max=4096,unique"`
+	OperationID *string       `json:"operationId"    form:"operation-id"    binding:"omitempty,min=1,max=64"`
 }
 
 type Filter struct {
 	Column *string `json:"column"   form:"column"   binding:"required,min=1,max=64"`
 	Value  *string `json:"value"    form:"value"    binding:"required"`
+}
+
+const (
+	DRT_DEFAULT = "default"
+	DRT_BASE64  = "base64" // not implemented yet
+	DRT_HEX     = "hex"    // not implemented yet
+)
+
+type ReadColumn struct {
+	Column *string `json:"column"    form:"column"    binding:"required,min=1,max=64"`
+
+	// Data return type you can change the return type for the column data
+	// int/floats/decimal are returned as JSON Number type (default),
+	// varchar/char are returned as strings (default) and varbinary as base64 (default)
+	// Right now only default return type is supported
+	DataReturnType *string `json:"dataReturnType"    form:"column"    binding:"Enum=default,min=1,max=64"`
+
+	// more parameter can be added later.
 }
 
 func PkReadHandler(c *gin.Context) {
@@ -82,6 +100,7 @@ func PkReadHandler(c *gin.Context) {
 	request, response, err := createNativeRequest(&pkReadParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
+		return
 	}
 
 	dalErr := dal.RonDBPKRead(request, response)
@@ -146,33 +165,37 @@ func ParseBody(req *http.Request, params *PKReadBody) error {
 	}
 
 	// make sure that the columns are unique.
-	exists := make(map[string]bool)
+	existingFilters := make(map[string]bool)
 	for _, filter := range *params.Filters {
-		if _, value := exists[*filter.Column]; value {
+		if _, value := existingFilters[*filter.Column]; value {
 			return fmt.Errorf("field validation for filter failed on the 'unique' tag")
 		} else {
-			exists[*filter.Column] = true
+			existingFilters[*filter.Column] = true
 		}
 	}
 
 	// make sure read columns are valid
 	if params.ReadColumns != nil {
 		for _, col := range *params.ReadColumns {
-			if err := validateDBIdentifier(col); err != nil {
+			if err := validateDBIdentifier(*col.Column); err != nil {
 				return err
 			}
 		}
 	}
 
 	// make sure that the filter columns and read colummns do not overlap
+	// and read cols are unique
 	if params.ReadColumns != nil {
-		exists = make(map[string]bool)
-		for _, filter := range *params.Filters {
-			exists[*filter.Column] = true
-		}
+		existingCols := make(map[string]bool)
 		for _, readCol := range *params.ReadColumns {
-			if _, value := exists[readCol]; value {
-				return fmt.Errorf("field validation for read columns faild. '%s' already included in filter", readCol)
+			if _, value := existingFilters[*readCol.Column]; value {
+				return fmt.Errorf("field validation for read columns faild. '%s' already included in filter", *readCol.Column)
+			}
+
+			if _, value := existingCols[*readCol.Column]; value {
+				return fmt.Errorf("field validation for 'ReadColumns' failed on the 'unique' tag.")
+			} else {
+				existingCols[*readCol.Column] = true
 			}
 		}
 	}

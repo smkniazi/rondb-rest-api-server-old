@@ -786,6 +786,29 @@ func TestDataTypesChar(t *testing.T) {
 	test(t, tests)
 }
 
+func TestDataTypesTest(t *testing.T) {
+
+	testTable := "char_table"
+	testDb := "DB012"
+	tests := map[string]TestInfo{
+
+		"notfound1": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "-1"),
+				ReadColumns: NewReadColumns(t, "col", 3),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusNotFound,
+			bodyContains: "",
+			respKVs:      []string{},
+		},
+	}
+
+	test(t, tests)
+}
+
 func test(t *testing.T, tests map[string]TestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {

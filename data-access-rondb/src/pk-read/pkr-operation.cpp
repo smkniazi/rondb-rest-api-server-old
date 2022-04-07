@@ -265,6 +265,14 @@ RS_Status PKROperation::ValidateRequest() {
         return RS_CLIENT_ERROR(ERROR_012 + std::string(" Column: ") +
                                std::string(request.ReadColumnName(i)));
       }
+
+      // check that the data return type is supported
+      // for now we only support DataReturnType.DEFAULT
+      if (request.ReadColumnReturnType(i) > __MAX_TYPE_NOT_A_DRT || 
+          DEFAULT_DRT !=  request.ReadColumnReturnType(i)) {
+        return RS_SERVER_ERROR(ERROR_025 + std::string(" Column: ") +
+                               std::string(request.ReadColumnName(i)));
+      }
     }
   }
 

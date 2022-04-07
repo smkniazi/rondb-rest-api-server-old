@@ -48,6 +48,7 @@ extern "C" {
 #define ERROR_022 "Failed to set lock level."
 #define ERROR_023 "Failed to set NdbOperation::equal()."
 #define ERROR_024 "Failed to find free API node slot"
+#define ERROR_025 "Data return type is not supported"
 
 #ifdef __cplusplus
 }

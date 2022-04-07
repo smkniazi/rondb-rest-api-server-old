@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 #include <NdbApi.hpp>
+#include "src/rdrs-dal.h"
 
 class PKRRequest {
  private:
@@ -112,6 +113,14 @@ class PKRRequest {
    * @return read column name
    */
   const char *ReadColumnName(const Uint32 n);
+
+  /**
+   * Get read column data return type 
+   *
+   * @param n. index
+   * @return return data type 
+   */
+  DataReturnType ReadColumnReturnType(const Uint32 n);
 
   /**
    * Get operation ID

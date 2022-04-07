@@ -44,6 +44,17 @@ typedef struct RS_Status {
   char *err_file_name;  // NOTE: receiver's responsibility to free this memory
 } RS_Status;
 
+// Data return type you can change the return type for the column data
+// int/floats/decimal are returned as JSON Number type (default),
+// varchar/char are returned as strings (default) and varbinary as base64 (default)
+// Right now only default return type is supported
+typedef enum DataReturnType {
+  DEFAULT_DRT = 1,
+  // BASE64 = 2;
+
+  __MAX_TYPE_NOT_A_DRT = 1
+} DataReturnType;
+
 /**
  * Initialize connection to the database
  */

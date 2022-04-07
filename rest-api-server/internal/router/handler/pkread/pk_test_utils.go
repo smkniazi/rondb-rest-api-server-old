@@ -62,19 +62,24 @@ func NewFiltersKVs(t *testing.T, vals ...string) *[]Filter {
 	return &filters
 }
 
-func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]string {
+func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]ReadColumn {
 	t.Helper()
-	readColumns := make([]string, numReadColumns)
+	readColumns := make([]ReadColumn, numReadColumns)
 	for i := 0; i < numReadColumns; i++ {
-		readColumns[i] = prefix + fmt.Sprintf("%d", i)
+		col := prefix + fmt.Sprintf("%d", i)
+		drt := DRT_DEFAULT
+		readColumns[i].Column = &col
+		readColumns[i].DataReturnType = &drt
 	}
 	return &readColumns
 }
 
-func NewReadColumn(t *testing.T, col string) *[]string {
+func NewReadColumn(t *testing.T, col string) *[]ReadColumn {
 	t.Helper()
-	readColumns := make([]string, 1)
-	readColumns[0] = col
+	readColumns := make([]ReadColumn, 1)
+	drt := string(DRT_DEFAULT)
+	readColumns[0].Column = &col
+	readColumns[0].DataReturnType = &drt
 	return &readColumns
 }
 

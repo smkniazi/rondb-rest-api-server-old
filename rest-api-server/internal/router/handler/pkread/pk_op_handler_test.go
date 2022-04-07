@@ -30,30 +30,6 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-// Simple test with all parameters correctly supplied
-func TestPKReadTest(t *testing.T) {
-	router, err := initRouter(t)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	param := PKReadBody{
-		Filters:     NewFilters(t, "filter_col_", 3),
-		ReadColumns: NewReadColumns(t, "read_col_", 5),
-		OperationID: NewOperationID(t, 64),
-	}
-
-	body, _ := json.MarshalIndent(param, "", "\t")
-	url := NewPKReadURL("db", "table")
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-
-	// Omit the optional operation ID param
-	param.OperationID = nil
-	param.ReadColumns = nil
-	body, _ = json.MarshalIndent(param, "", "\t")
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
-}
-
 func TestPKReadOmitRequired(t *testing.T) {
 	router, err := initRouter(t)
 	if err != nil {
@@ -193,9 +169,10 @@ func TestPKUniqueParams(t *testing.T) {
 	}
 
 	// Test. unique read columns
-	readColumns := make([]string, 2)
-	readColumns[0] = "col1"
-	readColumns[1] = "col1"
+	readColumns := make([]ReadColumn, 2)
+	col := "col1"
+	readColumns[0].Column = &col
+	readColumns[1].Column = &col
 	param := PKReadBody{
 		Filters:     NewFilters(t, "col", 1),
 		ReadColumns: &readColumns,
@@ -204,10 +181,10 @@ func TestPKUniqueParams(t *testing.T) {
 	url := NewPKReadURL("db", "table")
 	body, _ := json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
-		"Field validation for 'ReadColumns' failed on the 'unique' tag")
+		"field validation for 'ReadColumns' failed on the 'unique' tag")
 
 	// Test. unique filter columns
-	col := "col"
+	col = "col"
 	val := "val"
 	filters := make([]Filter, 2)
 	filters[0] = (*(NewFilter(t, &col, &val)))[0]
