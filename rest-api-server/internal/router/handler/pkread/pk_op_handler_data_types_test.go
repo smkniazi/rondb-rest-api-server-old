@@ -23,12 +23,14 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/ianlancetaylor/cgosymbolizer"
 	"hopsworks.ai/rdrs/internal/common"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
 type PKTestInfo struct {
-	pkReq        PKReadBody
+	pkReq        ds.PKReadBody
 	table        string
 	db           string
 	httpCode     int
@@ -44,7 +46,7 @@ func TestDataTypesInt(t *testing.T) {
 	testDb := "DB004"
 	tests := map[string]PKTestInfo{
 		"simple1": {
-			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
@@ -56,7 +58,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"simple2": { //with out operation ID
-			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
 			table:        testTable,
@@ -67,8 +69,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"simple3": { //without read columns.
-			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0")},
-
+			pkReq:        ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0")},
 			table:        testTable,
 			db:           testDb,
 			httpCode:     http.StatusOK,
@@ -77,7 +78,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"simple4": { //Table with only primary keys
-			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				OperationID: NewOperationID(t, 64),
 			},
 			table:        "int_table1",
@@ -88,7 +89,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"maxValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -100,7 +101,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"minValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -112,7 +113,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -125,7 +126,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2147483648", "id1", "4294967295"), //bigger than the range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -137,7 +138,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"assigningSmallerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-2147483649", "id1", "0"), //smaller than range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -149,7 +150,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -173,7 +174,7 @@ func TestDataTypesBigInt(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -186,7 +187,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"maxValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551615"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -198,7 +199,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"minValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775808", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -210,7 +211,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -223,7 +224,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551616"), //18446744073709551615+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -235,7 +236,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"assigningSmallerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -247,7 +248,7 @@ func TestDataTypesBigInt(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -269,7 +270,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -282,7 +283,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"maxValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "255"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -294,7 +295,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"minValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-128", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -306,7 +307,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -319,7 +320,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "256"), //255+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -331,7 +332,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"assigningSmallerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-129", "id1", "0"), //-128-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -343,7 +344,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -365,7 +366,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -378,7 +379,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"maxValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32767", "id1", "65535"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -390,7 +391,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"minValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-32768", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -402,7 +403,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -415,7 +416,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32768", "id1", "256"), //32767+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -427,7 +428,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"assigningSmallerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-32769", "id1", "0"), //-32768-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -439,7 +440,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -461,7 +462,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -474,7 +475,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"maxValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388607", "id1", "16777215"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -486,7 +487,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"minValues": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388608", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -498,7 +499,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -511,7 +512,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388608", "id1", "256"), //8388607+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -523,7 +524,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"assigningSmallerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388609", "id1", "0"), //-8388608-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -535,7 +536,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -557,7 +558,7 @@ func TestDataTypesFloat(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"floatPK": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -569,7 +570,7 @@ func TestDataTypesFloat(t *testing.T) {
 		},
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -581,7 +582,7 @@ func TestDataTypesFloat(t *testing.T) {
 		},
 
 		"simple2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -593,7 +594,7 @@ func TestDataTypesFloat(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -615,7 +616,7 @@ func TestDataTypesDouble(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"floatPK": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -627,7 +628,7 @@ func TestDataTypesDouble(t *testing.T) {
 		},
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -639,7 +640,7 @@ func TestDataTypesDouble(t *testing.T) {
 		},
 
 		"simple2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -651,7 +652,7 @@ func TestDataTypesDouble(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -673,7 +674,7 @@ func TestDataTypesDecimal(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"simple": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "12345.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -686,7 +687,7 @@ func TestDataTypesDecimal(t *testing.T) {
 		},
 
 		"nullVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-67890.12345", "id1", "67890.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -699,7 +700,7 @@ func TestDataTypesDecimal(t *testing.T) {
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "-12345.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -712,7 +713,7 @@ func TestDataTypesDecimal(t *testing.T) {
 		},
 
 		"assigningBiggerVals": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "123456789.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
@@ -733,7 +734,7 @@ func TestDataTypesChar(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"notfound1": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-1"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -746,7 +747,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"notfound2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", *NewOperationID(t, 256)),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -759,7 +760,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"simple1": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -772,7 +773,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"simple2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -785,7 +786,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"simple3": { // new line char in string
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "3"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -798,7 +799,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"simple4": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "4"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -811,7 +812,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"simple5": { //unicode pk
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "这是一个测验"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -824,7 +825,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"nulltest": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "5"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -837,7 +838,7 @@ func TestDataTypesChar(t *testing.T) {
 		},
 
 		"escapedChars": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "6"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
@@ -859,7 +860,7 @@ func TestDataTypesBlobs(t *testing.T) {
 	tests := map[string]PKTestInfo{
 
 		"blob1": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 5),
@@ -872,7 +873,7 @@ func TestDataTypesBlobs(t *testing.T) {
 		},
 
 		"blob2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumn(t, "col1"),
 				OperationID: NewOperationID(t, 5),
@@ -885,7 +886,7 @@ func TestDataTypesBlobs(t *testing.T) {
 		},
 
 		"text1": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 5),
@@ -898,7 +899,7 @@ func TestDataTypesBlobs(t *testing.T) {
 		},
 
 		"text2": {
-			pkReq: PKReadBody{
+			pkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumn(t, "col1"),
 				OperationID: NewOperationID(t, 5),
@@ -920,7 +921,7 @@ func test(t *testing.T, tests map[string]PKTestInfo) {
 			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
 				url := NewPKReadURL(testInfo.db, testInfo.table)
 				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
-				res := tu.ProcessRequest(t, router, HTTP_VERB, url,
+				res := tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
 					string(body), testInfo.httpCode, testInfo.bodyContains)
 				if len(testInfo.respKVs) > 0 {
 					tu.ValidateResponse(t, res, testInfo.respKVs...)

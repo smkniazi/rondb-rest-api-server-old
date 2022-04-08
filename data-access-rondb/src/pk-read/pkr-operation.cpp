@@ -285,16 +285,16 @@ RS_Status PKROperation::ValidateRequest() {
       }
     }
   } else {
-    // the user wants to read all columns. make sure that we are not reading Blobs
+    // user wants to read all columns. make sure that we are not reading Blobs
     std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator it =
         non_pk_cols.begin();
     while (it != non_pk_cols.end()) {
-      NdbRecAttr *rec = operation->getValue(it->first.c_str(), NULL);
-      it++;
-      if (it->second->getType() == NdbDictionary::Column::Blob ||
-          it->second->getType() == NdbDictionary::Column::Text) {
+      NdbDictionary::Column::Type type = it->second->getType();
+      std::cout << "here 2 --" << std::endl;
+      if (type == NdbDictionary::Column::Blob || type == NdbDictionary::Column::Text) {
         return RS_SERVER_ERROR(ERROR_026 + std::string(" Column: ") + it->first);
       }
+      it++;
     }
   }
 

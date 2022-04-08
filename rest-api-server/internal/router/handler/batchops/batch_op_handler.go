@@ -25,26 +25,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"hopsworks.ai/rdrs/internal/router/handler/pkread"
-	"hopsworks.ai/rdrs/version"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
-const DB_OPS_EP_GROUP = "/" + version.API_VERSION + "/"
-const DB_OPERATION = "batch"
-const HTTP_VERB = "POST"
-
-type Operations struct {
-	Operations *[]Operation `json:"operations" binding:"required,min=1,max=4096,unique,dive"`
-}
-
-type Operation struct {
-	Method      *string `json:"method"        binding:"required,oneof=POST"`
-	RelativeURL *string `json:"relative-url"  binding:"required,min=1"`
-	Body        *string `json:"body"          binding:"required,min=1"`
-}
-
 func BatchOpsHandler(c *gin.Context) {
-	operations := Operations{}
+	operations := ds.Operations{}
 	err := c.ShouldBindJSON(&operations)
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v", err)
@@ -57,7 +42,7 @@ func BatchOpsHandler(c *gin.Context) {
 		return
 	}
 
-	pkOperations := make([]pkread.PKReadParams, len(*operations.Operations))
+	pkOperations := make([]ds.PKReadParams, len(*operations.Operations))
 	for i, operation := range *operations.Operations {
 		err := parseOperation(&operation, &pkOperations[i])
 		if err != nil {
@@ -75,7 +60,7 @@ func BatchOpsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
 }
 
-func parseOperation(operation *Operation, pkReadarams *pkread.PKReadParams) error {
+func parseOperation(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
 
 	//remove leading / character
 	if strings.HasPrefix(*operation.RelativeURL, "/") {
@@ -97,7 +82,7 @@ func parseOperation(operation *Operation, pkReadarams *pkread.PKReadParams) erro
 	return nil
 }
 
-func parsePKRead(operation *Operation, pkReadarams *pkread.PKReadParams) error {
+func parsePKRead(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
 	req, err := http.NewRequest(*operation.Method, *operation.RelativeURL,
 		strings.NewReader(*operation.Body))
 	if err != nil {
@@ -105,7 +90,7 @@ func parsePKRead(operation *Operation, pkReadarams *pkread.PKReadParams) error {
 	}
 
 	b := binding.JSON
-	params := pkread.PKReadBody{}
+	params := ds.PKReadBody{}
 	err = b.Bind(req, &params)
 	if err != nil {
 		return err

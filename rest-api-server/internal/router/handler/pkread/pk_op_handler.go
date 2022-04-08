@@ -28,66 +28,12 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
-	"hopsworks.ai/rdrs/version"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
-
-const DB_PP = "db"
-const TABLE_PP = "table"
-const DB_OPS_EP_GROUP = "/" + version.API_VERSION + "/:" + DB_PP + "/:" + TABLE_PP + "/"
-const DB_OPERATION = "pk-read"
-const HTTP_VERB = "POST"
-
-// Primary key column filter
-const FILTER_PARAM_NAME = "filters"
-const READ_COL_PARAM_NAME = "read-columns"
-const OPERATION_ID_PARAM_NAME = "operation-id"
-
-type PKReadParams struct {
-	DB          *string       `json:"db" `
-	Table       *string       `json:"table"`
-	Filters     *[]Filter     `json:"filters"`
-	ReadColumns *[]ReadColumn `json:"readColumns"`
-	OperationID *string       `json:"operationId"`
-}
-
-// Path parameters
-type PKReadPP struct {
-	DB    *string `json:"db" uri:"db"  binding:"required,min=1,max=64"`
-	Table *string `json:"table" uri:"table"  binding:"required,min=1,max=64"`
-}
-
-type PKReadBody struct {
-	Filters     *[]Filter     `json:"filters"         form:"filters"         binding:"required,min=1,max=4096,dive"`
-	ReadColumns *[]ReadColumn `json:"readColumns"    form:"read-columns"    binding:"omitempty,min=1,max=4096,unique"`
-	OperationID *string       `json:"operationId"    form:"operation-id"    binding:"omitempty,min=1,max=64"`
-}
-
-type Filter struct {
-	Column *string `json:"column"   form:"column"   binding:"required,min=1,max=64"`
-	Value  *string `json:"value"    form:"value"    binding:"required"`
-}
-
-const (
-	DRT_DEFAULT = "default"
-	DRT_BASE64  = "base64" // not implemented yet
-	DRT_HEX     = "hex"    // not implemented yet
-)
-
-type ReadColumn struct {
-	Column *string `json:"column"    form:"column"    binding:"required,min=1,max=64"`
-
-	// Data return type you can change the return type for the column data
-	// int/floats/decimal are returned as JSON Number type (default),
-	// varchar/char are returned as strings (default) and varbinary as base64 (default)
-	// Right now only default return type is supported
-	DataReturnType *string `json:"dataReturnType"    form:"column"    binding:"Enum=default,min=1,max=64"`
-
-	// more parameter can be added later.
-}
 
 func PkReadHandler(c *gin.Context) {
 
-	pkReadParams := PKReadParams{}
+	pkReadParams := ds.PKReadParams{}
 
 	err := parseRequest(c, &pkReadParams)
 	if err != nil {
@@ -128,10 +74,10 @@ func setResponseBodyUnsafe(c *gin.Context, code int, resp unsafe.Pointer) {
 	c.String(code, string(b))
 }
 
-func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {
+func parseRequest(c *gin.Context, pkReadParams *ds.PKReadParams) error {
 
-	body := PKReadBody{}
-	pp := PKReadPP{}
+	body := ds.PKReadBody{}
+	pp := ds.PKReadPP{}
 
 	if err := parseURI(c, &pp); err != nil {
 		return err
@@ -149,7 +95,7 @@ func parseRequest(c *gin.Context, pkReadParams *PKReadParams) error {
 	return nil
 }
 
-func ParseBody(req *http.Request, params *PKReadBody) error {
+func ParseBody(req *http.Request, params *ds.PKReadBody) error {
 
 	b := binding.JSON
 	err := b.Bind(req, &params)
@@ -203,7 +149,7 @@ func ParseBody(req *http.Request, params *PKReadBody) error {
 	return nil
 }
 
-func parseURI(c *gin.Context, resource *PKReadPP) error {
+func parseURI(c *gin.Context, resource *ds.PKReadPP) error {
 	err := c.ShouldBindUri(&resource)
 	if err != nil {
 		return err

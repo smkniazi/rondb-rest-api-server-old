@@ -24,85 +24,86 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
 func TestBatchOps(t *testing.T) {
 	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, BatchOpsHandler)
+	group := router.Group(ds.DBS_OPS_EP_GROUP)
+	group.POST(ds.BATCH_OPERATION, BatchOpsHandler)
 	url := URL()
 
 	operations := NewOperations(t, 3)
-	operationsWrapper := Operations{Operations: &operations}
+	operationsWrapper := ds.Operations{Operations: &operations}
 	body, _ := json.Marshal(operationsWrapper)
 
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusOK, "")
 }
 
 func TestBatchMissingReqField(t *testing.T) {
 	router := gin.Default()
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, BatchOpsHandler)
+	group := router.Group(ds.DBS_OPS_EP_GROUP)
+	group.POST(ds.BATCH_OPERATION, BatchOpsHandler)
 	url := URL()
 
 	// Test missing method
 	operations := NewOperations(t, 3)
 	operations[1].Method = nil
-	operationsWrapper := Operations{Operations: &operations}
+	operationsWrapper := ds.Operations{Operations: &operations}
 	body, _ := json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Method' failed ")
 
 	// Test missing relative URL
 	operations = NewOperations(t, 3)
 	operations[1].RelativeURL = nil
-	operationsWrapper = Operations{Operations: &operations}
+	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'RelativeURL' failed ")
 
 	// Test missing body
 	operations = NewOperations(t, 3)
 	operations[1].Body = nil
-	operationsWrapper = Operations{Operations: &operations}
+	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Body' failed ")
 
 	// Test missing filter in an operation
 	operations = NewOperations(t, 3)
-	*operations[1].Body = strings.Replace(*operations[1].Body, pkread.FILTER_PARAM_NAME, "XXX", -1)
-	operationsWrapper = Operations{Operations: &operations}
+	*operations[1].Body = strings.Replace(*operations[1].Body, ds.FILTER_PARAM_NAME, "XXX", -1)
+	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusBadRequest,
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Filters' failed")
 
 	// Test missing non-required fields
 	operations = NewOperations(t, 1)
-	*operations[0].Body = strings.Replace(*operations[0].Body, pkread.READ_COL_PARAM_NAME, "XXX", -1)
-	*operations[0].Body = strings.Replace(*operations[0].Body, pkread.OPERATION_ID_PARAM_NAME, "XXX", -1)
-	operationsWrapper = Operations{Operations: &operations}
+	*operations[0].Body = strings.Replace(*operations[0].Body, ds.READ_COL_PARAM_NAME, "XXX", -1)
+	*operations[0].Body = strings.Replace(*operations[0].Body, ds.OPERATION_ID_PARAM_NAME, "XXX", -1)
+	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, HTTP_VERB, url, string(body), http.StatusOK, "")
+	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusOK, "")
 }
 
-func NewOperations(t *testing.T, numOps int) []Operation {
-	operations := make([]Operation, numOps)
+func NewOperations(t *testing.T, numOps int) []ds.Operation {
+	operations := make([]ds.Operation, numOps)
 	for i := 0; i < numOps; i++ {
 		operations[i] = NewOperation(t)
 	}
 	return operations
 }
 
-func NewOperation(t *testing.T) Operation {
+func NewOperation(t *testing.T) ds.Operation {
 	opBody, _ := json.MarshalIndent(pkread.NewPKReadReqBody(t), "", "\t")
 	opBodyStr := string(opBody)
 	method := "POST"
 	relativeURL := pkread.NewPKReadURL("db", "table")
 
-	op := Operation{
+	op := ds.Operation{
 		Method:      &method,
 		RelativeURL: &relativeURL,
 		Body:        &opBodyStr,
@@ -112,5 +113,5 @@ func NewOperation(t *testing.T) Operation {
 }
 
 func URL() string {
-	return fmt.Sprintf("%s%s", DB_OPS_EP_GROUP, DB_OPERATION)
+	return fmt.Sprintf("%s%s", ds.DBS_OPS_EP_GROUP, ds.BATCH_OPERATION)
 }

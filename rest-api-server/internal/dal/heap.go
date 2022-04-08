@@ -31,11 +31,11 @@ const BUFFER_SIZE = 512
 
 func init() {
 	if C.ADDRESS_SIZE != 4 {
-		panic(fmt.Sprintf("Only 4 byte address are supported", C.ADDRESS_SIZE))
+		panic(fmt.Sprintf("Only 4 byte address are supported"))
 	}
 
 	if BUFFER_SIZE%C.ADDRESS_SIZE != 0 {
-		panic(fmt.Sprintf("Buffer size must be multiple of %s", C.ADDRESS_SIZE))
+		panic(fmt.Sprintf("Buffer size must be multiple of %d", C.ADDRESS_SIZE))
 	}
 }
 

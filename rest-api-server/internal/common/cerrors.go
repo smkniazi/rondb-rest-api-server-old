@@ -50,6 +50,10 @@ func ERROR_017() string {
 	return C.ERROR_017
 }
 
+func ERROR_024() string {
+	return C.ERROR_024
+}
+
 func ERROR_026() string {
 	return C.ERROR_026
 }

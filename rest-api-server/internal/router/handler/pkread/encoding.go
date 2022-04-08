@@ -30,6 +30,7 @@ import (
 
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
 // Also checkout internal/router/handler/pkread/encoding-scheme.png
@@ -68,7 +69,7 @@ import (
 //    null terminated  operation Id
 //
 
-func createNativeRequest(pkrParams *PKReadParams) (unsafe.Pointer, unsafe.Pointer, error) {
+func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Pointer, error) {
 	response, respSize := dal.GetBuffer()
 	request, reqSize := dal.GetBuffer()
 
@@ -197,7 +198,7 @@ func processResponse(buffer unsafe.Pointer) string {
 }
 
 func dataReturnType(drt *string) (uint32, error) {
-	if *drt == DRT_DEFAULT {
+	if *drt == ds.DRT_DEFAULT {
 		return C.DEFAULT_DRT, nil
 	} else {
 		return math.MaxUint32, fmt.Errorf("Return data type is not supported. Data type: " + *drt)

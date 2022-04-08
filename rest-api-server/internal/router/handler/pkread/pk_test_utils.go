@@ -10,11 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
-func NewPKReadReqBody(t *testing.T) PKReadBody {
+func NewPKReadReqBody(t *testing.T) ds.PKReadBody {
 	t.Helper()
-	param := PKReadBody{
+	param := ds.PKReadBody{
 		Filters:     NewFilters(t, "filter_col_", 3),
 		ReadColumns: NewReadColumns(t, "read_col_", 5),
 		OperationID: NewOperationID(t, 64),
@@ -27,66 +28,66 @@ func NewOperationID(t *testing.T, size int) *string {
 	return &opID
 }
 
-func NewFilters(t *testing.T, prefix string, numFilters int) *[]Filter {
+func NewFilters(t *testing.T, prefix string, numFilters int) *[]ds.Filter {
 	t.Helper()
 
-	filters := make([]Filter, numFilters)
+	filters := make([]ds.Filter, numFilters)
 	for i := 0; i < numFilters; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
 		val := col + "_data"
-		filters[i] = Filter{Column: &col, Value: &val}
+		filters[i] = ds.Filter{Column: &col, Value: &val}
 	}
 	return &filters
 }
 
-func NewFilter(t *testing.T, column *string, value *string) *[]Filter {
+func NewFilter(t *testing.T, column *string, value *string) *[]ds.Filter {
 	t.Helper()
-	filter := make([]Filter, 1)
-	filter[0] = Filter{Column: column, Value: value}
+	filter := make([]ds.Filter, 1)
+	filter[0] = ds.Filter{Column: column, Value: value}
 	return &filter
 }
 
-func NewFiltersKVs(t *testing.T, vals ...string) *[]Filter {
+func NewFiltersKVs(t *testing.T, vals ...string) *[]ds.Filter {
 	t.Helper()
 	if len(vals)%2 != 0 {
 		t.Fatal("Expecting key value pairs")
 	}
 
-	filters := make([]Filter, len(vals)/2)
+	filters := make([]ds.Filter, len(vals)/2)
 	fidx := 0
 	for i := 0; i < len(vals); {
-		filters[fidx] = Filter{Column: &vals[i], Value: &vals[i+1]}
+		filters[fidx] = ds.Filter{Column: &vals[i], Value: &vals[i+1]}
 		fidx++
 		i += 2
 	}
 	return &filters
 }
 
-func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]ReadColumn {
+func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]ds.ReadColumn {
 	t.Helper()
-	readColumns := make([]ReadColumn, numReadColumns)
+	readColumns := make([]ds.ReadColumn, numReadColumns)
 	for i := 0; i < numReadColumns; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
-		drt := DRT_DEFAULT
+		drt := ds.DRT_DEFAULT
 		readColumns[i].Column = &col
 		readColumns[i].DataReturnType = &drt
 	}
 	return &readColumns
 }
 
-func NewReadColumn(t *testing.T, col string) *[]ReadColumn {
+func NewReadColumn(t *testing.T, col string) *[]ds.ReadColumn {
 	t.Helper()
-	readColumns := make([]ReadColumn, 1)
-	drt := string(DRT_DEFAULT)
+	readColumns := make([]ds.ReadColumn, 1)
+	drt := string(ds.DRT_DEFAULT)
 	readColumns[0].Column = &col
 	readColumns[0].DataReturnType = &drt
 	return &readColumns
 }
 
 func NewPKReadURL(db string, table string) string {
-	url := fmt.Sprintf("%s%s", DB_OPS_EP_GROUP, DB_OPERATION)
-	url = strings.Replace(url, ":"+DB_PP, db, 1)
-	url = strings.Replace(url, ":"+TABLE_PP, table, 1)
+	url := fmt.Sprintf("%s%s", ds.DB_OPS_EP_GROUP, ds.PK_DB_OPERATION)
+	url = strings.Replace(url, ":"+ds.DB_PP, db, 1)
+	url = strings.Replace(url, ":"+ds.TABLE_PP, table, 1)
 	return url
 }
 
@@ -146,8 +147,8 @@ func initRouter(t *testing.T) (*gin.Engine, error) {
 	//router := gin.Default()
 	router := gin.New()
 
-	group := router.Group(DB_OPS_EP_GROUP)
-	group.POST(DB_OPERATION, PkReadHandler)
+	group := router.Group(ds.DB_OPS_EP_GROUP)
+	group.POST(ds.PK_DB_OPERATION, PkReadHandler)
 	err := dal.InitRonDBConnection(config.ConnectionString(), true)
 	if err != nil {
 		return nil, err

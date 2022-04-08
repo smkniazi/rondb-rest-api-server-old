@@ -23,9 +23,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 	"hopsworks.ai/rdrs/internal/router/handler/batchops"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	"hopsworks.ai/rdrs/internal/router/handler/stat"
+	// _ "github.com/ianlancetaylor/cgosymbolizer" // enable this for stack trace for c layer
 )
 
 type RouterConext struct {
@@ -45,8 +47,8 @@ func (rc *RouterConext) SetupRouter() error {
 	rc.Engine = gin.Default()
 
 	rc.Engine.GET("/"+rc.APIVersion+"/ping", stat.StatHandler)
-	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+pkread.DB_OPERATION, pkread.PkReadHandler)
-	rc.Engine.POST("/"+rc.APIVersion+"/"+batchops.DB_OPERATION, batchops.BatchOpsHandler)
+	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+ds.PK_DB_OPERATION, pkread.PkReadHandler)
+	rc.Engine.POST("/"+rc.APIVersion+"/"+ds.BATCH_OPERATION, batchops.BatchOpsHandler)
 
 	// connect to RonDB
 	err := dal.InitRonDBConnection(rc.ConnStr, false)
