@@ -49,6 +49,7 @@ extern "C" {
 #define ERROR_023 "Failed to set NdbOperation::equal()."
 #define ERROR_024 "Failed to find free API node slot"
 #define ERROR_025 "Data return type is not supported"
+#define ERROR_026 "Reading BLOB/TEXT column is not supported yet"
 
 #ifdef __cplusplus
 }

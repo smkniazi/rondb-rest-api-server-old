@@ -19,7 +19,6 @@ package pkread
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -28,7 +27,7 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-type TestInfo struct {
+type PKTestInfo struct {
 	pkReq        PKReadBody
 	table        string
 	db           string
@@ -43,8 +42,8 @@ func TestDataTypesInt(t *testing.T) {
 
 	testTable := "int_table"
 	testDb := "DB004"
-	tests := map[string]TestInfo{
-		"simple": {
+	tests := map[string]PKTestInfo{
+		"simple1": {
 			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
@@ -55,6 +54,39 @@ func TestDataTypesInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
+		"simple2": { //with out operation ID
+			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+			},
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+
+		"simple3": { //without read columns.
+			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0")},
+
+			table:        testTable,
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col0", "0", "col1", "0"},
+		},
+
+		"simple4": { //Table with only primary keys
+			pkReq: PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+				OperationID: NewOperationID(t, 64),
+			},
+			table:        "int_table1",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{},
+		},
+
 		"maxValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
@@ -66,6 +98,7 @@ func TestDataTypesInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "2147483647", "col1", "4294967295"},
 		},
+
 		"minValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
@@ -137,7 +170,8 @@ func TestDataTypesBigInt(t *testing.T) {
 	testTable := "bigint_table"
 	testDb := "DB005"
 
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
@@ -150,6 +184,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"maxValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551615"),
@@ -173,6 +208,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-9223372036854775808", "col1", "0"},
 		},
+
 		"assignNegativeValToUnsignedCol": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
@@ -185,6 +221,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningBiggerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551616"), //18446744073709551615+1
@@ -196,6 +233,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningSmallerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808-1
@@ -207,6 +245,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
@@ -227,7 +266,8 @@ func TestDataTypesTinyInt(t *testing.T) {
 
 	testTable := "tinyint_table"
 	testDb := "DB006"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
@@ -240,6 +280,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"maxValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "255"),
@@ -263,6 +304,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-128", "col1", "0"},
 		},
+
 		"assignNegativeValToUnsignedCol": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
@@ -275,6 +317,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningBiggerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "256"), //255+1
@@ -286,6 +329,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningSmallerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-129", "id1", "0"), //-128-1
@@ -297,6 +341,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
@@ -317,7 +362,8 @@ func TestDataTypesSmallInt(t *testing.T) {
 
 	testTable := "smallint_table"
 	testDb := "DB007"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
@@ -330,6 +376,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"maxValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32767", "id1", "65535"),
@@ -353,6 +400,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-32768", "col1", "0"},
 		},
+
 		"assignNegativeValToUnsignedCol": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
@@ -365,6 +413,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningBiggerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32768", "id1", "256"), //32767+1
@@ -376,6 +425,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningSmallerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-32769", "id1", "0"), //-32768-1
@@ -387,6 +437,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
@@ -407,7 +458,8 @@ func TestDataTypesMediumInt(t *testing.T) {
 
 	testTable := "mediumint_table"
 	testDb := "DB008"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
@@ -420,6 +472,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"maxValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388607", "id1", "16777215"),
@@ -431,6 +484,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "8388607", "col1", "16777215"},
 		},
+
 		"minValues": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388608", "id1", "0"),
@@ -442,6 +496,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-8388608", "col1", "0"},
 		},
+
 		"assignNegativeValToUnsignedCol": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
@@ -454,6 +509,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningBiggerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388608", "id1", "256"), //8388607+1
@@ -465,6 +521,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningSmallerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388609", "id1", "0"), //-8388608-1
@@ -476,6 +533,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
@@ -496,7 +554,8 @@ func TestDataTypesFloat(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB009"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"floatPK": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
@@ -508,6 +567,7 @@ func TestDataTypesFloat(t *testing.T) {
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_017(),
 		},
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
@@ -519,6 +579,7 @@ func TestDataTypesFloat(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"simple2": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
@@ -530,6 +591,7 @@ func TestDataTypesFloat(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
@@ -550,7 +612,8 @@ func TestDataTypesDouble(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB010"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
+
 		"floatPK": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
@@ -562,6 +625,7 @@ func TestDataTypesDouble(t *testing.T) {
 			httpCode:     http.StatusBadRequest,
 			bodyContains: common.ERROR_017(),
 		},
+
 		"simple": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
@@ -573,6 +637,7 @@ func TestDataTypesDouble(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "0", "col1", "0"},
 		},
+
 		"simple2": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
@@ -584,6 +649,7 @@ func TestDataTypesDouble(t *testing.T) {
 			bodyContains: "",
 			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
 		},
+
 		"nullVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
@@ -604,7 +670,7 @@ func TestDataTypesDecimal(t *testing.T) {
 
 	testTable := "decimal_table"
 	testDb := "DB011"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
 
 		"simple": {
 			pkReq: PKReadBody{
@@ -644,6 +710,7 @@ func TestDataTypesDecimal(t *testing.T) {
 			bodyContains: common.ERROR_015(),
 			respKVs:      []string{},
 		},
+
 		"assigningBiggerVals": {
 			pkReq: PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "123456789.12345"),
@@ -663,7 +730,7 @@ func TestDataTypesChar(t *testing.T) {
 
 	testTable := "char_table"
 	testDb := "DB012"
-	tests := map[string]TestInfo{
+	tests := map[string]PKTestInfo{
 
 		"notfound1": {
 			pkReq: PKReadBody{
@@ -786,30 +853,68 @@ func TestDataTypesChar(t *testing.T) {
 	test(t, tests)
 }
 
-func TestDataTypesTest(t *testing.T) {
+func TestDataTypesBlobs(t *testing.T) {
 
-	testTable := "char_table"
-	testDb := "DB012"
-	tests := map[string]TestInfo{
+	testDb := "DB013"
+	tests := map[string]PKTestInfo{
 
-		"notfound1": {
+		"blob1": {
 			pkReq: PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "-1"),
-				ReadColumns: NewReadColumns(t, "col", 3),
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 5),
 			},
-			table:        testTable,
+			table:        "blob_table",
 			db:           testDb,
-			httpCode:     http.StatusNotFound,
+			httpCode:     http.StatusInternalServerError,
+			bodyContains: common.ERROR_026(),
+			respKVs:      []string{},
+		},
+
+		"blob2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumn(t, "col1"),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        "blob_table",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col1", "1"},
+		},
+
+		"text1": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        "text_table",
+			db:           testDb,
+			httpCode:     http.StatusInternalServerError,
 			bodyContains: "",
 			respKVs:      []string{},
+		},
+
+		"text2": {
+			pkReq: PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumn(t, "col1"),
+				OperationID: NewOperationID(t, 5),
+			},
+			table:        "text_table",
+			db:           testDb,
+			httpCode:     http.StatusOK,
+			bodyContains: "",
+			respKVs:      []string{"col1", "1"},
 		},
 	}
 
 	test(t, tests)
 }
 
-func test(t *testing.T, tests map[string]TestInfo) {
+func test(t *testing.T, tests map[string]PKTestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
 			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
@@ -817,7 +922,6 @@ func test(t *testing.T, tests map[string]TestInfo) {
 				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
 				res := tu.ProcessRequest(t, router, HTTP_VERB, url,
 					string(body), testInfo.httpCode, testInfo.bodyContains)
-				fmt.Printf("Response %v\n", res)
 				if len(testInfo.respKVs) > 0 {
 					tu.ValidateResponse(t, res, testInfo.respKVs...)
 				}

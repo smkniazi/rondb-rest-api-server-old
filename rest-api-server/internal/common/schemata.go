@@ -107,6 +107,10 @@ func init() {
 			"INSERT INTO  int_table VALUES(-2147483648,0,-2147483648,0)",
 			"INSERT INTO  int_table VALUES(0,0,0,0)",
 			"INSERT INTO  int_table set id0=1, id1=1", // NULL values for non primary columns
+
+			// this table only has primary keys
+			"CREATE TABLE int_table1(id0 INT, id1 INT UNSIGNED, PRIMARY KEY(id0, id1))",
+			"INSERT INTO  int_table1 VALUES(0,0)",
 		},
 
 		{ // clean up commands
@@ -280,6 +284,27 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB013"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			// blobs in PK is not supported by RonDB
+			"CREATE TABLE blob_table(id0 int, col0 blob, col1 int,  PRIMARY KEY(id0))",
+			"INSERT INTO  blob_table VALUES(1,0xFFFF, 1)",
+			"CREATE TABLE text_table(id0 int, col0 text, col1 int, PRIMARY KEY(id0))",
+			"INSERT INTO  text_table VALUES(1,\"FFFF\", 1)",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
+
 }
 
 func Database(name string) [][]string {

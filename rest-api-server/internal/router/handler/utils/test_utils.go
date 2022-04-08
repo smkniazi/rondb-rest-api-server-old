@@ -18,6 +18,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,6 +36,7 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
+	fmt.Printf("Response Body. %v\n", resp.Body)
 	if resp.Code != expectedStatus || !strings.Contains(resp.Body.String(), expectedMsg) {
 		if resp.Code != expectedStatus {
 			t.Fatalf("Test failed. Expected: %d, Got: %d. Complete Response Body: %v ", expectedStatus, resp.Code, resp.Body)

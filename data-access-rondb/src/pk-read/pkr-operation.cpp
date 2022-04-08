@@ -257,6 +257,8 @@ RS_Status PKROperation::ValidateRequest() {
 
   // Check non primary key columns
   // check that all columns exist
+  // check that data return type is supported
+  // check for reading blob columns
   if (request.ReadColumnsCount() > 0) {
     for (Uint32 i = 0; i < request.ReadColumnsCount(); i++) {
       std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator got =
@@ -268,10 +270,30 @@ RS_Status PKROperation::ValidateRequest() {
 
       // check that the data return type is supported
       // for now we only support DataReturnType.DEFAULT
-      if (request.ReadColumnReturnType(i) > __MAX_TYPE_NOT_A_DRT || 
-          DEFAULT_DRT !=  request.ReadColumnReturnType(i)) {
+      if (request.ReadColumnReturnType(i) > __MAX_TYPE_NOT_A_DRT ||
+          DEFAULT_DRT != request.ReadColumnReturnType(i)) {
         return RS_SERVER_ERROR(ERROR_025 + std::string(" Column: ") +
                                std::string(request.ReadColumnName(i)));
+      }
+
+      if (table_dic->getColumn(request.ReadColumnName(i))->getType() ==
+              NdbDictionary::Column::Blob ||
+          table_dic->getColumn(request.ReadColumnName(i))->getType() ==
+              NdbDictionary::Column::Text) {
+        return RS_SERVER_ERROR(ERROR_026 + std::string(" Column: ") +
+                               std::string(request.ReadColumnName(i)));
+      }
+    }
+  } else {
+    // the user wants to read all columns. make sure that we are not reading Blobs
+    std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator it =
+        non_pk_cols.begin();
+    while (it != non_pk_cols.end()) {
+      NdbRecAttr *rec = operation->getValue(it->first.c_str(), NULL);
+      it++;
+      if (it->second->getType() == NdbDictionary::Column::Blob ||
+          it->second->getType() == NdbDictionary::Column::Text) {
+        return RS_SERVER_ERROR(ERROR_026 + std::string(" Column: ") + it->first);
       }
     }
   }

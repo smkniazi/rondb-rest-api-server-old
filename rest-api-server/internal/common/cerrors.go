@@ -49,3 +49,7 @@ func ERROR_015() string {
 func ERROR_017() string {
 	return C.ERROR_017
 }
+
+func ERROR_026() string {
+	return C.ERROR_026
+}
