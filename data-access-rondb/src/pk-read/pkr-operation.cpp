@@ -449,22 +449,22 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     decimal_bin2str(bin, bin_len, precision, scale, decStr, MaxDecimalStrLen);
     return response.Append_string(decStr, appendComma);
   }
-  case NdbDictionary::Column::Char: {
+  case NdbDictionary::Column::Char:
     ///< Len. A fixed array of 1-byte chars
+    [[fallthrough]];
+  case NdbDictionary::Column::Varchar:
+    ///< Length bytes: 1, Max: 255
+    [[fallthrough]];
+  case NdbDictionary::Column::Longvarchar: {
+    ///< Length bytes: 2, little-endian
     int attr_bytes;
     const char *data_start = NULL;
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
-      return RS_CLIENT_ERROR(std::string(ERROR_019) + std::string(" Char column. Column: ") +
-                             attr->getColumn()->getName());
+      return RS_CLIENT_ERROR(ERROR_019);
     } else {
       return response.Append_char(data_start, attr_bytes, attr->getColumn()->getCharset(),
                                   appendComma);
     }
-  }
-  case NdbDictionary::Column::Varchar: {
-    ///< Length bytes: 1, Max: 255
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Varchar")
-    return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
@@ -499,11 +499,6 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
-  }
-  case NdbDictionary::Column::Longvarchar: {
-    ///< Length bytes: 2, little-endian
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Longvarchar")
     return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarbinary: {
@@ -806,14 +801,16 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Char: {
     ///< Len. A fixed array of 1-byte chars
-    const char *charStr = request.PKValueCStr(colIdx);
-    const int len       = strlen(charStr);
+
+    const int len = request.PKValueLen(colIdx);
     if (len > col->getLength()) {
-      // the user is searching a key greater than all the possible keys so 404
+      // the user is searching a key greater than all the possible keys so return 404
       // additionally using a pk greater in size than the table definition
       // causes seg fault https://github.com/logicalclocks/rondb/issues/122
       return RS_CLIENT_404_ERROR();
     }
+
+    const char *charStr = request.PKValueCStr(colIdx);
     char pk[col->getLength()];
     for (int i = 0; i < col->getLength(); i++) {
       pk[i] = 0;
@@ -825,10 +822,26 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     }
     return RS_OK;
   }
-  case NdbDictionary::Column::Varchar: {
+  case NdbDictionary::Column::Varchar:
     ///< Length bytes: 1, Max: 255
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Varchar")
-    return RS_SERVER_ERROR("Not Implemented");
+    [[fallthrough]];
+  case NdbDictionary::Column::Longvarchar: {
+    ///< Length bytes: 2, little-endian
+    const int len = request.PKValueLen(colIdx);
+    if (len > col->getLength()) {
+      // the user is searching a key greater than all the possible keys so return 404
+      // additionally using a pk greater in size than the table definition
+      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
+      return RS_CLIENT_404_ERROR();
+    }
+    char *charStr;
+    if (request.PKValueNDBStr(colIdx, col, &charStr) != 0) {
+      return RS_SERVER_ERROR(ERROR_019);
+    }
+    if (operation->equal(request.PKName(colIdx), charStr, len) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
@@ -863,11 +876,6 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
-  }
-  case NdbDictionary::Column::Longvarchar: {
-    ///< Length bytes: 2, little-endian
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Longvarchar")
     return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Longvarbinary: {

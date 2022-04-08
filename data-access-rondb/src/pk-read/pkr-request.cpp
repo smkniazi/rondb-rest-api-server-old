@@ -80,6 +80,14 @@ const char *PKRRequest::PKValueCStr(Uint32 index) {
   return buffer + vOffset + 2;  // skip first 2 bytes that contain size of string
 }
 
+Int16 PKRRequest::PKValueLen(Uint32 index) {
+  Uint32 kvOffset        = PKTupleOffset(index);
+  Uint32 vOffset         = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
+  char *data_start       = buffer + vOffset;
+  Int16 len = data_start[1] * 256 + data_start[0];
+  return len;
+}
+
 int PKRRequest::PKValueNDBStr(Uint32 index, const NdbDictionary::Column *col, char **data) {
   Uint32 kvOffset  = PKTupleOffset(index);
   Uint32 vOffset   = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
@@ -132,7 +140,6 @@ const char *PKRRequest::ReadColumnName(const Uint32 n) {
   //          ...............................................|                                 ^
   //                         ..................................................................|
 
-
   Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_READ_COLS_IDX];
   Uint32 r_offset =
       (reinterpret_cast<Uint32 *>(buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
@@ -144,7 +151,6 @@ DataReturnType PKRRequest::ReadColumnReturnType(const Uint32 n) {
   //                                      ^
   //          ............................|                                 ^
   //                         ...............................................|
-
 
   Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_READ_COLS_IDX];
   Uint32 c_offset =

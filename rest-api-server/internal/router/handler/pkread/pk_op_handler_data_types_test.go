@@ -727,10 +727,22 @@ func TestDataTypesDecimal(t *testing.T) {
 	test(t, tests)
 }
 
-func TestDataTypesChar(t *testing.T) {
+func TestCharacterColumnChar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB012")
+}
 
-	testTable := "char_table"
-	testDb := "DB012"
+func TestCharacterColumnVarchar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB014")
+}
+
+func TestCharacterColumnLongVarchar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB015")
+}
+
+func CharacterColumnTest(t *testing.T, table string, database string) {
+	t.Helper()
+	testTable := table
+	testDb := database
 	tests := map[string]PKTestInfo{
 
 		"notfound1": {
@@ -808,7 +820,7 @@ func TestDataTypesChar(t *testing.T) {
 			db:           testDb,
 			httpCode:     http.StatusOK,
 			bodyContains: "",
-			respKVs:      []string{"col0", "\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\""},
+			respKVs:      []string{"col0", "\"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\""},
 		},
 
 		"simple5": { //unicode pk

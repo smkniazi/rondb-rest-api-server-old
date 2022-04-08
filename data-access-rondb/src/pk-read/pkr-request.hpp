@@ -83,6 +83,14 @@ class PKRRequest {
   const char *PKName(Uint32 n);
 
   /**
+   * Get length of PK column value 
+   *
+   * @param n. index
+   * @return PK length of the string 
+   */
+  Int16 PKValueLen(Uint32 n);
+
+  /**
    * Get PK column value.
    *
    * @param n. index
