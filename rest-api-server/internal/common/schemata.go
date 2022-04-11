@@ -295,7 +295,7 @@ func init() {
 	databases[db] = SchemaTextualColumns("varchar", db, 256)
 
 	db = "DB016" //binary fix size
-	databases[db] = SchemaTextualColumns("binary", db, 255)
+	databases[db] = SchemaTextualColumns("binary", db, 100)
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {
@@ -319,7 +319,7 @@ func SchemaTextualColumns(colType string, db string, length int) [][]string {
 			},
 
 			{ // clean up commands
-				// "DROP DATABASE " + db,
+				"DROP DATABASE " + db,
 			},
 		}
 	} else {

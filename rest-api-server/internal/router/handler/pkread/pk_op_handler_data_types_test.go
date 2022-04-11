@@ -18,6 +18,7 @@
 package pkread
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -35,6 +36,7 @@ func TestDataTypesInt(t *testing.T) {
 
 	testTable := "int_table"
 	testDb := "DB004"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 		"simple1": {
 			PkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", 0, "id1", 0),
@@ -45,7 +47,7 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"simple2": { //with out operation ID
@@ -56,7 +58,7 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"simple3": { //without read columns.
@@ -65,7 +67,7 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"simple4": { //Table with only primary keys
@@ -88,7 +90,7 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 2147483647, "col1", 4294967295},
+			RespKVs:      validateColumns,
 		},
 
 		"minValues": {
@@ -100,7 +102,7 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -2147483648, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -150,11 +152,11 @@ func TestDataTypesInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
 
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesBigInt(t *testing.T) {
@@ -162,6 +164,7 @@ func TestDataTypesBigInt(t *testing.T) {
 	testTable := "bigint_table"
 	testDb := "DB005"
 
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
@@ -174,7 +177,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"maxValues": {
@@ -186,7 +189,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 9223372036854775807, "col1", uint64(18446744073709551615)},
+			RespKVs:      validateColumns,
 		},
 
 		"minValues": {
@@ -198,7 +201,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -9223372036854775808, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -211,7 +214,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningBiggerVals": {
@@ -223,7 +226,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningSmallerVals": {
@@ -235,7 +238,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -248,16 +251,17 @@ func TestDataTypesBigInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesTinyInt(t *testing.T) {
 
 	testTable := "tinyint_table"
 	testDb := "DB006"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
@@ -270,7 +274,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"maxValues": {
@@ -282,7 +286,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 127, "col1", 255},
+			RespKVs:      validateColumns,
 		},
 
 		"minValues": {
@@ -294,7 +298,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -128, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -307,7 +311,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningBiggerVals": {
@@ -319,7 +323,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningSmallerVals": {
@@ -331,7 +335,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -344,16 +348,17 @@ func TestDataTypesTinyInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesSmallInt(t *testing.T) {
 
 	testTable := "smallint_table"
 	testDb := "DB007"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
@@ -366,7 +371,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"maxValues": {
@@ -378,7 +383,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 32767, "col1", 65535},
+			RespKVs:      validateColumns,
 		},
 
 		"minValues": {
@@ -390,7 +395,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -32768, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -403,7 +408,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningBiggerVals": {
@@ -415,7 +420,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningSmallerVals": {
@@ -427,7 +432,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -440,16 +445,17 @@ func TestDataTypesSmallInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesMediumInt(t *testing.T) {
 
 	testTable := "mediumint_table"
 	testDb := "DB008"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
@@ -462,7 +468,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"maxValues": {
@@ -474,7 +480,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 8388607, "col1", 16777215},
+			RespKVs:      validateColumns,
 		},
 
 		"minValues": {
@@ -486,7 +492,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -8388608, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -499,7 +505,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningBiggerVals": {
@@ -511,7 +517,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningSmallerVals": {
@@ -523,7 +529,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -536,16 +542,17 @@ func TestDataTypesMediumInt(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesFloat(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB009"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"floatPK": { // NDB does not support floats PKs
@@ -569,7 +576,7 @@ func TestDataTypesFloat(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"simple2": {
@@ -581,7 +588,7 @@ func TestDataTypesFloat(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -123.123, "col1", 123.123},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -594,16 +601,17 @@ func TestDataTypesFloat(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesDouble(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB010"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"floatPK": {
@@ -627,7 +635,7 @@ func TestDataTypesDouble(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", 0, "col1", 0},
+			RespKVs:      validateColumns,
 		},
 
 		"simple2": {
@@ -639,7 +647,7 @@ func TestDataTypesDouble(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -123.123, "col1", 123.123},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -652,16 +660,17 @@ func TestDataTypesDouble(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
 func TestDataTypesDecimal(t *testing.T) {
 
 	testTable := "decimal_table"
 	testDb := "DB011"
+	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
@@ -674,7 +683,7 @@ func TestDataTypesDecimal(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", -12345.12345, "col1", 12345.12345},
+			RespKVs:      validateColumns,
 		},
 
 		"nullVals": {
@@ -687,7 +696,7 @@ func TestDataTypesDecimal(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusOK,
 			BodyContains: "",
-			RespKVs:      []interface{}{"col0", nil, "col1", nil},
+			RespKVs:      validateColumns,
 		},
 
 		"assignNegativeValToUnsignedCol": {
@@ -700,7 +709,7 @@ func TestDataTypesDecimal(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 
 		"assigningBiggerVals": {
@@ -712,246 +721,243 @@ func TestDataTypesDecimal(t *testing.T) {
 			Db:           testDb,
 			HttpCode:     http.StatusBadRequest,
 			BodyContains: common.ERROR_015(),
-			RespKVs:      []interface{}{},
+			RespKVs:      validateColumns,
 		},
 	}
-	test(t, tests)
+	test(t, tests, false)
 }
 
-////func TestCharacterColumnChar(t *testing.T) {
-////	CharacterColumnTest(t, "table1", "DB012", false, -1, false)
-////}
-////
-////func TestCharacterColumnVarchar(t *testing.T) {
-////	CharacterColumnTest(t, "table1", "DB014", false, -1, false)
-////}
-////
-////func TestCharacterColumnLongVarchar(t *testing.T) {
-////	CharacterColumnTest(t, "table1", "DB015", false, -1, false)
-////}
-////
-////func TestCharacterColumnBinary(t *testing.T) {
-////	CharacterColumnTest(t, "table1", "DB016", true, 255, true)
-////}
-////
-////func CharacterColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
-////	t.Helper()
-////	testTable := table
-////	testDb := database
-////	tests := map[string]ds.PKTestInfo{
-////
-////		"notfound1": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("-1", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusNotFound,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{},
-////		},
-////
-////		"notfound2": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode(*NewOperationID(t, 256), isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusNotFound,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{},
-////		},
-////
-////		"simple1": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("1", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode("\"这是一个测验。 我不知道怎么读中文。\"", isBinary, colWidth, padding)},
-////		},
-////
-////		"simple2": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("2", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode("\"f\\u0000f\"", isBinary, colWidth, padding)},
-////		},
-////
-////		"simple3": { // new line char in string
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("3", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode("\"a\\nb\"", isBinary, colWidth, padding)},
-////		},
-////
-////		"simple4": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("4", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode("\"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\"", isBinary, colWidth, padding)},
-////		},
-////
-////		"simple5": { //unicode pk
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("这是一个测验", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode("\"12345\"", isBinary, colWidth, padding)},
-////		},
-////
-////		"nulltest": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("5", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", "null"},
-////		},
-////
-////		"escapedChars": {
-////			PkReq: ds.PKReadBody{
-////				Filters:     NewFiltersKVs(t, "id0", encode("6", isBinary, colWidth, padding)),
-////				ReadColumns: NewReadColumns(t, "col", 1),
-////				OperationID: NewOperationID(t, 5),
-////			},
-////			Table:        testTable,
-////			Db:           testDb,
-////			HttpCode:     http.StatusOK,
-////			BodyContains: "",
-////			RespKVs:      []interface{}{"col0", encode(`"\"\\\bf\n\r\t$%_?"`, isBinary, colWidth, padding)}, // in mysql \f is replaced by f
-////		},
-////	}
-////
-////	test(t, tests)
-////}
-////
-////func encode(data string, binary bool, colWidth int, padding bool) string {
-////
-////	if binary {
-////
-////		newData := []byte(data)
-////		if padding {
-////			length := colWidth
-////			if length < len(data) {
-////				length = len(data)
-////			}
-////
-////			newData = make([]byte, length)
-////			for i := 0; i < length; i++ {
-////				newData[i] = 0x00
-////			}
-////			for i := 0; i < len(data); i++ {
-////				newData[i] = data[i]
-////			}
-////		}
-////		fmt.Printf("----------- \n")
-////		fmt.Printf("old data is %s \n", data)
-////		fmt.Printf("new data len is %d \n", len(newData))
-////		fmt.Printf("new data  is %x \n", newData)
-////		return base64.StdEncoding.EncodeToString(newData)
-////	} else {
-////		return data
-////	}
-////}
-//
-//func TestDataTypesBlobs(t *testing.T) {
-//
-//	testDb := "DB013"
-//	tests := map[string]ds.PKTestInfo{
-//
-//		"blob1": {
-//			PkReq: ds.PKReadBody{
-//				Filters:     NewFiltersKVs(t, "id0", "1"),
-//				ReadColumns: NewReadColumns(t, "col", 2),
-//				OperationID: NewOperationID(t, 5),
-//			},
-//			Table:        "blob_table",
-//			Db:           testDb,
-//			HttpCode:     http.StatusInternalServerError,
-//			BodyContains: common.ERROR_026(),
-//			RespKVs:      []interface{}{},
-//		},
-//
-//		"blob2": {
-//			PkReq: ds.PKReadBody{
-//				Filters:     NewFiltersKVs(t, "id0", "1"),
-//				ReadColumns: NewReadColumn(t, "col1"),
-//				OperationID: NewOperationID(t, 5),
-//			},
-//			Table:        "blob_table",
-//			Db:           testDb,
-//			HttpCode:     http.StatusOK,
-//			BodyContains: "",
-//			RespKVs:      []interface{}{"col1", "1"},
-//		},
-//
-//		"text1": {
-//			PkReq: ds.PKReadBody{
-//				Filters:     NewFiltersKVs(t, "id0", "1"),
-//				ReadColumns: NewReadColumns(t, "col", 2),
-//				OperationID: NewOperationID(t, 5),
-//			},
-//			Table:        "text_table",
-//			Db:           testDb,
-//			HttpCode:     http.StatusInternalServerError,
-//			BodyContains: "",
-//			RespKVs:      []interface{}{},
-//		},
-//
-//		"text2": {
-//			PkReq: ds.PKReadBody{
-//				Filters:     NewFiltersKVs(t, "id0", "1"),
-//				ReadColumns: NewReadColumn(t, "col1"),
-//				OperationID: NewOperationID(t, 5),
-//			},
-//			Table:        "text_table",
-//			Db:           testDb,
-//			HttpCode:     http.StatusOK,
-//			BodyContains: "",
-//			RespKVs:      []interface{}{"col1", "1"},
-//		},
-//	}
-//
-//	test(t, tests)
-//}
+func TestDataTypesBlobs(t *testing.T) {
 
-func test(t *testing.T, tests map[string]ds.PKTestInfo) {
+	testDb := "DB013"
+	tests := map[string]ds.PKTestInfo{
+
+		"blob1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "blob_table",
+			Db:           testDb,
+			HttpCode:     http.StatusInternalServerError,
+			BodyContains: common.ERROR_026(),
+			RespKVs:      []interface{}{},
+		},
+
+		"blob2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumn(t, "col1"),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "blob_table",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []interface{}{"col1"},
+		},
+
+		"text1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumns(t, "col", 2),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "text_table",
+			Db:           testDb,
+			HttpCode:     http.StatusInternalServerError,
+			BodyContains: "",
+			RespKVs:      []interface{}{},
+		},
+
+		"text2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1"),
+				ReadColumns: NewReadColumn(t, "col1"),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "text_table",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []interface{}{"col1"},
+		},
+	}
+
+	test(t, tests, false)
+}
+
+func TestDataTypesChar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB012", false, -1, true)
+}
+
+func TestDataTypesVarchar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB014", false, -1, false)
+}
+
+func TestDataTypesLongVarchar(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB015", false, -1, false)
+}
+
+func TestDataTypesBinary(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB016", true, 100, true)
+}
+
+func CharacterColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
+	t.Helper()
+	testTable := table
+	testDb := database
+	validateColumns := []interface{}{"col0"}
+	tests := map[string]ds.PKTestInfo{
+
+		"notfound1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("-1", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"notfound2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode(*NewOperationID(t, 256), isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"simple1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("1", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"simple2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("2", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"simple3": { // new line char in string
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("3", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"simple4": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("4", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"simple5": { //unicode pk
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("这是一个测验", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"nulltest": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("5", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"escapedChars": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("6", isBinary, colWidth, padding)),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+	}
+
+	test(t, tests, isBinary)
+}
+
+func encode(data string, binary bool, colWidth int, padding bool) string {
+
+	if binary {
+
+		newData := []byte(data)
+		if padding {
+			length := colWidth
+			if length < len(data) {
+				length = len(data)
+			}
+
+			newData = make([]byte, length)
+			for i := 0; i < length; i++ {
+				newData[i] = 0x00
+			}
+			for i := 0; i < len(data); i++ {
+				newData[i] = data[i]
+			}
+		}
+		return base64.StdEncoding.EncodeToString(newData)
+	} else {
+		return data
+	}
+}
+
+func test(t *testing.T, tests map[string]ds.PKTestInfo, isBinaryData bool) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
 			withDBs(t, [][][]string{common.Database(testInfo.Db)}, func(router *gin.Engine) {
@@ -959,8 +965,8 @@ func test(t *testing.T, tests map[string]ds.PKTestInfo) {
 				body, _ := json.MarshalIndent(testInfo.PkReq, "", "\t")
 				res := tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
 					string(body), testInfo.HttpCode, testInfo.BodyContains)
-				if len(testInfo.RespKVs) > 0 {
-					tu.ValidateResponse(t, testInfo, res)
+				if res.OK {
+					tu.ValidateResArrayData(t, testInfo, res, isBinaryData)
 				}
 			})
 		})

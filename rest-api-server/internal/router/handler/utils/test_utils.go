@@ -17,16 +17,19 @@
 package utils
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/common"
+	"hopsworks.ai/rdrs/internal/config"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
@@ -54,7 +57,7 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	return r
 }
 
-func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response) {
+func ValidateRes(t *testing.T, testInfo ds.PKTestInfo, resp common.Response) {
 	t.Helper()
 	if len(testInfo.RespKVs)%2 != 0 {
 		t.Fatalf("Expecting key value pairs. Items: %d\n ", len(testInfo.RespKVs))
@@ -65,7 +68,7 @@ func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response
 		value := RawBytes(testInfo.RespKVs[i+1])
 		i += 2
 
-		readVal, found := getColumnDataFromJson(key, resp)
+		readVal, found := getColumnDataFromJson(t, key, testInfo, resp)
 		if !found {
 			t.Fatalf("Key not found in the response. Key %s", key)
 		}
@@ -76,7 +79,31 @@ func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response
 	}
 }
 
-func getColumnDataFromJson(colName string, resp common.Response) (string, bool) {
+func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp common.Response, isBinaryData bool) {
+	t.Helper()
+
+	for i := 0; i < len(testInfo.RespKVs); i++ {
+		key := string(testInfo.RespKVs[i].(string))
+
+		jsonVal, found := getColumnDataFromJson(t, key, testInfo, resp)
+		if !found {
+			t.Fatalf("Key not found in the response. Key %s", key)
+		}
+
+		dbVal, err := getColumnDataFromDB(t, testInfo, key, isBinaryData)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
+
+		if string(jsonVal) != string(dbVal) {
+			t.Fatalf("The read value for key %s does not match. Exptected: %s, Got: %s", key, jsonVal, dbVal)
+		}
+	}
+}
+
+func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo, resp common.Response) (string, bool) {
+	t.Helper()
+
 	if colName[0:1] != "\"" && colName[len(colName)-1:] != "\"" {
 		colName = "\"" + colName + "\""
 	}
@@ -96,30 +123,92 @@ func getColumnDataFromJson(colName string, resp common.Response) (string, bool) 
 	}
 
 	val, ok := kvMap[colName]
-	return val, ok
+	if !ok {
+		return val, ok
+	} else {
+		var err error
+		var unquote string
+		unquote = val
+		if val[0] == '"' {
+			unquote, err = strconv.Unquote(val)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		return unquote, ok
+	}
 }
 
-// func getColumnDataFromDB(t *testing.T, testInfo ds.PKTestInfo, col string, isString bool) (string, bool) {
-// 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
-// 		config.SqlServerIP(), config.SqlServerPort())
-// 	db, err := sql.Open("mysql", connectionString)
-// 	defer db.Close()
-// 	if err != nil {
-// 		t.Fatalf("failed to connect to db. %v", err)
-// 	}
+func getColumnDataFromDB(t *testing.T, testInfo ds.PKTestInfo, col string, isBinary bool) (string, error) {
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
+		config.SqlServerIP(), config.SqlServerPort())
+	db, err := sql.Open("mysql", connectionString)
+	defer db.Close()
+	if err != nil {
+		t.Fatalf("failed to connect to db. %v", err)
+	}
 
-// 	command := "use " + testInfo.Db
-// 	_, err = db.Exec(command)
-// 	if err != nil {
-// 		t.Fatalf("failed to run command. %s. Error: %v", command, err)
-// 	}
+	command := "use " + testInfo.Db
+	_, err = db.Exec(command)
+	if err != nil {
+		t.Fatalf("failed to run command. %s. Error: %v", command, err)
+	}
 
-//   command := "select "+col+" from "+testInfo.Table+ " where "
-// 	for i := 0; i < len (*testInfo.PkReq.Filters); i++) {
-// 	   command += (*testInfo.PkReq.Filters)[i].Column + " = " + *(*testInfo.PkReq.Filters)[i].Value
-// 	}
+	if isBinary {
+		command = fmt.Sprintf("select replace(replace(to_base64(%s), '\\r',''), '\\n', '') from %s where ", col, testInfo.Table)
+	} else {
+		command = fmt.Sprintf("select %s from %s where ", col, testInfo.Table)
+	}
+	where := ""
+	for i := 0; i < len(*testInfo.PkReq.Filters); i++ {
+		if where != "" {
+			where += " and "
+		}
+		if isBinary {
+			where = fmt.Sprintf("%s %s = from_base64(%s)", where, *(*testInfo.PkReq.Filters)[i].Column, string(*(*testInfo.PkReq.Filters)[i].Value))
+		} else {
+			where = fmt.Sprintf("%s %s = %s", where, *(*testInfo.PkReq.Filters)[i].Column, string(*(*testInfo.PkReq.Filters)[i].Value))
+		}
+	}
 
-// }
+	command = fmt.Sprintf(" %s %s\n ", command, where)
+	rows, err := db.Query(command)
+	if err != nil {
+		return "", err
+	}
+
+	// Get column names
+	//columns, err := rows.Columns()
+	//if err != nil {
+	//	return "", err
+	//}
+
+	values := make([]sql.RawBytes, 1)
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	for rows.Next() {
+		// get RawBytes from data
+		err = rows.Scan(scanArgs...)
+		if err != nil {
+			return "", err
+		}
+		var value string
+		for _, col := range values {
+
+			// Here we can check if the value is nil (NULL value)
+			if col == nil {
+				value = "null"
+			} else {
+				value = string(col)
+			}
+			return value, nil
+		}
+	}
+
+	return "", nil
+}
 
 func RawBytes(a interface{}) json.RawMessage {
 	var value json.RawMessage

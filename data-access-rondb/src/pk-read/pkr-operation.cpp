@@ -474,12 +474,6 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
-      std::cout<< "------------------> length "<<attr_bytes<<std::endl;
-      for (int i = 0 ; i < attr_bytes ; i++) {
-        std::cout<<std::hex<<(int)data_start[i]<<" ";
-      }
-      std::cout<<std::endl;
-
       std::string encoded = base64_encode(reinterpret_cast<const unsigned char *>(data_start), attr_bytes);
       return response.Append_string(encoded, true, appendComma);
     }
