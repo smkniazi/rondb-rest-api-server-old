@@ -35,22 +35,11 @@ func PkReadHandler(c *gin.Context) {
 
 	pkReadParams := ds.PKReadParams{}
 
-	if true {
-		fmt.Printf("Body %s\n", c.Request.Body)
-	}
-
 	err := parseRequest(c, &pkReadParams)
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v", err)
 		c.AbortWithError(http.StatusBadRequest, err)
 		setResponseError(c, http.StatusBadRequest, common.Response{OK: false, Message: fmt.Sprintf("%-v", err)})
-		return
-	}
-
-	if true {
-		fmt.Printf("Req Col is %v\n", *((*pkReadParams.Filters)[0]).Column)
-		fmt.Printf("Req Val is %s\n", *((*pkReadParams.Filters)[0]).Value)
-		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": 1})
 		return
 	}
 
@@ -61,6 +50,7 @@ func PkReadHandler(c *gin.Context) {
 	}
 
 	dalErr := dal.RonDBPKRead(request, response)
+
 	var message string
 	if dalErr != nil {
 		if dalErr.HttpCode >= http.StatusInternalServerError {
@@ -114,8 +104,8 @@ func ParseBody(req *http.Request, params *ds.PKReadBody) error {
 		return err
 	}
 
-	// make sure filter columns are valid
 	for _, filter := range *params.Filters {
+		// make sure filter columns are valid
 		if err := validateDBIdentifier(*filter.Column); err != nil {
 			return err
 		}

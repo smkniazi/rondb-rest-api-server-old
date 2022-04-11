@@ -30,19 +30,6 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-func TestPKImp(t *testing.T) {
-	router, err := initRouter(t)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
-
-	// Test. Omitting filter should result in 400 error
-	body := `{ "filters": [ { "column": "id0", "value": "1234" } ] }`
-	url := NewPKReadURL("db", "table")
-	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
-		"Error:Field validation for 'Filters'")
-
-}
 func TestPKReadOmitRequired(t *testing.T) {
 	router, err := initRouter(t)
 	if err != nil {
@@ -56,8 +43,9 @@ func TestPKReadOmitRequired(t *testing.T) {
 		OperationID: NewOperationID(t, 64),
 	}
 
-	body, _ := json.MarshalIndent(param, "", "\t")
 	url := NewPKReadURL("db", "table")
+
+	body, _ := json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Filters'")
 
@@ -67,7 +55,7 @@ func TestPKReadOmitRequired(t *testing.T) {
 	param.Filters = filter
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
-		"Error:Field validation for 'Value'")
+		"Error:Field validation for 'Value' failed on the 'required' tag")
 
 	val := "val"
 	filter = NewFilter(t, nil, &val)

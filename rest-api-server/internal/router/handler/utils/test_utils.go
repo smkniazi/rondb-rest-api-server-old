@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -53,15 +54,15 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	return r
 }
 
-func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response, kvs ...string) {
+func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response) {
 	t.Helper()
-	if len(kvs)%2 != 0 {
-		t.Fatalf("Expecting key value pairs. Items: %d\n ", len(kvs))
+	if len(testInfo.RespKVs)%2 != 0 {
+		t.Fatalf("Expecting key value pairs. Items: %d\n ", len(testInfo.RespKVs))
 	}
 
-	for i := 0; i < len(kvs); {
-		key := kvs[i]
-		value := kvs[i+1]
+	for i := 0; i < len(testInfo.RespKVs); {
+		key := string(testInfo.RespKVs[i].(string))
+		value := RawBytes(testInfo.RespKVs[i+1])
 		i += 2
 
 		readVal, found := getColumnDataFromJson(key, resp)
@@ -69,7 +70,7 @@ func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response
 			t.Fatalf("Key not found in the response. Key %s", key)
 		}
 
-		if value != readVal {
+		if string(value) != readVal {
 			t.Fatalf("The read value for key %s does not match. Exptected: %s, Got: %s", key, value, readVal)
 		}
 	}
@@ -119,3 +120,20 @@ func getColumnDataFromJson(colName string, resp common.Response) (string, bool) 
 // 	}
 
 // }
+
+func RawBytes(a interface{}) json.RawMessage {
+	var value json.RawMessage
+	if a == nil {
+		return []byte("null")
+	}
+
+	switch a.(type) {
+	case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, uint, float32, float64:
+		value = []byte(fmt.Sprintf("%v", a))
+	case string:
+		value = []byte(fmt.Sprintf("\"%v\"", a))
+	default:
+		panic(fmt.Errorf("Unsupported data type. Type: %v", reflect.TypeOf(a)))
+	}
+	return value
+}

@@ -75,5 +75,5 @@ type PKTestInfo struct {
 	Db           string
 	HttpCode     int
 	BodyContains string
-	RespKVs      []string
+	RespKVs      []interface{}
 }

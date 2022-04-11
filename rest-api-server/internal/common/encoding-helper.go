@@ -48,6 +48,13 @@ func CopyGoStrToCStr(src []byte, dst []byte, offset uint32, capacity uint32) (ui
 // we adjust the size accordingly.
 
 func CopyGoStrToNDBStr(src []byte, dst []byte, offset uint32, capacity uint32) (uint32, error) {
+
+	// remove the quotation marks from string
+	str := string(src)
+	if str[0:1] == "\"" && str[len(str)-1:] == "\"" {
+		src = []byte(str[1 : len(str)-1])
+	}
+
 	if offset+uint32(len(src))+1+2 > capacity {
 		return 0, fmt.Errorf("Trying to write more data than the buffer capacity")
 	}

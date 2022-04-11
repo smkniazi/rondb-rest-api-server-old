@@ -115,7 +115,7 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 			return nil, nil, err
 		}
 		valueOffset := head
-		head, err = common.CopyGoStrToNDBStr([]byte(*filter.Value), bBuf, head, reqSize)
+		head, err = common.CopyGoStrToNDBStr(*filter.Value, bBuf, head, reqSize)
 		if err != nil {
 			return nil, nil, err
 		}

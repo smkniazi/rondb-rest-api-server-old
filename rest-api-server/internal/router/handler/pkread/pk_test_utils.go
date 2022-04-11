@@ -2,8 +2,10 @@ package pkread
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -11,6 +13,7 @@ import (
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
 func NewPKReadReqBody(t *testing.T) ds.PKReadBody {
@@ -28,6 +31,7 @@ func NewOperationID(t *testing.T, size int) *string {
 	return &opID
 }
 
+// creates dummy filter columns of type string
 func NewFilters(t *testing.T, prefix string, numFilters int) *[]ds.Filter {
 	t.Helper()
 
@@ -35,19 +39,63 @@ func NewFilters(t *testing.T, prefix string, numFilters int) *[]ds.Filter {
 	for i := 0; i < numFilters; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
 		val := col + "_data"
-		filters[i] = ds.Filter{Column: &col, Value: &val}
+		v := tu.RawBytes(val)
+		filters[i] = ds.Filter{Column: &col, Value: &v}
 	}
 	return &filters
 }
 
-func NewFilter(t *testing.T, column *string, value *string) *[]ds.Filter {
+func NewFilter(t *testing.T, column *string, a interface{}) *[]ds.Filter {
 	t.Helper()
 	filter := make([]ds.Filter, 1)
-	filter[0] = ds.Filter{Column: column, Value: value}
+
+	filter[0] = ds.Filter{Column: column}
+	v := tu.RawBytes(a)
+	filter[0].Value = &v
 	return &filter
 }
 
-func NewFiltersKVs(t *testing.T, vals ...string) *[]ds.Filter {
+func RawBytes(a interface{}) json.RawMessage {
+	var value json.RawMessage
+	if a == nil {
+		return []byte("null")
+	}
+
+	switch a.(type) {
+	case int8:
+	case uint8:
+	case int16:
+	case uint16:
+	case int32:
+	case uint32:
+	case int64:
+	case uint64:
+	case int:
+	case uint:
+	case *int8:
+	case *uint8:
+	case *int16:
+	case *uint16:
+	case *int32:
+	case *uint32:
+	case *int64:
+	case *uint64:
+	case *int:
+	case *uint:
+	case float32:
+	case float64:
+		value = []byte(fmt.Sprintf("%v", a))
+	case string:
+	case *string:
+	case *float32:
+	case *float64:
+	default:
+		panic(fmt.Errorf("Unsupported data type. Type: %v", reflect.TypeOf(a)))
+	}
+	return value
+}
+
+func NewFiltersKVs(t *testing.T, vals ...interface{}) *[]ds.Filter {
 	t.Helper()
 	if len(vals)%2 != 0 {
 		t.Fatal("Expecting key value pairs")
@@ -56,7 +104,9 @@ func NewFiltersKVs(t *testing.T, vals ...string) *[]ds.Filter {
 	filters := make([]ds.Filter, len(vals)/2)
 	fidx := 0
 	for i := 0; i < len(vals); {
-		filters[fidx] = ds.Filter{Column: &vals[i], Value: &vals[i+1]}
+		c := fmt.Sprintf("%v", vals[i])
+		v := tu.RawBytes(vals[i+1])
+		filters[fidx] = ds.Filter{Column: &c, Value: &v}
 		fidx++
 		i += 2
 	}
