@@ -30,6 +30,19 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
+func TestPKImp(t *testing.T) {
+	router, err := initRouter(t)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// Test. Omitting filter should result in 400 error
+	body := `{ "filters": [ { "column": "id0", "value": "1234" } ] }`
+	url := NewPKReadURL("db", "table")
+	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
+		"Error:Field validation for 'Filters'")
+
+}
 func TestPKReadOmitRequired(t *testing.T) {
 	router, err := initRouter(t)
 	if err != nil {

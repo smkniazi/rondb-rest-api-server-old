@@ -44,8 +44,24 @@ Uint32 PKRResponse::GetWriteHeader() {
   return this->writeHeader;
 }
 
-RS_Status PKRResponse::Append_string(std::string str, bool appendComma) {
-  return Append_cstring(str.c_str(), appendComma);
+RS_Status PKRResponse::Append_string(std::string str, bool add_quotes, bool appendComma) {
+
+  int additional_len = add_quotes ? 2 : 0;
+  additional_len     = appendComma ? additional_len : additional_len;
+
+  if ((str.length() + additional_len) >= GetRemainingCapacity()) {  // +2 for quotation marks
+    return RS_SERVER_ERROR(ERROR_010);
+  }
+
+  if (!add_quotes) {
+    Append_cstring(str.c_str(), appendComma);
+  } else {
+    Append_cstring("\"", false);
+    Append_cstring(str.c_str(), false);
+    Append_cstring("\"", appendComma);
+  }
+
+  return RS_OK;
 }
 
 RS_Status PKRResponse::Append_cstring(const char *str, bool appendComma) {
@@ -105,7 +121,7 @@ RS_Status PKRResponse::Append_d64(double num, bool appendComma) {
   try {
     std::stringstream ss;
     ss << num;
-    Append_string(ss.str(), appendComma);
+    Append_string(ss.str(), false, appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
@@ -121,7 +137,7 @@ RS_Status PKRResponse::Append_NULL() {
 RS_Status PKRResponse::Append_iu64(Uint64 num, bool appendComma) {
   try {
     std::string numStr = std::to_string(num);
-    Append_string(numStr, appendComma);
+    Append_string(numStr, false, appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
@@ -131,7 +147,7 @@ RS_Status PKRResponse::Append_iu64(Uint64 num, bool appendComma) {
 RS_Status PKRResponse::Append_i64(Int64 num, bool appendComma) {
   try {
     std::string numStr = std::to_string(num);
-    Append_string(numStr, appendComma);
+    Append_string(numStr, false, appendComma);
   } catch (...) {
     return RS_SERVER_ERROR(ERROR_015);
   }
@@ -192,9 +208,6 @@ RS_Status PKRResponse::Append_char(const char *fromBuff, Uint32 fromBuffLen, CHA
     return RS_SERVER_ERROR(ERROR_010);
   }
 
-  Append_string("\"", appendComma);
-  Append_string(escapedstr, appendComma);
-  Append_string("\"", appendComma);
-
+  Append_string(escapedstr, true, appendComma);
   return RS_OK;
 }

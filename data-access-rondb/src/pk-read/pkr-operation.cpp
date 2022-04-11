@@ -25,6 +25,7 @@
 #include "src/logger.hpp"
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
+#include "src/base64/base64.h"
 
 size_t convert_to_printable(char *to, size_t to_len, const char *from, size_t from_len,
                             const CHARSET_INFO *from_cs, size_t nbytes = 0);
@@ -115,16 +116,16 @@ RS_Status PKROperation::CreateResponse() {
     return RS_CLIENT_404_ERROR();
   } else {
     // iterate over all columns
-    response.Append_string("{", false);
+    response.Append_string("{", false, false);
     if (request.OperationId() != NULL) {
-      response.Append_string("\"OperationID\": ", false);
-      response.Append_string(std::string("\"") + request.OperationId() + std::string("\""), true);
+      response.Append_string("\"operationId\": ", false, false);
+      response.Append_string(std::string("\"") + request.OperationId() + std::string("\""), false,  true);
     }
-    response.Append_string("\"Data\": {", false);
+    response.Append_string("\"Data\": {", false, false);
 
     for (Uint32 i = 0; i < recs.size(); i++) {
       RS_Status status = response.Append_string(
-          std::string("\"") + recs[i]->getColumn()->getName() + std::string("\":"), false);
+          std::string("\"") + recs[i]->getColumn()->getName() + std::string("\":"), false, false);
       if (status.http_code != SUCCESS) {
         return status;
       }
@@ -134,7 +135,7 @@ RS_Status PKROperation::CreateResponse() {
         return status;
       }
     }
-    response.Append_string("} } ", false);
+    response.Append_string("} } ",false, false);
     response.Append_NULL();
     return RS_OK;
   }
@@ -361,7 +362,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   RS_Status status;
 
   if (attr->isNULL()) {
-    return response.Append_string("null", appendComma);
+    return response.Append_string("null", false, appendComma);
   }
 
   switch (col->getType()) {
@@ -447,7 +448,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     void *bin     = attr->aRef();
     int bin_len   = attr->get_size_in_bytes();
     decimal_bin2str(bin, bin_len, precision, scale, decStr, MaxDecimalStrLen);
-    return response.Append_string(decStr, appendComma);
+    return response.Append_string(decStr, false, appendComma);
   }
   case NdbDictionary::Column::Char:
     ///< Len. A fixed array of 1-byte chars
@@ -468,8 +469,20 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Binary")
-    return RS_SERVER_ERROR("Not Implemented");
+    int attr_bytes;
+    const char *data_start = NULL;
+    if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
+      return RS_CLIENT_ERROR(ERROR_019);
+    } else {
+      std::cout<< "------------------> length "<<attr_bytes<<std::endl;
+      for (int i = 0 ; i < attr_bytes ; i++) {
+        std::cout<<std::hex<<(int)data_start[i]<<" ";
+      }
+      std::cout<<std::endl;
+
+      std::string encoded = base64_encode(reinterpret_cast<const unsigned char *>(data_start), attr_bytes);
+      return response.Append_string(encoded, true, appendComma);
+    }
   }
   case NdbDictionary::Column::Varbinary: {
     ///< Length bytes: 1, Max: 255
@@ -845,8 +858,26 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Binary: {
     ///< Len
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Binary")
-    return RS_SERVER_ERROR("Not Implemented");
+    // we get the data in base64
+    const char *encodedStr = request.PKValueCStr(colIdx);
+    std::string decoded    = base64_decode(std::string(encodedStr), false);
+    if (static_cast<int>(decoded.length()) > col->getLength()) {
+      // the user is searching a key greater than all the possible keys so return 404
+      // additionally using a pk greater in size than the table definition
+      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
+      return RS_CLIENT_404_ERROR();
+    }
+
+    char pk[col->getLength()];
+    for (int i = 0; i < col->getLength(); i++) {
+      pk[i] = 0;
+    }
+    memcpy(pk, decoded.c_str(), decoded.length());
+    
+    if (operation->equal(request.PKName(colIdx), pk, col->getLength()) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Varbinary: {
     ///< Length bytes: 1, Max: 255

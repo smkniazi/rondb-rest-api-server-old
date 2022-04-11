@@ -135,14 +135,13 @@ RS_Status PKRead(char *reqBuff, char *respBuff) {
   return RS_OK;
 }
 
-
 static int LastConnectedInodeID = -1;
 /*
- * NDB API does not support gracefull disconnection form the  
+ * NDB API does not support gracefull disconnection form the
  * cluster. All disconnections are treated as failures. When
- * you disconnect, the API node is not able to accept new 
+ * you disconnect, the API node is not able to accept new
  * connections until the filure recovery has completed for
- * the API node. This can take upto ~5 sec, slowing down 
+ * the API node. This can take upto ~5 sec, slowing down
  * unit tests which start/stop the NDB API multiple times.
  * This function returns next available API node to connect to.
  */

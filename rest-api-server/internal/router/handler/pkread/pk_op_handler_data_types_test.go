@@ -29,137 +29,128 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-type PKTestInfo struct {
-	pkReq        ds.PKReadBody
-	table        string
-	db           string
-	httpCode     int
-	bodyContains string
-	respKVs      []string
-}
-
 // INT TESTS
 // Test signed and unsigned int data type
 func TestDataTypesInt(t *testing.T) {
 
 	testTable := "int_table"
 	testDb := "DB004"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 		"simple1": {
-			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			PkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"simple2": { //with out operation ID
-			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			PkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"simple3": { //without read columns.
-			pkReq:        ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0")},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			PkReq:        ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0")},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"simple4": { //Table with only primary keys
-			pkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
+			PkReq: ds.PKReadBody{Filters: NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "int_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{},
+			Table:        "int_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{},
 		},
 
 		"maxValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2147483647", "id1", "4294967295"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "2147483647", "col1", "4294967295"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "2147483647", "col1", "4294967295"},
 		},
 
 		"minValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-2147483648", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-2147483648", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-2147483648", "col1", "0"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2147483648", "id1", "4294967295"), //bigger than the range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningSmallerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-2147483649", "id1", "0"), //smaller than range
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 
@@ -171,93 +162,93 @@ func TestDataTypesBigInt(t *testing.T) {
 	testTable := "bigint_table"
 	testDb := "DB005"
 
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"maxValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551615"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "9223372036854775807", "col1", "18446744073709551615"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "9223372036854775807", "col1", "18446744073709551615"},
 		},
 
 		"minValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775808", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-9223372036854775808", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-9223372036854775808", "col1", "0"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "9223372036854775807", "id1", "18446744073709551616"), //18446744073709551615+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningSmallerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-9223372036854775809", "id1", "0"), //-9223372036854775808-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -267,93 +258,93 @@ func TestDataTypesTinyInt(t *testing.T) {
 
 	testTable := "tinyint_table"
 	testDb := "DB006"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"maxValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "255"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "127", "col1", "255"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "127", "col1", "255"},
 		},
 
 		"minValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-128", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-128", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-128", "col1", "0"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "127", "id1", "256"), //255+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningSmallerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-129", "id1", "0"), //-128-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -363,93 +354,93 @@ func TestDataTypesSmallInt(t *testing.T) {
 
 	testTable := "smallint_table"
 	testDb := "DB007"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"maxValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32767", "id1", "65535"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "32767", "col1", "65535"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "32767", "col1", "65535"},
 		},
 
 		"minValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-32768", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-32768", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-32768", "col1", "0"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "32768", "id1", "256"), //32767+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningSmallerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-32769", "id1", "0"), //-32768-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -459,93 +450,93 @@ func TestDataTypesMediumInt(t *testing.T) {
 
 	testTable := "mediumint_table"
 	testDb := "DB008"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"maxValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388607", "id1", "16777215"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "8388607", "col1", "16777215"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "8388607", "col1", "16777215"},
 		},
 
 		"minValues": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388608", "id1", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-8388608", "col1", "0"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-8388608", "col1", "0"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0", "id1", "-1"), //id1 is unsigned
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "8388608", "id1", "256"), //8388607+1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningSmallerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-8388609", "id1", "0"), //-8388608-1
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1", "id1", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -555,55 +546,55 @@ func TestDataTypesFloat(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB009"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"floatPK": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "float_table2",
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_017(),
+			Table:        "float_table2",
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_017(),
 		},
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "float_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        "float_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"simple2": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "float_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
+			Table:        "float_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-123.123", "col1", "123.123"},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "float_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        "float_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -613,55 +604,55 @@ func TestDataTypesDouble(t *testing.T) {
 
 	// testTable := "float_table"
 	testDb := "DB010"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"floatPK": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "double_table2",
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_017(),
+			Table:        "double_table2",
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_017(),
 		},
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "0"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "double_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "0", "col1", "0"},
+			Table:        "double_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "0", "col1", "0"},
 		},
 
 		"simple2": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        "double_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-123.123", "col1", "123.123"},
+			Table:        "double_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-123.123", "col1", "123.123"},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "2"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        "double_table1",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        "double_table1",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 	}
 	test(t, tests)
@@ -671,272 +662,305 @@ func TestDataTypesDecimal(t *testing.T) {
 
 	testTable := "decimal_table"
 	testDb := "DB011"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"simple": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "12345.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "-12345.12345", "col1", "12345.12345"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "-12345.12345", "col1", "12345.12345"},
 		},
 
 		"nullVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-67890.12345", "id1", "67890.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null", "col1", "null"},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col0", "null", "col1", "null"},
 		},
 
 		"assignNegativeValToUnsignedCol": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "-12345.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 64),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 
 		"assigningBiggerVals": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "-12345.12345", "id1", "123456789.12345"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusBadRequest,
-			bodyContains: common.ERROR_015(),
-			respKVs:      []string{},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      []string{},
 		},
 	}
 	test(t, tests)
 }
 
-func TestCharacterColumnChar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB012")
-}
-
-func TestCharacterColumnVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB014")
-}
-
-func TestCharacterColumnLongVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB015")
-}
-
-func CharacterColumnTest(t *testing.T, table string, database string) {
-	t.Helper()
-	testTable := table
-	testDb := database
-	tests := map[string]PKTestInfo{
-
-		"notfound1": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "-1"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusNotFound,
-			bodyContains: "",
-			respKVs:      []string{},
-		},
-
-		"notfound2": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", *NewOperationID(t, 256)),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusNotFound,
-			bodyContains: "",
-			respKVs:      []string{},
-		},
-
-		"simple1": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "1"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "\"这是一个测验。 我不知道怎么读中文。\""},
-		},
-
-		"simple2": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "2"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "\"f\\u0000f\""},
-		},
-
-		"simple3": { // new line char in string
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "3"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "\"a\\nb\""},
-		},
-
-		"simple4": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "4"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "\"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\""},
-		},
-
-		"simple5": { //unicode pk
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "这是一个测验"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "\"12345\""},
-		},
-
-		"nulltest": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "5"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", "null"},
-		},
-
-		"escapedChars": {
-			pkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "6"),
-				ReadColumns: NewReadColumns(t, "col", 1),
-				OperationID: NewOperationID(t, 5),
-			},
-			table:        testTable,
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col0", `"\"\\\bf\n\r\t$%_?"`}, // in mysql \f is replaced by f
-		},
-	}
-
-	test(t, tests)
-}
+//func TestCharacterColumnChar(t *testing.T) {
+//	CharacterColumnTest(t, "table1", "DB012", false, -1, false)
+//}
+//
+//func TestCharacterColumnVarchar(t *testing.T) {
+//	CharacterColumnTest(t, "table1", "DB014", false, -1, false)
+//}
+//
+//func TestCharacterColumnLongVarchar(t *testing.T) {
+//	CharacterColumnTest(t, "table1", "DB015", false, -1, false)
+//}
+//
+//func TestCharacterColumnBinary(t *testing.T) {
+//	CharacterColumnTest(t, "table1", "DB016", true, 255, true)
+//}
+//
+//func CharacterColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
+//	t.Helper()
+//	testTable := table
+//	testDb := database
+//	tests := map[string]ds.PKTestInfo{
+//
+//		"notfound1": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("-1", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusNotFound,
+//			BodyContains: "",
+//			RespKVs:      []string{},
+//		},
+//
+//		"notfound2": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode(*NewOperationID(t, 256), isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusNotFound,
+//			BodyContains: "",
+//			RespKVs:      []string{},
+//		},
+//
+//		"simple1": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("1", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode("\"这是一个测验。 我不知道怎么读中文。\"", isBinary, colWidth, padding)},
+//		},
+//
+//		"simple2": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("2", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode("\"f\\u0000f\"", isBinary, colWidth, padding)},
+//		},
+//
+//		"simple3": { // new line char in string
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("3", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode("\"a\\nb\"", isBinary, colWidth, padding)},
+//		},
+//
+//		"simple4": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("4", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode("\"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\"", isBinary, colWidth, padding)},
+//		},
+//
+//		"simple5": { //unicode pk
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("这是一个测验", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode("\"12345\"", isBinary, colWidth, padding)},
+//		},
+//
+//		"nulltest": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("5", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", "null"},
+//		},
+//
+//		"escapedChars": {
+//			PkReq: ds.PKReadBody{
+//				Filters:     NewFiltersKVs(t, "id0", encode("6", isBinary, colWidth, padding)),
+//				ReadColumns: NewReadColumns(t, "col", 1),
+//				OperationID: NewOperationID(t, 5),
+//			},
+//			Table:        testTable,
+//			Db:           testDb,
+//			HttpCode:     http.StatusOK,
+//			BodyContains: "",
+//			RespKVs:      []string{"col0", encode(`"\"\\\bf\n\r\t$%_?"`, isBinary, colWidth, padding)}, // in mysql \f is replaced by f
+//		},
+//	}
+//
+//	test(t, tests)
+//}
+//
+//func encode(data string, binary bool, colWidth int, padding bool) string {
+//
+//	if binary {
+//
+//		newData := []byte(data)
+//		if padding {
+//			length := colWidth
+//			if length < len(data) {
+//				length = len(data)
+//			}
+//
+//			newData = make([]byte, length)
+//			for i := 0; i < length; i++ {
+//				newData[i] = 0x00
+//			}
+//			for i := 0; i < len(data); i++ {
+//				newData[i] = data[i]
+//			}
+//		}
+//		fmt.Printf("----------- \n")
+//		fmt.Printf("old data is %s \n", data)
+//		fmt.Printf("new data len is %d \n", len(newData))
+//		fmt.Printf("new data  is %x \n", newData)
+//		return base64.StdEncoding.EncodeToString(newData)
+//	} else {
+//		return data
+//	}
+//}
 
 func TestDataTypesBlobs(t *testing.T) {
 
 	testDb := "DB013"
-	tests := map[string]PKTestInfo{
+	tests := map[string]ds.PKTestInfo{
 
 		"blob1": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 5),
 			},
-			table:        "blob_table",
-			db:           testDb,
-			httpCode:     http.StatusInternalServerError,
-			bodyContains: common.ERROR_026(),
-			respKVs:      []string{},
+			Table:        "blob_table",
+			Db:           testDb,
+			HttpCode:     http.StatusInternalServerError,
+			BodyContains: common.ERROR_026(),
+			RespKVs:      []string{},
 		},
 
 		"blob2": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumn(t, "col1"),
 				OperationID: NewOperationID(t, 5),
 			},
-			table:        "blob_table",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col1", "1"},
+			Table:        "blob_table",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col1", "1"},
 		},
 
 		"text1": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumns(t, "col", 2),
 				OperationID: NewOperationID(t, 5),
 			},
-			table:        "text_table",
-			db:           testDb,
-			httpCode:     http.StatusInternalServerError,
-			bodyContains: "",
-			respKVs:      []string{},
+			Table:        "text_table",
+			Db:           testDb,
+			HttpCode:     http.StatusInternalServerError,
+			BodyContains: "",
+			RespKVs:      []string{},
 		},
 
 		"text2": {
-			pkReq: ds.PKReadBody{
+			PkReq: ds.PKReadBody{
 				Filters:     NewFiltersKVs(t, "id0", "1"),
 				ReadColumns: NewReadColumn(t, "col1"),
 				OperationID: NewOperationID(t, 5),
 			},
-			table:        "text_table",
-			db:           testDb,
-			httpCode:     http.StatusOK,
-			bodyContains: "",
-			respKVs:      []string{"col1", "1"},
+			Table:        "text_table",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      []string{"col1", "1"},
 		},
 	}
 
 	test(t, tests)
 }
 
-func test(t *testing.T, tests map[string]PKTestInfo) {
+func test(t *testing.T, tests map[string]ds.PKTestInfo) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
-			withDBs(t, [][][]string{common.Database(testInfo.db)}, func(router *gin.Engine) {
-				url := NewPKReadURL(testInfo.db, testInfo.table)
-				body, _ := json.MarshalIndent(testInfo.pkReq, "", "\t")
+			withDBs(t, [][][]string{common.Database(testInfo.Db)}, func(router *gin.Engine) {
+				url := NewPKReadURL(testInfo.Db, testInfo.Table)
+				body, _ := json.MarshalIndent(testInfo.PkReq, "", "\t")
 				res := tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
-					string(body), testInfo.httpCode, testInfo.bodyContains)
-				if len(testInfo.respKVs) > 0 {
-					tu.ValidateResponse(t, res, testInfo.respKVs...)
+					string(body), testInfo.HttpCode, testInfo.BodyContains)
+				if len(testInfo.RespKVs) > 0 {
+					tu.ValidateResponse(t, testInfo, res, testInfo.RespKVs...)
 				}
 			})
 		})

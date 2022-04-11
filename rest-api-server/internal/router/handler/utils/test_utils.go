@@ -26,6 +26,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/common"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
 func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
@@ -52,7 +53,7 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	return r
 }
 
-func ValidateResponse(t *testing.T, resp common.Response, kvs ...string) {
+func ValidateResponse(t *testing.T, testInfo ds.PKTestInfo, resp common.Response, kvs ...string) {
 	t.Helper()
 	if len(kvs)%2 != 0 {
 		t.Fatalf("Expecting key value pairs. Items: %d\n ", len(kvs))
@@ -63,7 +64,7 @@ func ValidateResponse(t *testing.T, resp common.Response, kvs ...string) {
 		value := kvs[i+1]
 		i += 2
 
-		readVal, found := getColumnData(key, resp)
+		readVal, found := getColumnDataFromJson(key, resp)
 		if !found {
 			t.Fatalf("Key not found in the response. Key %s", key)
 		}
@@ -74,7 +75,7 @@ func ValidateResponse(t *testing.T, resp common.Response, kvs ...string) {
 	}
 }
 
-func getColumnData(colName string, resp common.Response) (string, bool) {
+func getColumnDataFromJson(colName string, resp common.Response) (string, bool) {
 	if colName[0:1] != "\"" && colName[len(colName)-1:] != "\"" {
 		colName = "\"" + colName + "\""
 	}
@@ -96,3 +97,25 @@ func getColumnData(colName string, resp common.Response) (string, bool) {
 	val, ok := kvMap[colName]
 	return val, ok
 }
+
+// func getColumnDataFromDB(t *testing.T, testInfo ds.PKTestInfo, col string, isString bool) (string, bool) {
+// 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
+// 		config.SqlServerIP(), config.SqlServerPort())
+// 	db, err := sql.Open("mysql", connectionString)
+// 	defer db.Close()
+// 	if err != nil {
+// 		t.Fatalf("failed to connect to db. %v", err)
+// 	}
+
+// 	command := "use " + testInfo.Db
+// 	_, err = db.Exec(command)
+// 	if err != nil {
+// 		t.Fatalf("failed to run command. %s. Error: %v", command, err)
+// 	}
+
+//   command := "select "+col+" from "+testInfo.Table+ " where "
+// 	for i := 0; i < len (*testInfo.PkReq.Filters); i++) {
+// 	   command += (*testInfo.PkReq.Filters)[i].Column + " = " + *(*testInfo.PkReq.Filters)[i].Value
+// 	}
+
+// }

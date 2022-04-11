@@ -16,6 +16,8 @@
  */
 package datastructs
 
+import "encoding/json"
+
 const PK_DB_OPERATION = "pk-read"
 const PK_HTTP_VERB = "POST"
 
@@ -45,8 +47,8 @@ type PKReadBody struct {
 }
 
 type Filter struct {
-	Column *string `json:"column"   form:"column"   binding:"required,min=1,max=64"`
-	Value  *string `json:"value"    form:"value"    binding:"required"`
+	Column *string          `json:"column"   form:"column"   binding:"required,min=1,max=64"`
+	Value  *json.RawMessage `json:"value"    form:"value"    binding:"required"`
 }
 
 const (
@@ -65,4 +67,13 @@ type ReadColumn struct {
 	DataReturnType *string `json:"dataReturnType"    form:"column"    binding:"Enum=default,min=1,max=64"`
 
 	// more parameter can be added later.
+}
+
+type PKTestInfo struct {
+	PkReq        PKReadBody
+	Table        string
+	Db           string
+	HttpCode     int
+	BodyContains string
+	RespKVs      []string
 }

@@ -293,10 +293,13 @@ func init() {
 
 	db = "DB015" //long varchar
 	databases[db] = SchemaTextualColumns("varchar", db, 256)
+
+	db = "DB016" //binary fix size
+	databases[db] = SchemaTextualColumns("binary", db, 255)
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {
-	if strings.EqualFold(colType, "char") || strings.EqualFold(colType, "varchar") {
+	if strings.EqualFold(colType, "binary") || strings.EqualFold(colType, "char") || strings.EqualFold(colType, "varchar") {
 		return [][]string{
 			{
 				// setup commands
@@ -306,17 +309,17 @@ func SchemaTextualColumns(colType string, db string, length int) [][]string {
 
 				// blobs in PK is not supported by RonDB
 				"CREATE TABLE table1(id0 " + colType + "(" + strconv.Itoa(length) + "), col0 " + colType + "(" + strconv.Itoa(length) + "),  PRIMARY KEY(id0))",
-				"INSERT INTO  table1 VALUES(\"1\",\"这是一个测验。 我不知道怎么读中文。\")",
-				"INSERT INTO  table1 VALUES(\"2\",0x660066)",
-				"INSERT INTO  table1 VALUES(\"3\",\"a\nb\")",
-				"INSERT INTO  table1 VALUES(\"这是一个测验\",\"12345\")",
-				"INSERT INTO  table1 VALUES(\"4\",\"ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð\")", // some chars
-				"INSERT INTO  table1 set id0=5",
+				`INSERT INTO  table1 VALUES("1","这是一个测验。 我不知道怎么读中文。")`,
+				`INSERT INTO  table1 VALUES("2",0x660066)`,
+				`INSERT INTO  table1 VALUES("3","a\nb")`,
+				`INSERT INTO  table1 VALUES("这是一个测验","12345")`,
+				`INSERT INTO  table1 VALUES("4","ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïð")`, // some chars
+				`INSERT INTO  table1 set id0=5`,
 				`INSERT INTO  table1 VALUES("6","\"\\\b\f\n\r\t$%_?")`, // in mysql \f is replaced by f
 			},
 
 			{ // clean up commands
-				"DROP DATABASE " + db,
+				// "DROP DATABASE " + db,
 			},
 		}
 	} else {
