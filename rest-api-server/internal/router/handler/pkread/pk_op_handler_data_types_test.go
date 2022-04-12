@@ -789,19 +789,27 @@ func TestDataTypesBlobs(t *testing.T) {
 }
 
 func TestDataTypesChar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB012", false, -1, true)
+	CharacterColumnTest(t, "table1", "DB012", false, 100, true)
 }
 
 func TestDataTypesVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB014", false, -1, false)
+	CharacterColumnTest(t, "table1", "DB014", false, 50, false)
 }
 
 func TestDataTypesLongVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB015", false, -1, false)
+	CharacterColumnTest(t, "table1", "DB015", false, 256, false)
 }
 
 func TestDataTypesBinary(t *testing.T) {
 	CharacterColumnTest(t, "table1", "DB016", true, 100, true)
+}
+
+func TestDataTypesVarbinary(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB017", true, 100, false)
+}
+
+func TestDataTypesLongVarbinary(t *testing.T) {
+	CharacterColumnTest(t, "table1", "DB018", true, 256, false)
 }
 
 func CharacterColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
@@ -826,7 +834,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"notfound2": {
 			PkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", encode(*NewOperationID(t, 256), isBinary, colWidth, padding)),
+				Filters:     NewFiltersKVs(t, "id0", encode(*NewOperationID(t, colWidth+1), isBinary, colWidth, padding)),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},

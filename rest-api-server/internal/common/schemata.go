@@ -289,17 +289,24 @@ func init() {
 	}
 
 	db = "DB014" //varchar
-	databases[db] = SchemaTextualColumns("varchar", db, 50)
+	databases[db] = SchemaTextualColumns("VARCHAR", db, 50)
 
 	db = "DB015" //long varchar
-	databases[db] = SchemaTextualColumns("varchar", db, 256)
+	databases[db] = SchemaTextualColumns("VARCHAR", db, 256)
 
 	db = "DB016" //binary fix size
-	databases[db] = SchemaTextualColumns("binary", db, 100)
+	databases[db] = SchemaTextualColumns("BINARY", db, 100)
+
+	db = "DB017" //varbinary
+	databases[db] = SchemaTextualColumns("VARBINARY", db, 100)
+
+	db = "DB018" //long varbinary
+	databases[db] = SchemaTextualColumns("VARBINARY", db, 256)
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {
-	if strings.EqualFold(colType, "binary") || strings.EqualFold(colType, "char") || strings.EqualFold(colType, "varchar") {
+	if strings.EqualFold(colType, "varbinary") || strings.EqualFold(colType, "binary") ||
+		strings.EqualFold(colType, "char") || strings.EqualFold(colType, "varchar") {
 		return [][]string{
 			{
 				// setup commands

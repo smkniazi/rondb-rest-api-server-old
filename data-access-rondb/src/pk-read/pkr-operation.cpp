@@ -119,7 +119,8 @@ RS_Status PKROperation::CreateResponse() {
     response.Append_string("{", false, false);
     if (request.OperationId() != NULL) {
       response.Append_string("\"operationId\": ", false, false);
-      response.Append_string(std::string("\"") + request.OperationId() + std::string("\""), false,  true);
+      response.Append_string(std::string("\"") + request.OperationId() + std::string("\""), false,
+                             true);
     }
     response.Append_string("\"Data\": {", false, false);
 
@@ -135,7 +136,7 @@ RS_Status PKROperation::CreateResponse() {
         return status;
       }
     }
-    response.Append_string("} } ",false, false);
+    response.Append_string("} } ", false, false);
     response.Append_NULL();
     return RS_OK;
   }
@@ -467,21 +468,22 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
                                   appendComma);
     }
   }
-  case NdbDictionary::Column::Binary: {
-    ///< Len
+  case NdbDictionary::Column::Binary:
+    [[fallthrough]];
+  case NdbDictionary::Column::Varbinary:
+    ///< Length bytes: 1, Max: 255
+    [[fallthrough]];
+  case NdbDictionary::Column::Longvarbinary: {
+    ///< Length bytes: 2, little-endian
     int attr_bytes;
     const char *data_start = NULL;
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
-      std::string encoded = base64_encode(reinterpret_cast<const unsigned char *>(data_start), attr_bytes);
+      std::string encoded =
+          base64_encode(reinterpret_cast<const unsigned char *>(data_start), attr_bytes);
       return response.Append_string(encoded, true, appendComma);
     }
-  }
-  case NdbDictionary::Column::Varbinary: {
-    ///< Length bytes: 1, Max: 255
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Varbinary")
-    return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
@@ -506,11 +508,6 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
-  }
-  case NdbDictionary::Column::Longvarbinary: {
-    ///< Length bytes: 2, little-endian
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Longvarbinary")
     return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Time: {
@@ -867,16 +864,47 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
       pk[i] = 0;
     }
     memcpy(pk, decoded.c_str(), decoded.length());
-    
+
     if (operation->equal(request.PKName(colIdx), pk, col->getLength()) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
   }
-  case NdbDictionary::Column::Varbinary: {
+  case NdbDictionary::Column::Varbinary:
     ///< Length bytes: 1, Max: 255
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Varbinary")
-    return RS_SERVER_ERROR("Not Implemented");
+    [[fallthrough]];
+  case NdbDictionary::Column::Longvarbinary: {
+    ///< Length bytes: 2, little-endian
+    const char *encodedStr = request.PKValueCStr(colIdx);
+    std::string decoded    = base64_decode(std::string(encodedStr), false);
+    if (static_cast<int>(decoded.length()) > col->getLength()) {
+      // the user is searching a key greater than all the possible keys so return 404
+      // additionally using a pk greater in size than the table definition
+      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
+      return RS_CLIENT_404_ERROR();
+    }
+
+    if (col->getType() == NdbDictionary::Column::Varbinary && decoded.length() > 256) {
+      return RS_SERVER_ERROR(ERROR_020);
+    }
+
+    // insert the length at the begenning of the array
+    if (col->getType() == NdbDictionary::Column::Varbinary) {
+      decoded.insert(0, 1, static_cast<uint8_t>(decoded.length()));
+    } else if (col->getType() == NdbDictionary::Column::Longvarbinary) {
+      size_t len = decoded.length();
+      decoded.insert(0, 2, static_cast<uint8_t>(0));
+      decoded[0] = len % 256;
+      decoded[1] = len / 256;
+    } else {
+      return RS_SERVER_ERROR(ERROR_015);
+    }
+
+    if (operation->equal(request.PKName(colIdx), (const char *)decoded.c_str(), decoded.length()) !=
+        0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
@@ -901,11 +929,6 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
     TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
-  }
-  case NdbDictionary::Column::Longvarbinary: {
-    ///< Length bytes: 2, little-endian
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Longvarbinary")
     return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Time: {
