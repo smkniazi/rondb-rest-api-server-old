@@ -940,27 +940,71 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 	test(t, tests, isBinary)
 }
 
-func TestDataTypesDate(t *testing.T) {
-	// DateColumnTest(t, "date_table", "DB019")
+type DTTest struct {
+	db        string
+	table     string
+	pkValid   string
+	pkNull    string
+	pkInvalid string
+	errorMsg  string
+	errorCode int
 }
 
-func DateColumnTest(t *testing.T, table string, database string) {
+func TestDateTimeTypesDate(t *testing.T) {
+	testDateTimeTypes(t, DTTest{
+		db:        "DB019",
+		table:     "date_table",
+		pkValid:   "1111-11-11",
+		pkNull:    "1111-11-12",
+		pkInvalid: "1111-13-11",
+		errorMsg:  common.ERROR_027(),
+		errorCode: http.StatusBadRequest,
+	})
+}
+
+func testDateTimeTypes(t *testing.T, params DTTest) {
 	t.Helper()
-	testTable := table
-	testDb := database
+	testTable := params.table
+	testDb := params.db
 	validateColumns := []interface{}{"col0"}
 	tests := map[string]ds.PKTestInfo{
 
-		"notfound1": {
+		"validpk": {
 			PkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", "1111-11-11"),
+				Filters:     NewFiltersKVs(t, "id0", params.pkValid),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},
 			Table:        testTable,
 			Db:           testDb,
-			HttpCode:     http.StatusNotFound,
+			HttpCode:     http.StatusOK,
 			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"nulltest": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", params.pkNull),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"error": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", params.pkInvalid),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     params.errorCode,
+			BodyContains: params.errorMsg,
 			RespKVs:      validateColumns,
 		},
 	}

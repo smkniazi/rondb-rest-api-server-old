@@ -41,11 +41,11 @@ bool str_to_datetime(const char *str, std::size_t length, MYSQL_TIME *l_time, my
 bool str_to_time(const char *str, std::size_t length, MYSQL_TIME *l_time, MYSQL_TIME_STATUS *status,
                  my_time_flags_t flags);
 
+int my_date_to_str(const MYSQL_TIME &my_time, char *to);
+
 int my_datetime_to_str(const MYSQL_TIME &my_time, char *to, uint dec);
 
 int my_TIME_to_str(const MYSQL_TIME &my_time, char *to, uint dec);
-
-
 
 /**
  * Unpack and pack date/time types.  There is no check that the data

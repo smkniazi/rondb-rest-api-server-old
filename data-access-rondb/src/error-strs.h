@@ -50,6 +50,7 @@ extern "C" {
 #define ERROR_024 "Failed to find free API node slot"
 #define ERROR_025 "Data return type is not supported"
 #define ERROR_026 "Reading BLOB/TEXT column is not supported yet"
+#define ERROR_027 "Invalid Date/Time"
 
 #ifdef __cplusplus
 }

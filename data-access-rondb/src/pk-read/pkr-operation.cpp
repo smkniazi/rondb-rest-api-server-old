@@ -19,6 +19,7 @@
 
 #include <boost/beast/core/detail/base64.hpp>
 #include <NdbDictionary.hpp>
+#include <mysql_time.h>
 #include "src/pk-read/pkr-operation.hpp"
 #include "src/pk-read/pkr-request.hpp"
 #include "src/pk-read/pkr-response.hpp"
@@ -27,6 +28,7 @@
 #include "src/logger.hpp"
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
+#include "src/common/rdrs_date.hpp"
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -481,9 +483,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
       size_t encoded_str_size = boost::beast::detail::base64::encoded_size(attr_bytes);
       char buffer[encoded_str_size];
       size_t ret = boost::beast::detail::base64::encode((void *)buffer, data_start, attr_bytes);
-      response.Append_string(std::string(buffer, ret), true, appendComma);
+      return response.Append_string(std::string(buffer, ret), true, appendComma);
     }
-    return RS_OK;
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
@@ -492,8 +493,17 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Date")
-    return RS_SERVER_ERROR("Not Implemented");
+    Date d;
+    unpack_date(d, (unsigned char *)attr->aRef());
+    char to[MAX_DATE_STRING_REP_LENGTH];
+    MYSQL_TIME l_time;
+    l_time.day   = d.day;
+    l_time.month = d.month;
+    l_time.year  = d.year;
+    l_time.time_type = MYSQL_TIMESTAMP_DATE;
+
+    my_date_to_str(l_time, to);
+    return response.Append_string(std::string(to), true, appendComma);
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
@@ -852,14 +862,15 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     // we get the data in base64
     const char *encodedStr = request.PKValueCStr(colIdx);
     size_t decoded_size    = boost::beast::detail::base64::decoded_size(request.PKValueLen(colIdx));
-    int maxlen = std::max(col->getLength(), (int)decoded_size);
-    
+    int maxlen             = std::max(col->getLength(), (int)decoded_size);
+
     char pk[maxlen];
     for (int i = 0; i < col->getLength(); i++) {
       pk[i] = 0;
     }
 
-    std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(pk, encodedStr, request.PKValueLen(colIdx));
+    std::pair<std::size_t, std::size_t> ret =
+        boost::beast::detail::base64::decode(pk, encodedStr, request.PKValueLen(colIdx));
 
     if ((int)ret.first > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
@@ -881,19 +892,19 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
 
     const char *encodedStr = request.PKValueCStr(colIdx);
     size_t decoded_size    = boost::beast::detail::base64::decoded_size(request.PKValueLen(colIdx));
-    int additional_len = 1;
+    int additional_len     = 1;
     if (col->getType() == NdbDictionary::Column::Longvarbinary) {
       additional_len = 2;
     }
 
-    int maxlen = std::max(col->getLength(), (int)decoded_size+additional_len);
+    int maxlen = std::max(col->getLength(), (int)decoded_size + additional_len);
     char pk[maxlen];
     for (int i = 0; i < maxlen; i++) {
       pk[i] = 0;
     }
 
-    std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(pk + additional_len, encodedStr, request.PKValueLen(colIdx));
-
+    std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(
+        pk + additional_len, encodedStr, request.PKValueLen(colIdx));
 
     if ((int)ret.first > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
@@ -924,8 +935,27 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Date")
-    return RS_SERVER_ERROR("Not Implemented");
+    const char *date_str = request.PKValueCStr(colIdx);
+    size_t date_str_len  = request.PKValueLen(colIdx);
+
+    MYSQL_TIME l_time;
+    MYSQL_TIME_STATUS status;
+    bool ret = str_to_datetime(date_str, date_str_len, &l_time, 0, &status);
+    if (ret != 0) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(date_str))
+    }
+    Date d;
+    d.day   = l_time.day;
+    d.month = l_time.month;
+    d.year  = l_time.year;
+    char packed[3];
+    pack_date(d, (unsigned char *)packed);
+
+    if (operation->equal(request.PKName(colIdx), packed, 3) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
