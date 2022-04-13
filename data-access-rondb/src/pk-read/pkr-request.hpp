@@ -88,7 +88,7 @@ class PKRRequest {
    * @param n. index
    * @return PK length of the string 
    */
-  Int16 PKValueLen(Uint32 n);
+  Uint16 PKValueLen(Uint32 n);
 
   /**
    * Get PK column value.

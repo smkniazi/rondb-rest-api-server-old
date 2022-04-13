@@ -44,13 +44,17 @@ Uint32 PKRResponse::GetWriteHeader() {
   return this->writeHeader;
 }
 
+void *PKRResponse::GetWritePointer() {
+  return respBuff + writeHeader;
+}
+
 RS_Status PKRResponse::Append_string(std::string str, bool add_quotes, bool appendComma) {
 
   int additional_len = add_quotes ? 2 : 0;
-  additional_len     = appendComma ? additional_len : additional_len;
+  additional_len     = appendComma ? additional_len + 1 : additional_len;
 
   if ((str.length() + additional_len) >= GetRemainingCapacity()) {  // +2 for quotation marks
-    return RS_SERVER_ERROR(ERROR_010);
+    return RS_SERVER_ERROR(ERROR_016);
   }
 
   if (!add_quotes) {

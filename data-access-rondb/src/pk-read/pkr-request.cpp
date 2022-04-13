@@ -80,11 +80,11 @@ const char *PKRRequest::PKValueCStr(Uint32 index) {
   return buffer + vOffset + 2;  // skip first 2 bytes that contain size of string
 }
 
-Int16 PKRRequest::PKValueLen(Uint32 index) {
+Uint16 PKRRequest::PKValueLen(Uint32 index) {
   Uint32 kvOffset        = PKTupleOffset(index);
   Uint32 vOffset         = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
-  char *data_start       = buffer + vOffset;
-  Int16 len = data_start[1] * 256 + data_start[0];
+  unsigned char *data_start       = (unsigned char*)buffer + vOffset;
+  Uint16 len = ((Uint16)data_start[1] * (Uint16)256) + (Uint16)data_start[0];
   return len;
 }
 

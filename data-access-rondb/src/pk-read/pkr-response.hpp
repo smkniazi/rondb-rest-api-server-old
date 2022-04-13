@@ -32,14 +32,14 @@ class PKRResponse {
   Uint32 capacity    = 512;  // TODO(salman) FIX ME
   Uint32 writeHeader = 0;
 
- private:
+
+ public:
+  explicit PKRResponse(char *respBuff);
+
   /**
    * Append to response buffer
    */
   RS_Status Append_cstring(const char *str, bool appendComma);
-
- public:
-  explicit PKRResponse(char *respBuff);
 
   /**
    * Get maximum capacity of the response buffer
@@ -69,6 +69,11 @@ class PKRResponse {
    * Get write header location
    */
   Uint32 GetWriteHeader();
+
+  /**
+   * Get pointer to the writing end of the buffer
+   */
+  void* GetWritePointer();
 
   /**
    * Append to response buffer

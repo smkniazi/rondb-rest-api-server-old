@@ -302,6 +302,26 @@ func init() {
 
 	db = "DB018" //long varbinary
 	databases[db] = SchemaTextualColumns("VARBINARY", db, 256)
+
+	db = "DB019"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			// blobs in PK is not supported by RonDB
+			"CREATE TABLE `date_table` ( `id0`  date, `col0` date DEFAULT NULL, PRIMARY KEY (`id0`))",
+			"insert into date_table values( \"1111-11-11\", \"11:11:11\")",
+			"insert into date_table set id0= \"1111-11-12\" ",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
+
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {

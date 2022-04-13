@@ -189,7 +189,7 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 	respBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
 	respBuf[C.PKR_CAPACITY_IDX] = uint32(respSize)
 	respBuf[C.PKR_LENGTH_IDX] = uint32(C.ADDRESS_SIZE * 2)
-	// xxd.Print(0, bBuf[:])
+	//xxd.Print(0, bBuf[:])
 	return request, response, nil
 }
 

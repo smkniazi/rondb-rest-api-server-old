@@ -17,6 +17,8 @@
  * USA.
  */
 
+#include <boost/beast/core/detail/base64.hpp>
+#include <NdbDictionary.hpp>
 #include "src/pk-read/pkr-operation.hpp"
 #include "src/pk-read/pkr-request.hpp"
 #include "src/pk-read/pkr-response.hpp"
@@ -25,10 +27,6 @@
 #include "src/logger.hpp"
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
-#include "src/base64/base64.h"
-
-size_t convert_to_printable(char *to, size_t to_len, const char *from, size_t from_len,
-                            const CHARSET_INFO *from_cs, size_t nbytes = 0);
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -480,10 +478,12 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
-      std::string encoded =
-          base64_encode(reinterpret_cast<const unsigned char *>(data_start), attr_bytes);
-      return response.Append_string(encoded, true, appendComma);
+      size_t encoded_str_size = boost::beast::detail::base64::encoded_size(attr_bytes);
+      char buffer[encoded_str_size];
+      size_t ret = boost::beast::detail::base64::encode((void *)buffer, data_start, attr_bytes);
+      response.Append_string(std::string(buffer, ret), true, appendComma);
     }
+    return RS_OK;
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
@@ -851,19 +851,22 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     ///< Len
     // we get the data in base64
     const char *encodedStr = request.PKValueCStr(colIdx);
-    std::string decoded    = base64_decode(std::string(encodedStr), false);
-    if (static_cast<int>(decoded.length()) > col->getLength()) {
+    size_t decoded_size    = boost::beast::detail::base64::decoded_size(request.PKValueLen(colIdx));
+    int maxlen = std::max(col->getLength(), (int)decoded_size);
+    
+    char pk[maxlen];
+    for (int i = 0; i < col->getLength(); i++) {
+      pk[i] = 0;
+    }
+
+    std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(pk, encodedStr, request.PKValueLen(colIdx));
+
+    if ((int)ret.first > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
       // additionally using a pk greater in size than the table definition
       // causes seg fault https://github.com/logicalclocks/rondb/issues/122
       return RS_CLIENT_404_ERROR();
     }
-
-    char pk[col->getLength()];
-    for (int i = 0; i < col->getLength(); i++) {
-      pk[i] = 0;
-    }
-    memcpy(pk, decoded.c_str(), decoded.length());
 
     if (operation->equal(request.PKName(colIdx), pk, col->getLength()) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
@@ -875,33 +878,41 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     [[fallthrough]];
   case NdbDictionary::Column::Longvarbinary: {
     ///< Length bytes: 2, little-endian
+
     const char *encodedStr = request.PKValueCStr(colIdx);
-    std::string decoded    = base64_decode(std::string(encodedStr), false);
-    if (static_cast<int>(decoded.length()) > col->getLength()) {
+    size_t decoded_size    = boost::beast::detail::base64::decoded_size(request.PKValueLen(colIdx));
+    int additional_len = 1;
+    if (col->getType() == NdbDictionary::Column::Longvarbinary) {
+      additional_len = 2;
+    }
+
+    int maxlen = std::max(col->getLength(), (int)decoded_size+additional_len);
+    char pk[maxlen];
+    for (int i = 0; i < maxlen; i++) {
+      pk[i] = 0;
+    }
+
+    std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(pk + additional_len, encodedStr, request.PKValueLen(colIdx));
+
+
+    if ((int)ret.first > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
       // additionally using a pk greater in size than the table definition
       // causes seg fault https://github.com/logicalclocks/rondb/issues/122
       return RS_CLIENT_404_ERROR();
     }
 
-    if (col->getType() == NdbDictionary::Column::Varbinary && decoded.length() > 256) {
-      return RS_SERVER_ERROR(ERROR_020);
-    }
-
     // insert the length at the begenning of the array
     if (col->getType() == NdbDictionary::Column::Varbinary) {
-      decoded.insert(0, 1, static_cast<uint8_t>(decoded.length()));
+      pk[0] = (Uint8)ret.first;
     } else if (col->getType() == NdbDictionary::Column::Longvarbinary) {
-      size_t len = decoded.length();
-      decoded.insert(0, 2, static_cast<uint8_t>(0));
-      decoded[0] = len % 256;
-      decoded[1] = len / 256;
+      pk[0] = (Uint8)(ret.first % 256);
+      pk[1] = (Uint8)(ret.first / 256);
     } else {
       return RS_SERVER_ERROR(ERROR_015);
     }
 
-    if (operation->equal(request.PKName(colIdx), (const char *)decoded.c_str(), decoded.length()) !=
-        0) {
+    if (operation->equal(request.PKName(colIdx), pk, ret.first + additional_len) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;

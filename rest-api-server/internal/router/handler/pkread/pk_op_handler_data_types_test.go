@@ -940,6 +940,33 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 	test(t, tests, isBinary)
 }
 
+func TestDataTypesDate(t *testing.T) {
+	// DateColumnTest(t, "date_table", "DB019")
+}
+
+func DateColumnTest(t *testing.T, table string, database string) {
+	t.Helper()
+	testTable := table
+	testDb := database
+	validateColumns := []interface{}{"col0"}
+	tests := map[string]ds.PKTestInfo{
+
+		"notfound1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+	}
+	test(t, tests, false)
+}
+
 func encode(data string, binary bool, colWidth int, padding bool) string {
 
 	if binary {
