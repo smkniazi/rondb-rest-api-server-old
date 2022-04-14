@@ -538,8 +538,18 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   // */
   case NdbDictionary::Column::Time2: {
     ///< 3 bytes + 0-3 fraction
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Time2")
-    return RS_SERVER_ERROR("Not Implemented");
+    uint precision = col->getPrecision();
+
+    longlong numeric_time =
+        my_time_packed_from_binary((const unsigned char *)attr->aRef(), precision);
+
+    MYSQL_TIME l_time;
+    TIME_from_longlong_time_packed(&l_time, numeric_time);
+
+    char to[MAX_DATE_STRING_REP_LENGTH];
+    my_TIME_to_str(l_time, to, precision);
+
+    return response.Append_string(std::string(to), true, appendComma);
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
@@ -958,7 +968,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     unsigned char packed[col->getSizeInBytes()];
     my_date_to_binary(&l_time, packed);
 
-    if (operation->equal(request.PKName(colIdx), (char*)packed, col->getSizeInBytes()) != 0) {
+    if (operation->equal(request.PKName(colIdx), (char *)packed, col->getSizeInBytes()) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
@@ -1002,8 +1012,28 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   // */
   case NdbDictionary::Column::Time2: {
     ///< 3 bytes + 0-3 fraction
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Time2")
-    return RS_SERVER_ERROR("Not Implemented");
+    const char *time_str = request.PKValueCStr(colIdx);
+    size_t time_str_len  = request.PKValueLen(colIdx);
+
+    MYSQL_TIME l_time;
+    MYSQL_TIME_STATUS status;
+    bool ret = str_to_time(time_str, time_str_len, &l_time, &status, 0);
+    if (ret != 0) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(col->getName()))
+    }
+
+    size_t packed_len = col->getSizeInBytes();
+    int precision     = col->getPrecision();
+    unsigned char packed[packed_len];
+
+    longlong numaric_date_time = TIME_to_longlong_time_packed(l_time);
+    my_time_packed_to_binary(numaric_date_time, packed, precision);
+
+    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
@@ -1020,7 +1050,6 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
 
     size_t packed_len = col->getSizeInBytes();
     int precision     = col->getPrecision();
-
     unsigned char packed[packed_len];
 
     longlong numaric_date_time = TIME_to_longlong_datetime_packed(l_time);
