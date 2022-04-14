@@ -96,7 +96,7 @@ func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp common.Resp
 		}
 
 		if string(jsonVal) != string(dbVal) {
-			t.Fatalf("The read value for key %s does not match. Exptected: %s, Got: %s", key, jsonVal, dbVal)
+			t.Fatalf("The read value for key %s does not match. Got from REST Server: %s, Got from MYSQL Server: %s", key, jsonVal, dbVal)
 		}
 	}
 }

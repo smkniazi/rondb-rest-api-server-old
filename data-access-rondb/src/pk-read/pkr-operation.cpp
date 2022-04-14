@@ -493,15 +493,9 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
-    Date d;
-    unpack_date(d, (unsigned char *)attr->aRef());
-    char to[MAX_DATE_STRING_REP_LENGTH];
     MYSQL_TIME l_time;
-    l_time.day   = d.day;
-    l_time.month = d.month;
-    l_time.year  = d.year;
-    l_time.time_type = MYSQL_TIMESTAMP_DATE;
-
+    my_unpack_date(&l_time, attr->aRef());
+    char to[MAX_DATE_STRING_REP_LENGTH];
     my_date_to_str(l_time, to);
     return response.Append_string(std::string(to), true, appendComma);
   }
@@ -549,8 +543,18 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Datetime2")
-    return RS_SERVER_ERROR("Not Implemented");
+    uint precision = col->getPrecision();
+
+    longlong numeric_date =
+        my_datetime_packed_from_binary((const unsigned char *)attr->aRef(), precision);
+
+    MYSQL_TIME l_time;
+    TIME_from_longlong_datetime_packed(&l_time, numeric_date);
+
+    char to[MAX_DATE_STRING_REP_LENGTH];
+    my_TIME_to_str(l_time, to, precision);
+
+    return response.Append_string(std::string(to), true, appendComma);
   }
   case NdbDictionary::Column::Timestamp2: {
     ///< 4 bytes + 0-3 fraction
@@ -943,16 +947,18 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     bool ret = str_to_datetime(date_str, date_str_len, &l_time, 0, &status);
     if (ret != 0) {
       return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
-                             std::string(date_str))
+                             std::string(col->getName()))
     }
-    Date d;
-    d.day   = l_time.day;
-    d.month = l_time.month;
-    d.year  = l_time.year;
-    char packed[3];
-    pack_date(d, (unsigned char *)packed);
 
-    if (operation->equal(request.PKName(colIdx), packed, 3) != 0) {
+    if (l_time.hour != 0 || l_time.minute != 0 || l_time.second != 0 || l_time.second_part != 0) {
+      // the user has also specified time. as we only store YYMMDD therefore return 404 error
+      return RS_CLIENT_404_ERROR();
+    }
+
+    unsigned char packed[col->getSizeInBytes()];
+    my_date_to_binary(&l_time, packed);
+
+    if (operation->equal(request.PKName(colIdx), (char*)packed, col->getSizeInBytes()) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
@@ -1001,8 +1007,30 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Datetime2: {
     ///< 5 bytes plus 0-3 fraction
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Datetime2")
-    return RS_SERVER_ERROR("Not Implemented");
+    const char *date_str = request.PKValueCStr(colIdx);
+    size_t date_str_len  = request.PKValueLen(colIdx);
+
+    MYSQL_TIME l_time;
+    MYSQL_TIME_STATUS status;
+    bool ret = str_to_datetime(date_str, date_str_len, &l_time, 0, &status);
+    if (ret != 0) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(col->getName()))
+    }
+
+    size_t packed_len = col->getSizeInBytes();
+    int precision     = col->getPrecision();
+
+    unsigned char packed[packed_len];
+
+    longlong numaric_date_time = TIME_to_longlong_datetime_packed(l_time);
+
+    my_datetime_packed_to_binary(numaric_date_time, packed, precision);
+
+    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   case NdbDictionary::Column::Timestamp2: {
     ///< 4 bytes + 0-3 fraction

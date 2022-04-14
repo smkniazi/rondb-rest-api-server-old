@@ -940,38 +940,16 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 	test(t, tests, isBinary)
 }
 
-type DTTest struct {
-	db        string
-	table     string
-	pkValid   string
-	pkNull    string
-	pkInvalid string
-	errorMsg  string
-	errorCode int
-}
-
-func TestDateTimeTypesDate(t *testing.T) {
-	testDateTimeTypes(t, DTTest{
-		db:        "DB019",
-		table:     "date_table",
-		pkValid:   "1111-11-11",
-		pkNull:    "1111-11-12",
-		pkInvalid: "1111-13-11",
-		errorMsg:  common.ERROR_027(),
-		errorCode: http.StatusBadRequest,
-	})
-}
-
-func testDateTimeTypes(t *testing.T, params DTTest) {
+func TestDataTypesDateColumn(t *testing.T) {
 	t.Helper()
-	testTable := params.table
-	testDb := params.db
+	testTable := "date_table"
+	testDb := "DB019"
 	validateColumns := []interface{}{"col0"}
 	tests := map[string]ds.PKTestInfo{
 
-		"validpk": {
+		"validpk1": {
 			PkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", params.pkValid),
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},
@@ -982,9 +960,61 @@ func testDateTimeTypes(t *testing.T, params DTTest) {
 			RespKVs:      validateColumns,
 		},
 
-		"nulltest": {
+		"validpk2": {
 			PkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", params.pkNull),
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 00:00:00"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"invalidpk": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:00:00"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      []interface{}{},
+		},
+
+		"invalidpk2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 00:00:00.123123"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      []interface{}{},
+		},
+
+		"nulltest1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-12"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"nulltest2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},
@@ -997,14 +1027,149 @@ func testDateTimeTypes(t *testing.T, params DTTest) {
 
 		"error": {
 			PkReq: ds.PKReadBody{
-				Filters:     NewFiltersKVs(t, "id0", params.pkInvalid),
+				Filters:     NewFiltersKVs(t, "id0", "1111-13-11"),
 				ReadColumns: NewReadColumns(t, "col", 1),
 				OperationID: NewOperationID(t, 5),
 			},
 			Table:        testTable,
 			Db:           testDb,
-			HttpCode:     params.errorCode,
-			BodyContains: params.errorMsg,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_027(),
+			RespKVs:      validateColumns,
+		},
+	}
+	test(t, tests, false)
+}
+
+func TestDataTypesDatetimeColumn(t *testing.T) {
+	t.Helper()
+	testDb := "DB020"
+	validateColumns := []interface{}{"col0"}
+	tests := map[string]ds.PKTestInfo{
+
+		"validpk1_pre0": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:11:11"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table0",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+		"validpk1_pre3": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:11:11.123"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table3",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+		"validpk1_pre6": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:11:11.123456"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table6",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"validpk2_pre0": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:11:11.123123"), // nanoseconds should be ignored
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table0",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"validpk2_pre3": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 11:11:11.123000"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table3",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"validpk2_pre6": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-11 -11:11:11.123456"), //-iv sign should be ignored
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table6",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"nulltest_pre0": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-12 11:11:11"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table0",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+		"nulltest_pre3": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-12 11:11:11.123"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table3",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+		"nulltest_pre6": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-11-12 11:11:11.123456"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table6",
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"wrongdate_pre0": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1111-13-11 11:11:11"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        "date_table0",
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_027(),
 			RespKVs:      validateColumns,
 		},
 	}
