@@ -57,28 +57,6 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	return r
 }
 
-func ValidateRes(t *testing.T, testInfo ds.PKTestInfo, resp common.Response) {
-	t.Helper()
-	if len(testInfo.RespKVs)%2 != 0 {
-		t.Fatalf("Expecting key value pairs. Items: %d\n ", len(testInfo.RespKVs))
-	}
-
-	for i := 0; i < len(testInfo.RespKVs); {
-		key := string(testInfo.RespKVs[i].(string))
-		value := RawBytes(testInfo.RespKVs[i+1])
-		i += 2
-
-		readVal, found := getColumnDataFromJson(t, key, testInfo, resp)
-		if !found {
-			t.Fatalf("Key not found in the response. Key %s", key)
-		}
-
-		if string(value) != readVal {
-			t.Fatalf("The read value for key %s does not match. Exptected: %s, Got: %s", key, value, readVal)
-		}
-	}
-}
-
 func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp common.Response, isBinaryData bool) {
 	t.Helper()
 

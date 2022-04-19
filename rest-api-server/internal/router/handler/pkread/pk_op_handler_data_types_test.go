@@ -1561,6 +1561,54 @@ func TestDataTypesYearColumn(t *testing.T) {
 	test(t, tests, false)
 }
 
+func TestDataTypesBitColumn(t *testing.T) {
+	t.Helper()
+	testDb := "DB024"
+	testTable := "bit_table"
+	validateColumns := []interface{}{"col0"}
+	tests := map[string]ds.PKTestInfo{
+
+		"simple1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("1", true, 100, true)),
+				ReadColumns: NewReadColumns(t, "col", 5),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+		"simple2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("2", true, 100, true)),
+				ReadColumns: NewReadColumns(t, "col", 5),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"null": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", encode("3", true, 100, true)),
+				ReadColumns: NewReadColumns(t, "col", 5),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+	}
+	test(t, tests, true)
+}
+
 func encode(data string, binary bool, colWidth int, padding bool) string {
 
 	if binary {

@@ -514,9 +514,24 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     return RS_SERVER_ERROR("Not Implemented");
   }
   case NdbDictionary::Column::Bit: {
-    ///< Bit, length specifies no of bits
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
+    //< Bit, length specifies no of bits
+    int32 attr_bytes = col->getSizeInBytes();
+    Uint32 words     = attr->getColumn()->getLength() / 8;
+    if (attr->getColumn()->getLength() % 8 != 0) {
+      words += 1;
+    }
+
+    //change endieness
+    int i = 0;
+    char reversed[words];
+    for (int j = words - 1; j >= 0; j--) {
+      reversed[i++] = attr->aRef()[j];
+    }
+
+    size_t encoded_str_size = boost::beast::detail::base64::encoded_size(words);
+    char buffer[encoded_str_size];
+    size_t ret = boost::beast::detail::base64::encode((void *)buffer, reversed, words);
+    return response.Append_string(std::string(buffer, ret), true, appendComma);
   }
   case NdbDictionary::Column::Time: {
     ///< Time without date
