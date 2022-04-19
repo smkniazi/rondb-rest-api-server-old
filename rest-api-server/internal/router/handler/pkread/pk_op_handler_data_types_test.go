@@ -1472,6 +1472,95 @@ func TestDataTypesTimestampColumn(t *testing.T) {
 	test(t, tests, false)
 }
 
+func TestDataTypesYearColumn(t *testing.T) {
+	///< Year 1901-2155 (1 byte)
+	t.Helper()
+	testDb := "DB023"
+	testTable := "year_table"
+	validateColumns := []interface{}{"col0"}
+	tests := map[string]ds.PKTestInfo{
+
+		"simple1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2022"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"notfound1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1901"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"notfound2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2155"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"nulltest": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2023"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusOK,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
+		"baddate1": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "1900"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      validateColumns,
+		},
+
+		"baddate2": {
+			PkReq: ds.PKReadBody{
+				Filters:     NewFiltersKVs(t, "id0", "2156"),
+				ReadColumns: NewReadColumns(t, "col", 1),
+				OperationID: NewOperationID(t, 5),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_015(),
+			RespKVs:      validateColumns,
+		},
+	}
+	test(t, tests, false)
+}
+
 func encode(data string, binary bool, colWidth int, padding bool) string {
 
 	if binary {

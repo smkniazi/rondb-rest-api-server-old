@@ -402,6 +402,25 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB023"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			// blobs in PK is not supported by RonDB
+			"CREATE TABLE `year_table` ( `id0`  year, `col0` year DEFAULT NULL, PRIMARY KEY (`id0`))",
+			"insert into year_table values( \"2022\", \"2022\")",
+			"insert into year_table set id0=\"2023\"",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {

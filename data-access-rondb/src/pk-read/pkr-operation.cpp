@@ -525,8 +525,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Year")
-    return RS_SERVER_ERROR("Not Implemented");
+    Int32 year = (uint)(1900 + attr->aRef()[0]);
+    return response.Append_i32(year, appendComma);
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
@@ -580,15 +580,16 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     long epoch_in = my_tv.m_tv_sec;
     std::time_t stdtime(epoch_in);
     boost::posix_time::ptime ts = boost::posix_time::from_time_t(stdtime);
-    MYSQL_TIME l_time = {};
-    l_time.year = ts.date().year();
-    l_time.month = ts.date().month();
-    l_time.day = ts.date().day();
-    l_time.hour = ts.time_of_day().hours(); 
-    l_time.minute = ts.time_of_day().minutes(); 
-    l_time.second = ts.time_of_day().seconds(); 
+
+    MYSQL_TIME l_time  = {};
+    l_time.year        = ts.date().year();
+    l_time.month       = ts.date().month();
+    l_time.day         = ts.date().day();
+    l_time.hour        = ts.time_of_day().hours();
+    l_time.minute      = ts.time_of_day().minutes();
+    l_time.second      = ts.time_of_day().seconds();
     l_time.second_part = my_tv.m_tv_usec;
-    l_time.time_type = MYSQL_TIMESTAMP_DATETIME;
+    l_time.time_type   = MYSQL_TIMESTAMP_DATETIME;
 
     char to[MAX_DATE_STRING_REP_LENGTH];
     my_TIME_to_str(l_time, to, precision);
@@ -1019,8 +1020,25 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Year")
-    return RS_SERVER_ERROR("Not Implemented");
+    bool success = false;
+    try {
+      Int32 year = std::stoi(request.PKValueCStr(colIdx));
+      if (year >= 1901 && year <= 2155) {
+        Uint8 year_char = (year - 1900);
+        if (operation->equal(request.PKName(colIdx), year_char) != 0) {
+          return RS_SERVER_ERROR(ERROR_023);
+        }
+        success = true;
+      }
+    } catch (...) {
+    }
+    if (!success) {
+      return RS_CLIENT_ERROR(
+          ERROR_015 + std::string(" Expecting YEAR column. Possible values [1901-2155]. Column: ") +
+          std::string(request.PKName(colIdx)));
+    } else {
+      return RS_OK;
+    }
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
