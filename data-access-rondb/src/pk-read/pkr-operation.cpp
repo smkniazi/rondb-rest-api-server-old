@@ -17,9 +17,12 @@
  * USA.
  */
 
+#include <sys/time.h>
+#include <time.h>
 #include <boost/beast/core/detail/base64.hpp>
 #include <NdbDictionary.hpp>
 #include <mysql_time.h>
+#include <ctime>
 #include "src/pk-read/pkr-operation.hpp"
 #include "src/pk-read/pkr-request.hpp"
 #include "src/pk-read/pkr-response.hpp"
@@ -29,6 +32,7 @@
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
 #include "src/common/rdrs_date.hpp"
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
@@ -568,8 +572,28 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Timestamp2: {
     ///< 4 bytes + 0-3 fraction
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Timestamp2");
-    return RS_SERVER_ERROR("Not Implemented");
+    uint precision = col->getPrecision();
+
+    my_timeval my_tv{};
+    my_timestamp_from_binary(&my_tv, (const unsigned char *)attr->aRef(), precision);
+
+    long epoch_in = my_tv.m_tv_sec;
+    std::time_t stdtime(epoch_in);
+    boost::posix_time::ptime ts = boost::posix_time::from_time_t(stdtime);
+    MYSQL_TIME l_time = {};
+    l_time.year = ts.date().year();
+    l_time.month = ts.date().month();
+    l_time.day = ts.date().day();
+    l_time.hour = ts.time_of_day().hours(); 
+    l_time.minute = ts.time_of_day().minutes(); 
+    l_time.second = ts.time_of_day().seconds(); 
+    l_time.second_part = my_tv.m_tv_usec;
+    l_time.time_type = MYSQL_TIMESTAMP_DATETIME;
+
+    char to[MAX_DATE_STRING_REP_LENGTH];
+    my_TIME_to_str(l_time, to, precision);
+
+    return response.Append_string(std::string(to), true, appendComma);
   }
   }
 
@@ -1062,11 +1086,66 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     return RS_OK;
   }
   case NdbDictionary::Column::Timestamp2: {
+    //[s] epoch range 0 , 2147483647
     ///< 4 bytes + 0-3 fraction
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Timestamp2");
-    return RS_SERVER_ERROR("Not Implemented");
+    const char *ts_str = request.PKValueCStr(colIdx);
+    size_t ts_str_len  = request.PKValueLen(colIdx);
+    size_t packed_len  = col->getSizeInBytes();
+    unsigned char packed[packed_len];
+    uint precision = col->getPrecision();
+
+    MYSQL_TIME l_time;
+    MYSQL_TIME_STATUS status;
+    bool ret = str_to_datetime(ts_str, ts_str_len, &l_time, 0, &status);
+    if (ret != 0) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(col->getName()))
+    }
+
+    time_t epoch = 0;
+    try {
+      char bts_str[MAX_DATE_STRING_REP_LENGTH];
+      sprintf(bts_str, "%d-%d-%d %d:%d:%d", l_time.year, l_time.month, l_time.day, l_time.hour,
+              l_time.minute, l_time.second);
+      boost::posix_time::ptime bt(boost::posix_time::time_from_string(std::string(bts_str)));
+      boost::posix_time::ptime start(boost::gregorian::date(1970, 1, 1));
+      boost::posix_time::time_duration dur = bt - start;
+      epoch                                = dur.total_seconds();
+    } catch (...) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(col->getName()))
+    }
+
+    // 1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
+    if (epoch <= 0 || epoch > 2147483647) {
+      return RS_CLIENT_ERROR(std::string(ERROR_027) + std::string(" Column: ") +
+                             std::string(col->getName()))
+    }
+
+    std::cout << "Boost secs : " << epoch << std::endl;
+    // TODO [salman] 1 apply timezone changes
+    // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+    // iMySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from
+    // UTC to the current time zone for retrieval. (This does not occur for other types such as
+    // DATETIME.) By default, the current time zone for each connection is the server's time. The
+    // time zone can be set on a per-connection basis. As long as the time zone setting remains
+    // constant, you get back the same value you store. If you store a TIMESTAMP value, and then
+    // change the time zone and retrieve the value, the retrieved value is different from the value
+    // you stored. This occurs because the same time zone was not used for conversion in both
+    // directions. The current time zone is available as the value of the time_zone system variable.
+    // For more information, see Section 5.1.15, “MySQL Server Time Zone Support”.
+    // TODO [salman] 2 Investigate how clusterj inserts time stamps. Does it apply time zone changes
+    // TODO [salman] how to deal with time zone setting in mysql server
+    //
+
+    my_timeval my_tv{epoch, (long)l_time.second_part};
+    my_timestamp_to_binary(&my_tv, packed, precision);
+
+    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+      return RS_SERVER_ERROR(ERROR_023);
+    }
+    return RS_OK;
   }
   }
   return RS_OK;
 }
-

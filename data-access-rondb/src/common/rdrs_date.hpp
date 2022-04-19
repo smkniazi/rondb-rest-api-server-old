@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <mysql_time.h>
+#include <sys/time.h>  // struct timeval
 
 
 typedef unsigned char uchar;
@@ -34,6 +35,11 @@ typedef Int64 int64;
 typedef Uint64 uint64;
 typedef unsigned long long ulonglong;
 typedef long long longlong;
+
+struct my_timeval {
+  int64_t m_tv_sec;
+  int64_t m_tv_usec;
+};
 
 constexpr const std::size_t MAX_DATE_STRING_REP_LENGTH =
     sizeof("YYYY-MM-DD AM HH:MM:SS.FFFFFF+HH:MM");
@@ -77,6 +83,17 @@ longlong my_datetime_packed_from_binary(const uchar *ptr, uint dec);
 
 longlong TIME_to_longlong_time_packed(const MYSQL_TIME &my_time);
 void my_time_packed_to_binary(longlong nr, uchar *ptr, uint dec);
+
+void my_timestamp_to_binary(const struct timeval *tm, uchar *ptr, uint dec);
+
+void my_timestamp_from_binary(struct timeval *tm, const uchar *ptr, uint dec);
+
+void my_timestamp_to_binary(const my_timeval *tm, unsigned char *ptr,
+                            unsigned int dec);
+void my_timestamp_from_binary(my_timeval *tm, const unsigned char *ptr,
+                              unsigned int dec);
+
+int my_timeval_to_str(const my_timeval *tm, char *to, uint dec);
 
 
 //static int TIME_to_datetime_str(const MYSQL_TIME &my_time, char *to) {

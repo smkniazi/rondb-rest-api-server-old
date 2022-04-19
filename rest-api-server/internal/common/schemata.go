@@ -375,6 +375,33 @@ func init() {
 			"DROP DATABASE " + db,
 		},
 	}
+
+	db = "DB022"
+	databases[db] = [][]string{
+		{
+			// setup commands
+			"DROP DATABASE IF EXISTS " + db,
+			"CREATE DATABASE " + db,
+			"USE " + db,
+
+			// blobs in PK is not supported by RonDB
+			"CREATE TABLE `ts_table0` ( `id0`  timestamp(0), `col0` timestamp(0) DEFAULT NULL, PRIMARY KEY (`id0`))",
+			"insert into ts_table0 values( \"2022-11-11 11:11:11\", \"2022-11-11 11:11:11\")",
+			"insert into ts_table0 set id0= \"2022-11-12 11:11:11\"",
+
+			"CREATE TABLE `ts_table3` ( `id0`  timestamp(3), `col0` timestamp(3) DEFAULT NULL, PRIMARY KEY (`id0`))",
+			"insert into ts_table3 values( \"2022-11-11 11:11:11.123\", \"2022-11-11 11:11:11.123\")",
+			"insert into ts_table3 set id0= \"2022-11-12 11:11:11.123\"",
+
+			"CREATE TABLE `ts_table6` ( `id0`  timestamp(6), `col0` timestamp(6) DEFAULT NULL, PRIMARY KEY (`id0`))",
+			"insert into ts_table6 values( \"2022-11-11 11:11:11.123456\", \"2022-11-11 11:11:11.123456\")",
+			"insert into ts_table6 set id0= \"2022-11-12 11:11:11.123456\"",
+		},
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
 }
 
 func SchemaTextualColumns(colType string, db string, length int) [][]string {
