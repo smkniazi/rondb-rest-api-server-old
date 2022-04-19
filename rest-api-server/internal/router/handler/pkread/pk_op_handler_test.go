@@ -55,14 +55,14 @@ func TestPKReadOmitRequired(t *testing.T) {
 	param.Filters = filter
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
-		"Error:Field validation for 'Value' failed on the 'required' tag")
+		"Field validation for 'Value' failed on the 'required' tag")
 
 	val := "val"
-	filter = NewFilter(t, nil, &val)
+	filter = NewFilter(t, nil, val)
 	param.Filters = filter
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
-		"Error:Field validation for 'Column'")
+		"Field validation for 'Column' failed on the 'required' tag")
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
@@ -75,7 +75,7 @@ func TestPKReadLargeColumns(t *testing.T) {
 	col := RandString(65)
 	val := "val"
 	param := ds.PKReadBody{
-		Filters:     NewFilter(t, &col, &val),
+		Filters:     NewFilter(t, &col, val),
 		ReadColumns: NewReadColumns(t, "read_col_", 5),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -127,7 +127,7 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	col := "col" + string(rune(0x0000))
 	val := "val"
 	param := ds.PKReadBody{
-		Filters:     NewFilter(t, &col, &val),
+		Filters:     NewFilter(t, &col, val),
 		ReadColumns: NewReadColumn(t, "read_col"),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -140,7 +140,7 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	col = "col"
 	val = "val"
 	param = ds.PKReadBody{
-		Filters:     NewFilter(t, &col, &val),
+		Filters:     NewFilter(t, &col, val),
 		ReadColumns: NewReadColumn(t, "col"+string(rune(0x10000))),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -150,7 +150,7 @@ func TestPKInvalidIdentifier(t *testing.T) {
 
 	// Test. Invalid path parameteres
 	param = ds.PKReadBody{
-		Filters:     NewFilter(t, &col, &val),
+		Filters:     NewFilter(t, &col, val),
 		ReadColumns: NewReadColumn(t, "col"),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -188,8 +188,8 @@ func TestPKUniqueParams(t *testing.T) {
 	col = "col"
 	val := "val"
 	filters := make([]ds.Filter, 2)
-	filters[0] = (*(NewFilter(t, &col, &val)))[0]
-	filters[1] = (*(NewFilter(t, &col, &val)))[0]
+	filters[0] = (*(NewFilter(t, &col, val)))[0]
+	filters[1] = (*(NewFilter(t, &col, val)))[0]
 
 	param = ds.PKReadBody{
 		Filters:     &filters,
@@ -202,7 +202,7 @@ func TestPKUniqueParams(t *testing.T) {
 
 	//Test that filter and read columns do not contain overlapping columns
 	param = ds.PKReadBody{
-		Filters:     NewFilter(t, &col, &val),
+		Filters:     NewFilter(t, &col, val),
 		ReadColumns: NewReadColumn(t, col),
 		OperationID: NewOperationID(t, 64),
 	}
@@ -212,13 +212,13 @@ func TestPKUniqueParams(t *testing.T) {
 }
 
 // DB/Table does not exist
-func TestERROR_011(t *testing.T) {
+func TestPKERROR_011(t *testing.T) {
 
 	withDBs(t, [][][]string{common.Database("DB001")}, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := ds.PKReadBody{
-			Filters:     NewFilter(t, &pkCol, &pkVal),
+			Filters:     NewFilter(t, &pkCol, pkVal),
 			ReadColumns: NewReadColumn(t, "col_0"),
 			OperationID: NewOperationID(t, 64),
 		}
@@ -234,13 +234,13 @@ func TestERROR_011(t *testing.T) {
 }
 
 // column does not exist
-func TestERROR_012(t *testing.T) {
+func TestPKERROR_012(t *testing.T) {
 
 	withDBs(t, [][][]string{common.Database("DB001")}, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := ds.PKReadBody{
-			Filters:     NewFilter(t, &pkCol, &pkVal),
+			Filters:     NewFilter(t, &pkCol, pkVal),
 			ReadColumns: NewReadColumn(t, "col_0_XXX"),
 			OperationID: NewOperationID(t, 64),
 		}
@@ -253,7 +253,7 @@ func TestERROR_012(t *testing.T) {
 }
 
 // Primary key test.
-func TestERROR_013_ERROR_014(t *testing.T) {
+func TestPKERROR_013_ERROR_014(t *testing.T) {
 
 	withDBs(t, [][][]string{common.Database("DB002")}, func(router *gin.Engine) {
 		// send an other request with one column missing from def

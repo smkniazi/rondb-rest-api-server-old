@@ -32,7 +32,7 @@ func BatchOpsHandler(c *gin.Context) {
 	operations := ds.Operations{}
 	err := c.ShouldBindJSON(&operations)
 	if err != nil {
-		fmt.Printf("Unable to parse request. Error: %v", err)
+		fmt.Printf("Unable to parse request. Error: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"OK": false, "msg": fmt.Sprintf("%-v", err)})
 		return
 	}

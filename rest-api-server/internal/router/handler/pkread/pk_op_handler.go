@@ -37,7 +37,7 @@ func PkReadHandler(c *gin.Context) {
 
 	err := parseRequest(c, &pkReadParams)
 	if err != nil {
-		fmt.Printf("Unable to parse request. Error: %v", err)
+		fmt.Printf("Unable to parse request. Error: %v\n", err)
 		c.AbortWithError(http.StatusBadRequest, err)
 		setResponseError(c, http.StatusBadRequest, common.Response{OK: false, Message: fmt.Sprintf("%-v", err)})
 		return

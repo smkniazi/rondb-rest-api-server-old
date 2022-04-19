@@ -17,13 +17,12 @@
  * USA.
  */
 
-#include <sys/time.h>
-#include <time.h>
+#include "src/pk-read/pkr-operation.hpp"
+#include <mysql_time.h>
+#include <algorithm>
+#include <utility>
 #include <boost/beast/core/detail/base64.hpp>
 #include <NdbDictionary.hpp>
-#include <mysql_time.h>
-#include <ctime>
-#include "src/pk-read/pkr-operation.hpp"
 #include "src/pk-read/pkr-request.hpp"
 #include "src/pk-read/pkr-response.hpp"
 #include "src/decimal_utils.hpp"
@@ -486,7 +485,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     } else {
       size_t encoded_str_size = boost::beast::detail::base64::encoded_size(attr_bytes);
       char buffer[encoded_str_size];
-      size_t ret = boost::beast::detail::base64::encode((void *)buffer, data_start, attr_bytes);
+      size_t ret = boost::beast::detail::base64::encode(reinterpret_cast<void *>(buffer),
+                                                        data_start, attr_bytes);
       return response.Append_string(std::string(buffer, ret), true, appendComma);
     }
   }
@@ -521,7 +521,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
       words += 1;
     }
 
-    //change endieness
+    // change endieness
     int i = 0;
     char reversed[words];
     for (int j = words - 1; j >= 0; j--) {
@@ -530,7 +530,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
 
     size_t encoded_str_size = boost::beast::detail::base64::encoded_size(words);
     char buffer[encoded_str_size];
-    size_t ret = boost::beast::detail::base64::encode((void *)buffer, reversed, words);
+    size_t ret =
+        boost::beast::detail::base64::encode(reinterpret_cast<void *>(buffer), reversed, words);
     return response.Append_string(std::string(buffer, ret), true, appendComma);
   }
   case NdbDictionary::Column::Time: {
@@ -592,7 +593,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
     my_timeval my_tv{};
     my_timestamp_from_binary(&my_tv, (const unsigned char *)attr->aRef(), precision);
 
-    long epoch_in = my_tv.m_tv_sec;
+    Int64 epoch_in = my_tv.m_tv_sec;
     std::time_t stdtime(epoch_in);
     boost::posix_time::ptime ts = boost::posix_time::from_time_t(stdtime);
 
@@ -916,7 +917,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     // we get the data in base64
     const char *encodedStr = request.PKValueCStr(colIdx);
     size_t decoded_size    = boost::beast::detail::base64::decoded_size(request.PKValueLen(colIdx));
-    int maxlen             = std::max(col->getLength(), (int)decoded_size);
+    int maxlen             = std::max(col->getLength(), static_cast<int>(decoded_size));
 
     char pk[maxlen];
     for (int i = 0; i < col->getLength(); i++) {
@@ -926,7 +927,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     std::pair<std::size_t, std::size_t> ret =
         boost::beast::detail::base64::decode(pk, encodedStr, request.PKValueLen(colIdx));
 
-    if ((int)ret.first > col->getLength()) {
+    if (static_cast<int>(ret.first) > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
       // additionally using a pk greater in size than the table definition
       // causes seg fault https://github.com/logicalclocks/rondb/issues/122
@@ -951,7 +952,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
       additional_len = 2;
     }
 
-    int maxlen = std::max(col->getLength(), (int)decoded_size + additional_len);
+    int maxlen = std::max(col->getLength(), static_cast<int>(decoded_size) + additional_len);
     char pk[maxlen];
     for (int i = 0; i < maxlen; i++) {
       pk[i] = 0;
@@ -960,7 +961,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     std::pair<std::size_t, std::size_t> ret = boost::beast::detail::base64::decode(
         pk + additional_len, encodedStr, request.PKValueLen(colIdx));
 
-    if ((int)ret.first > col->getLength()) {
+    if (static_cast<int>(ret.first) > col->getLength()) {
       // the user is searching a key greater than all the possible keys so return 404
       // additionally using a pk greater in size than the table definition
       // causes seg fault https://github.com/logicalclocks/rondb/issues/122
@@ -1008,7 +1009,8 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     unsigned char packed[col->getSizeInBytes()];
     my_date_to_binary(&l_time, packed);
 
-    if (operation->equal(request.PKName(colIdx), (char *)packed, col->getSizeInBytes()) != 0) {
+    if (operation->equal(request.PKName(colIdx), reinterpret_cast<char *>(packed),
+                         col->getSizeInBytes()) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
@@ -1087,7 +1089,8 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     longlong numaric_date_time = TIME_to_longlong_time_packed(l_time);
     my_time_packed_to_binary(numaric_date_time, packed, precision);
 
-    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+    if (operation->equal(request.PKName(colIdx), reinterpret_cast<char *>(packed), packed_len) !=
+        0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
@@ -1113,14 +1116,15 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
 
     my_datetime_packed_to_binary(numaric_date_time, packed, precision);
 
-    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+    if (operation->equal(request.PKName(colIdx), reinterpret_cast<char *>(packed), packed_len) !=
+        0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;
   }
   case NdbDictionary::Column::Timestamp2: {
-    //[s] epoch range 0 , 2147483647
-    ///< 4 bytes + 0-3 fraction
+    // epoch range 0 , 2147483647
+    /// < 4 bytes + 0-3 fraction
     const char *ts_str = request.PKValueCStr(colIdx);
     size_t ts_str_len  = request.PKValueLen(colIdx);
     size_t packed_len  = col->getSizeInBytes();
@@ -1138,8 +1142,8 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     time_t epoch = 0;
     try {
       char bts_str[MAX_DATE_STRING_REP_LENGTH];
-      sprintf(bts_str, "%d-%d-%d %d:%d:%d", l_time.year, l_time.month, l_time.day, l_time.hour,
-              l_time.minute, l_time.second);
+      snprintf(bts_str, MAX_DATE_STRING_REP_LENGTH, "%d-%d-%d %d:%d:%d", l_time.year, l_time.month,
+               l_time.day, l_time.hour, l_time.minute, l_time.second);
       boost::posix_time::ptime bt(boost::posix_time::time_from_string(std::string(bts_str)));
       boost::posix_time::ptime start(boost::gregorian::date(1970, 1, 1));
       boost::posix_time::time_duration dur = bt - start;
@@ -1156,7 +1160,7 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     }
 
     std::cout << "Boost secs : " << epoch << std::endl;
-    // TODO [salman] 1 apply timezone changes
+    // TODO(salman) 1 apply timezone changes
     // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
     // iMySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from
     // UTC to the current time zone for retrieval. (This does not occur for other types such as
@@ -1167,14 +1171,15 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
     // you stored. This occurs because the same time zone was not used for conversion in both
     // directions. The current time zone is available as the value of the time_zone system variable.
     // For more information, see Section 5.1.15, “MySQL Server Time Zone Support”.
-    // TODO [salman] 2 Investigate how clusterj inserts time stamps. Does it apply time zone changes
-    // TODO [salman] how to deal with time zone setting in mysql server
+    // TODO(salman) 2 Investigate how clusterj inserts time stamps. Does it apply time zone changes
+    // TODO(salman) how to deal with time zone setting in mysql server
     //
 
-    my_timeval my_tv{epoch, (long)l_time.second_part};
+    my_timeval my_tv{epoch, (Int64)l_time.second_part};
     my_timestamp_to_binary(&my_tv, packed, precision);
 
-    if (operation->equal(request.PKName(colIdx), (char *)packed, packed_len) != 0) {
+    if (operation->equal(request.PKName(colIdx), reinterpret_cast<char *>(packed), packed_len) !=
+        0) {
       return RS_SERVER_ERROR(ERROR_023);
     }
     return RS_OK;

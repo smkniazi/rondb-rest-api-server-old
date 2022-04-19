@@ -49,7 +49,6 @@ void *PKRResponse::GetWritePointer() {
 }
 
 RS_Status PKRResponse::Append_string(std::string str, bool add_quotes, bool appendComma) {
-
   int additional_len = add_quotes ? 2 : 0;
   additional_len     = appendComma ? additional_len + 1 : additional_len;
 
