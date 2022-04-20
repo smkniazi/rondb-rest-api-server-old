@@ -17,8 +17,8 @@
  * USA.
  */
 
-#ifndef DATA_ACCESS_RONDB_SRC_COMMON_RDRS_DATE_HPP_
-#define DATA_ACCESS_RONDB_SRC_COMMON_RDRS_DATE_HPP_
+#ifndef DATA_ACCESS_RONDB_SRC_RONDB_LIB_RDRS_DATE_HPP_
+#define DATA_ACCESS_RONDB_SRC_RONDB_LIB_RDRS_DATE_HPP_
 
 #include <stdio.h>
 #include <string.h>
@@ -84,7 +84,8 @@ static inline uint32 uint3korr(const uchar *A) {
   return static_cast<uint32>((static_cast<uint32>(A[0])) + ((static_cast<uint32>(A[1])) << 8) +
                              ((static_cast<uint32>(A[2])) << 16));
 }
-void my_unpack_date(MYSQL_TIME *l_time, const void *d) {
+
+inline void my_unpack_date(MYSQL_TIME *l_time, const void *d) {
   uchar b[4];
   memcpy(b, d, 3);
   b[3]        = 0;
@@ -96,4 +97,4 @@ void my_unpack_date(MYSQL_TIME *l_time, const void *d) {
   l_time->year      = w;
   l_time->time_type = MYSQL_TIMESTAMP_DATE;
 }
-#endif  // DATA_ACCESS_RONDB_SRC_COMMON_RDRS_DATE_HPP_
+#endif  // DATA_ACCESS_RONDB_SRC_RONDB_LIB_RDRS_DATE_HPP_

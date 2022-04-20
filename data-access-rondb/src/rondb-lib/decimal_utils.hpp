@@ -28,8 +28,8 @@
  */
 
 
-#ifndef DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_
-#define DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_
+#ifndef DATA_ACCESS_RONDB_SRC_RONDB_LIB_DECIMAL_UTILS_HPP_
+#define DATA_ACCESS_RONDB_SRC_RONDB_LIB_DECIMAL_UTILS_HPP_
 
 
 /* return values (redeclared here if to be mapped to Java) */
@@ -97,11 +97,11 @@ static int howManyBytesNeeded[] = {
  * @return the number of bytes needed for the binary representation of the number
  */
 
-int getDecimalColumnSpace(int precision, int scale) {
+inline int getDecimalColumnSpace(int precision, int scale) {
   int howManyBytesNeededForIntegral = howManyBytesNeeded[precision - scale];
   int howManyBytesNeededForFraction = howManyBytesNeeded[scale];
   int result                        = howManyBytesNeededForIntegral + howManyBytesNeededForFraction;
   return result;
 }
 
-#endif  // DATA_ACCESS_RONDB_SRC_DECIMAL_UTILS_HPP_
+#endif  // DATA_ACCESS_RONDB_SRC_RONDB_LIB_DECIMAL_UTILS_HPP_

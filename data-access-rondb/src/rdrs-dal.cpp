@@ -28,7 +28,7 @@
 #include <NdbApi.hpp>
 #include "src/error-strs.h"
 #include "src/logger.hpp"
-#include "src/pk-read/pkr-operation.hpp"
+#include "db-operations/pk/pkr-operation.hpp"
 #include "src/status.hpp"
 
 int GetAvailableAPINode(const char *connection_string);

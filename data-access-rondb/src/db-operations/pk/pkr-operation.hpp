@@ -24,8 +24,8 @@
 #include <unordered_map>
 #include <vector>
 #include <NdbApi.hpp>
-#include "src/pk-read/pkr-request.hpp"
-#include "src/pk-read/pkr-response.hpp"
+#include "src/db-operations/pk/pkr-request.hpp"
+#include "src/db-operations/pk/pkr-response.hpp"
 #include "src/rdrs-dal.h"
 
 class PKROperation {
@@ -54,26 +54,9 @@ class PKROperation {
   /**
    * start a transaction
    *
-   * @param[in] ndbObject
-   * @param[in] pkread
-   * @param[out] table
-   * @param[out] transaction
-   *
    * @return status
    */
   RS_Status SetupTransaction();
-
-  /**
-   * Set up read operation
-   *
-   * @param[in] ndbObject
-   * @param[in] table
-   * @param[in] transaction
-   * @param[out] operation
-   *
-   * @return status
-   */
-  RS_Status SetOperationPKCols(const NdbDictionary::Column *col, Uint32 colIdx);
 
   /**
    * setup pk read operation
@@ -86,11 +69,6 @@ class PKROperation {
    * @returns status
    */
   RS_Status SetOperationPKCols();
-
-  /**
-   * it stores the data read from the DB into the response buffer
-   */
-  RS_Status WriteColToRespBuff(const NdbRecAttr *attr, bool appendComma);
 
   /**
    * Execute transaction
@@ -128,8 +106,5 @@ class PKROperation {
    */
   RS_Status ValidateRequest();
 
-  int GetByteArray(const NdbRecAttr *attr, const char **first_byte, int *bytes);
-
-  int CopyString(const NdbRecAttr *attr, int start);
 };
 #endif  // DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_

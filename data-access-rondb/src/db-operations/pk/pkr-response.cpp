@@ -17,12 +17,13 @@
  * USA.
  */
 
-#include "src/pk-read/pkr-response.hpp"
+#include "src/db-operations/pk/pkr-response.hpp"
 
 #include <mysql.h>
 #include <iostream>
 #include <sstream>
-#include "src/common/rdrs_string.hpp"
+#include "src/rondb-lib/rdrs_string.hpp"
+#include "src/mystring.hpp"
 
 PKRResponse::PKRResponse(const RS_Buffer *respBuff) {
   this->resp = respBuff;

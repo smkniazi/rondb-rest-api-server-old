@@ -17,22 +17,10 @@
  * USA.
  */
 
-#ifndef DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_
-#define DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_
-
+#include "src/mystring.hpp"
 #include <stdint.h>
 #include <cstring>
 #include <string>
-#include <NdbApi.hpp>
-
-// function defined in RonDB lib
-size_t convert_to_printable(char *to, size_t to_len, const char *from, size_t from_len,
-                            const CHARSET_INFO *from_cs, size_t nbytes = 0);
-
-size_t well_formed_copy_nchars(const CHARSET_INFO *to_cs, char *to, size_t to_length,
-                               const CHARSET_INFO *from_cs, const char *from, size_t from_length,
-                               size_t nchars, const char **well_formed_error_pos,
-                               const char **cannot_convert_error_pos, const char **from_end_pos);
 
 /*!
     @brief calculates the extra space to escape a JSON string
@@ -160,5 +148,3 @@ std::string escape_string(const std::string &s) noexcept {
 
   return result;
 }
-
-#endif  // DATA_ACCESS_RONDB_SRC_COMMON_RDRS_STRING_HPP_
