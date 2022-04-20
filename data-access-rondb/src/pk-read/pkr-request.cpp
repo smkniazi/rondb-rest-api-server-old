@@ -22,35 +22,35 @@
 #include "src/rdrs-const.h"
 #include "src/status.hpp"
 
-PKRRequest::PKRRequest(char *request) {
-  this->buffer = request;
+PKRRequest::PKRRequest(const RS_Buffer *request) {
+  this->req = request;
 }
 
 Uint32 PKRRequest::OperationType() {
-  return (reinterpret_cast<Uint32 *>(buffer))[PKR_OP_TYPE_IDX];
+  return (reinterpret_cast<Uint32 *>(req->buffer))[PKR_OP_TYPE_IDX];
 }
 
 Uint32 PKRRequest::Length() {
-  return (reinterpret_cast<Uint32 *>(buffer))[PKR_LENGTH_IDX];
+  return (reinterpret_cast<Uint32 *>(req->buffer))[PKR_LENGTH_IDX];
 }
 
 Uint32 PKRRequest::Capacity() {
-  return (reinterpret_cast<Uint32 *>(buffer))[PKR_CAPACITY_IDX];
+  return (reinterpret_cast<Uint32 *>(req->buffer))[PKR_CAPACITY_IDX];
 }
 
 const char *PKRRequest::DB() {
-  Uint32 dbOffset = (reinterpret_cast<Uint32 *>(buffer))[PKR_DB_IDX];
-  return buffer + dbOffset;
+  Uint32 dbOffset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_DB_IDX];
+  return req->buffer + dbOffset;
 }
 
 const char *PKRRequest::Table() {
-  Uint32 tableOffset = (reinterpret_cast<Uint32 *>(buffer))[PKR_TABLE_IDX];
-  return buffer + tableOffset;
+  Uint32 tableOffset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_TABLE_IDX];
+  return req->buffer + tableOffset;
 }
 
 Uint32 PKRRequest::PKColumnsCount() {
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_PK_COLS_IDX];
-  Uint32 count  = (reinterpret_cast<Uint32 *>(buffer))[offset / ADDRESS_SIZE];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_PK_COLS_IDX];
+  Uint32 count  = (reinterpret_cast<Uint32 *>(req->buffer))[offset / ADDRESS_SIZE];
   return count;
 }
 
@@ -61,37 +61,37 @@ Uint32 PKRRequest::PKTupleOffset(const int n) {
   //                         ...............................................|
   //
 
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_PK_COLS_IDX];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_PK_COLS_IDX];
   Uint32 kvOffset =
-      (reinterpret_cast<Uint32 *>(buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
+      (reinterpret_cast<Uint32 *>(req->buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
   return kvOffset;
 }
 
 const char *PKRRequest::PKName(Uint32 index) {
   Uint32 kvOffset = PKTupleOffset(index);
-  Uint32 kOffset  = (reinterpret_cast<Uint32 *>(buffer))[kvOffset / 4];
-  return buffer + kOffset;
+  Uint32 kOffset  = (reinterpret_cast<Uint32 *>(req->buffer))[kvOffset / 4];
+  return req->buffer + kOffset;
 }
 
 const char *PKRRequest::PKValueCStr(Uint32 index) {
   Uint32 kvOffset = PKTupleOffset(index);
-  Uint32 vOffset  = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
+  Uint32 vOffset  = (reinterpret_cast<Uint32 *>(req->buffer))[(kvOffset / 4) + 1];
 
-  return buffer + vOffset + 2;  // skip first 2 bytes that contain size of string
+  return req->buffer + vOffset + 2;  // skip first 2 bytes that contain size of string
 }
 
 Uint16 PKRRequest::PKValueLen(Uint32 index) {
-  Uint32 kvOffset        = PKTupleOffset(index);
-  Uint32 vOffset         = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
-  unsigned char *data_start       = (unsigned char*)buffer + vOffset;
-  Uint16 len = ((Uint16)data_start[1] * (Uint16)256) + (Uint16)data_start[0];
+  Uint32 kvOffset           = PKTupleOffset(index);
+  Uint32 vOffset            = (reinterpret_cast<Uint32 *>(req->buffer))[(kvOffset / 4) + 1];
+  unsigned char *data_start = (unsigned char *)req->buffer + vOffset;
+  Uint16 len                = ((Uint16)data_start[1] * (Uint16)256) + (Uint16)data_start[0];
   return len;
 }
 
 int PKRRequest::PKValueNDBStr(Uint32 index, const NdbDictionary::Column *col, char **data) {
   Uint32 kvOffset  = PKTupleOffset(index);
-  Uint32 vOffset   = (reinterpret_cast<Uint32 *>(buffer))[(kvOffset / 4) + 1];
-  char *data_start = buffer + vOffset;
+  Uint32 vOffset   = (reinterpret_cast<Uint32 *>(req->buffer))[(kvOffset / 4) + 1];
+  char *data_start = req->buffer + vOffset;
 
   // The Go layer sets the length of the string in the first two bytes of the string
   const NdbDictionary::Column::ArrayType array_type = col->getArrayType();
@@ -99,7 +99,7 @@ int PKRRequest::PKValueNDBStr(Uint32 index, const NdbDictionary::Column *col, ch
   const size_t user_size                            = data_start[1] * 256 + data_start[0];
 
   if (user_size > max_size) {
-    *data = NULL;
+    *data = nullptr;
     return -1;
   }
 
@@ -119,17 +119,17 @@ int PKRRequest::PKValueNDBStr(Uint32 index, const NdbDictionary::Column *col, ch
     *data = data_start;
     return 0;
   default:
-    *data = NULL;
+    *data = nullptr;
     return -1;
   }
 }
 
 Uint32 PKRRequest::ReadColumnsCount() {
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_READ_COLS_IDX];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_READ_COLS_IDX];
   if (offset == 0) {
     return 0;
   } else {
-    Uint32 count = (reinterpret_cast<Uint32 *>(buffer))[offset / ADDRESS_SIZE];
+    Uint32 count = (reinterpret_cast<Uint32 *>(req->buffer))[offset / ADDRESS_SIZE];
     return count;
   }
 }
@@ -140,10 +140,10 @@ const char *PKRRequest::ReadColumnName(const Uint32 n) {
   //          ...............................................|                                 ^
   //                         ..................................................................|
 
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_READ_COLS_IDX];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_READ_COLS_IDX];
   Uint32 r_offset =
-      (reinterpret_cast<Uint32 *>(buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
-  return buffer + r_offset + ADDRESS_SIZE;
+      (reinterpret_cast<Uint32 *>(req->buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
+  return req->buffer + r_offset + ADDRESS_SIZE;
 }
 
 DataReturnType PKRRequest::ReadColumnReturnType(const Uint32 n) {
@@ -152,18 +152,18 @@ DataReturnType PKRRequest::ReadColumnReturnType(const Uint32 n) {
   //          ............................|                                 ^
   //                         ...............................................|
 
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_READ_COLS_IDX];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_READ_COLS_IDX];
   Uint32 c_offset =
-      (reinterpret_cast<Uint32 *>(buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
-  Uint32 type = (reinterpret_cast<Uint32 *>(buffer))[c_offset / ADDRESS_SIZE];
+      (reinterpret_cast<Uint32 *>(req->buffer))[(offset / ADDRESS_SIZE) + 1 + n];  // +1 for count
+  Uint32 type = (reinterpret_cast<Uint32 *>(req->buffer))[c_offset / ADDRESS_SIZE];
   return static_cast<DataReturnType>(type);
 }
 
 const char *PKRRequest::OperationId() {
-  Uint32 offset = (reinterpret_cast<Uint32 *>(buffer))[PKR_OP_ID_IDX];
+  Uint32 offset = (reinterpret_cast<Uint32 *>(req->buffer))[PKR_OP_ID_IDX];
   if (offset != 0) {
-    return buffer + offset;
+    return req->buffer + offset;
   } else {
-    return NULL;
+    return nullptr;
   }
 }

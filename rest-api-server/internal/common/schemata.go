@@ -1,10 +1,3 @@
-package common
-
-import (
-	"strconv"
-	"strings"
-)
-
 /*
  * This file is part of the RonDB REST API Server
  * Copyright (c) 2022 Hopsworks AB
@@ -21,6 +14,13 @@ import (
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
+package common
+
+import (
+	"strconv"
+	"strings"
+)
 
 var databases map[string][][]string = make(map[string][][]string)
 

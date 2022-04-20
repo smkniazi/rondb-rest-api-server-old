@@ -72,8 +72,19 @@ func ShutdownConnection() *DalError {
 	return nil
 }
 
-func RonDBPKRead(request unsafe.Pointer, response unsafe.Pointer) *DalError {
-	ret := C.PKRead((*C.char)(request), (*C.char)(response))
+func RonDBPKRead(request *Native_Buffer, response *Native_Buffer) *DalError {
+	// unsafe.Pointer
+	// create C structs for  buffers
+	var crequest C.RS_Buffer
+	var cresponse C.RS_Buffer
+	crequest.buffer = (*C.char)(request.Buffer)
+	crequest.size = C.uint(request.Size)
+
+	cresponse.buffer = (*C.char)(response.Buffer)
+	cresponse.size = C.uint(response.Size)
+
+	ret := C.PKRead(&crequest, &cresponse)
+
 	defer cleanUp(&ret)
 	if ret.http_code != http.StatusOK {
 		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),

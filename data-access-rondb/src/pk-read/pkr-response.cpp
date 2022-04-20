@@ -24,12 +24,12 @@
 #include <sstream>
 #include "src/common/rdrs_string.hpp"
 
-PKRResponse::PKRResponse(char *respBuff) {
-  this->respBuff = respBuff;
+PKRResponse::PKRResponse(const RS_Buffer *respBuff) {
+  this->resp = respBuff;
 }
 
 char *PKRResponse::GetResponseBuffer() {
-  return respBuff;
+  return resp->buffer;
 }
 
 Uint32 PKRResponse::GetMaxCapacity() {
@@ -45,7 +45,7 @@ Uint32 PKRResponse::GetWriteHeader() {
 }
 
 void *PKRResponse::GetWritePointer() {
-  return respBuff + writeHeader;
+  return resp->buffer + writeHeader;
 }
 
 RS_Status PKRResponse::Append_string(std::string str, bool add_quotes, bool appendComma) {
@@ -73,11 +73,11 @@ RS_Status PKRResponse::Append_cstring(const char *str, bool appendComma) {
     return RS_SERVER_ERROR(ERROR_016);
   }
 
-  std::memcpy(respBuff + writeHeader, str, strl);
+  std::memcpy(resp->buffer + writeHeader, str, strl);
   writeHeader += strl;
 
   if (appendComma) {
-    respBuff[writeHeader] = ',';
+    resp->buffer[writeHeader] = ',';
     writeHeader += 1;
   }
 
@@ -132,7 +132,7 @@ RS_Status PKRResponse::Append_d64(double num, bool appendComma) {
 }
 
 RS_Status PKRResponse::Append_NULL() {
-  respBuff[writeHeader] = 0x00;
+  resp->buffer[writeHeader] = 0x00;
   writeHeader += 1;
   return RS_OK;
 }

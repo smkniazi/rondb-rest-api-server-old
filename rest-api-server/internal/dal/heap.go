@@ -20,12 +20,18 @@ package dal
 
 /*
 #include "./../../../data-access-rondb/src/rdrs-const.h"
+#include "./../../../data-access-rondb/src/rdrs-dal.h"
 */
 import "C"
 import (
 	"fmt"
 	"unsafe"
 )
+
+type Native_Buffer struct {
+	Size   uint32
+	Buffer unsafe.Pointer
+}
 
 const BUFFER_SIZE = 512
 
@@ -39,6 +45,7 @@ func init() {
 	}
 }
 
-func GetBuffer() (unsafe.Pointer, uint32) {
-	return C.malloc(C.size_t(BUFFER_SIZE)), BUFFER_SIZE
+func GetBuffer() *Native_Buffer {
+	buff := Native_Buffer{Buffer: C.malloc(C.size_t(BUFFER_SIZE)), Size: BUFFER_SIZE}
+	return &buff
 }

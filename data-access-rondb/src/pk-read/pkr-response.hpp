@@ -28,13 +28,13 @@
 
 class PKRResponse {
  private:
-  char *respBuff;
+  const RS_Buffer *resp;
   Uint32 capacity    = 512;  // TODO(salman) FIX ME
   Uint32 writeHeader = 0;
 
 
  public:
-  explicit PKRResponse(char *respBuff);
+  explicit PKRResponse(const RS_Buffer *respBuff);
 
   /**
    * Append to response buffer

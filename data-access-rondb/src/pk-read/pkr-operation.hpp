@@ -43,7 +43,7 @@ class PKROperation {
   std::unordered_map<std::string, const NdbDictionary::Column *> pk_cols;
 
  public:
-  PKROperation(char *req_buff, char *resp_buff, Ndb *ndb_object);
+  PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_object);
 
   /**
    * perform the operation

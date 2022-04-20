@@ -47,10 +47,11 @@ extern "C" {
 #define ERROR_021 "Programming error buffer is too small."
 #define ERROR_022 "Failed to set lock level."
 #define ERROR_023 "Failed to set NdbOperation::equal()."
-#define ERROR_024 "Failed to find free API node slot"
-#define ERROR_025 "Data return type is not supported"
-#define ERROR_026 "Reading BLOB/TEXT column is not supported yet"
-#define ERROR_027 "Invalid Date/Time"
+#define ERROR_024 "Failed to find free API node slot."
+#define ERROR_025 "Data return type is not supported."
+#define ERROR_026 "Reading BLOB/TEXT column is not supported yet."
+#define ERROR_027 "Invalid Date/Time."
+#define ERROR_028 "Programming error. Please report bug."
 
 #ifdef __cplusplus
 }

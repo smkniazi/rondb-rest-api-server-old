@@ -25,7 +25,7 @@
 
 class PKRRequest {
  private:
-  char *buffer;
+  const RS_Buffer *req;
 
   /**
    * Get offset of nth primary key/value pair
@@ -36,7 +36,7 @@ class PKRRequest {
   Uint32 PKTupleOffset(const int n);
 
  public:
-  explicit PKRRequest(char *request);
+  explicit PKRRequest(const RS_Buffer *request);
 
   /**
    * Opration type

@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -69,8 +68,8 @@ func setResponseError(c *gin.Context, code int, resp common.Response) {
 	c.String(code, string(b))
 }
 
-func setResponseBodyUnsafe(c *gin.Context, code int, resp unsafe.Pointer) {
-	res := common.Response{OK: true, Message: common.ProcessResponse(resp)} // TODO XXX Fix this. Use response writer. Benchmark this part
+func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer) {
+	res := common.Response{OK: true, Message: common.ProcessResponse(resp.Buffer)} // TODO XXX Fix this. Use response writer. Benchmark this part
 	b, _ := json.Marshal(res)
 	c.String(code, string(b))
 }

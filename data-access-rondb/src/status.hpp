@@ -56,7 +56,7 @@ inline RS_Status __RS_ERROR_RONDB(const struct NdbError &error, std::string msg,
 
 #define __MYFILENAME__ __FILE__
 
-#define RS_OK __RS_ERROR(SUCCESS, -1, -1, -1, -1, NULL, 0, NULL);
+#define RS_OK __RS_ERROR(SUCCESS, -1, -1, -1, -1, nullptr, 0, nullptr);
 #define RS_CLIENT_ERROR(msg)                                                                       \
   __RS_ERROR(CLIENT_ERROR, -1, -1, -1, -1, __strToCharArr(msg), __LINE__,                          \
              __strToCharArr(__MYFILENAME__));

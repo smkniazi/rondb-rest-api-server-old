@@ -69,27 +69,23 @@ import (
 //    null terminated  operation Id
 //
 
-func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Pointer, error) {
-	response, respSize := dal.GetBuffer()
-	request, reqSize := dal.GetBuffer()
-
-	// iBuf := (*[dal.BUFFER_SIZE / C.ADDRESS_SIZE]uint32)(request)
-	// bBuf := (*[dal.BUFFER_SIZE]byte)(request)
-	iBuf := unsafe.Slice((*uint32)(request), reqSize)
-	bBuf := unsafe.Slice((*byte)(request), reqSize)
+func createNativeRequest(pkrParams *ds.PKReadParams) (*dal.Native_Buffer, *dal.Native_Buffer, error) {
+	response := dal.GetBuffer()
+	request := dal.GetBuffer()
+	iBuf := unsafe.Slice((*uint32)(request.Buffer), request.Size)
 
 	// First N bytes are for header
 	var head uint32 = C.PKR_HEADER_END
 
 	dbOffSet := head
 
-	head, err := common.CopyGoStrToCStr([]byte(*pkrParams.DB), bBuf, head, reqSize)
+	head, err := common.CopyGoStrToCStr([]byte(*pkrParams.DB), request, head)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	tableOffSet := head
-	head, err = common.CopyGoStrToCStr([]byte(*pkrParams.Table), bBuf, head, reqSize)
+	head, err = common.CopyGoStrToCStr([]byte(*pkrParams.Table), request, head)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -110,12 +106,12 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 
 		head = head + 8 //  for key and value offsets
 		keyOffset := head
-		head, err = common.CopyGoStrToCStr([]byte(*filter.Column), bBuf, head, reqSize)
+		head, err = common.CopyGoStrToCStr([]byte(*filter.Column), request, head)
 		if err != nil {
 			return nil, nil, err
 		}
 		valueOffset := head
-		head, err = common.CopyGoStrToNDBStr(*filter.Value, bBuf, head, reqSize)
+		head, err = common.CopyGoStrToNDBStr(*filter.Value, request, head)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -157,7 +153,7 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 			head += C.ADDRESS_SIZE
 
 			// col name
-			head, err = common.CopyGoStrToCStr([]byte(*col.Column), bBuf, head, reqSize)
+			head, err = common.CopyGoStrToCStr([]byte(*col.Column), request, head)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -168,7 +164,7 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 	var opIdOffset uint32 = 0
 	if pkrParams.OperationID != nil {
 		opIdOffset = head
-		head, err = common.CopyGoStrToCStr([]byte(*pkrParams.OperationID), bBuf, head, reqSize)
+		head, err = common.CopyGoStrToCStr([]byte(*pkrParams.OperationID), request, head)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -176,7 +172,7 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 
 	// request buffer header
 	iBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
-	iBuf[C.PKR_CAPACITY_IDX] = uint32(reqSize)
+	iBuf[C.PKR_CAPACITY_IDX] = uint32(request.Size)
 	iBuf[C.PKR_LENGTH_IDX] = uint32(head)
 	iBuf[C.PKR_DB_IDX] = uint32(dbOffSet)
 	iBuf[C.PKR_TABLE_IDX] = uint32(tableOffSet)
@@ -185,9 +181,9 @@ func createNativeRequest(pkrParams *ds.PKReadParams) (unsafe.Pointer, unsafe.Poi
 	iBuf[C.PKR_OP_ID_IDX] = uint32(opIdOffset)
 
 	//response buffer header
-	respBuf := unsafe.Slice((*uint32)(request), reqSize)
+	respBuf := unsafe.Slice((*uint32)(response.Buffer), response.Size)
 	respBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
-	respBuf[C.PKR_CAPACITY_IDX] = uint32(respSize)
+	respBuf[C.PKR_CAPACITY_IDX] = uint32(response.Size)
 	respBuf[C.PKR_LENGTH_IDX] = uint32(C.ADDRESS_SIZE * 2)
 	//xxd.Print(0, bBuf[:])
 	return request, response, nil

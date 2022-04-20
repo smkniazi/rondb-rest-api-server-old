@@ -33,7 +33,7 @@
 #include "src/common/rdrs_date.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-PKROperation::PKROperation(char *reqBuff, char *respBuff, Ndb *ndbObject)
+PKROperation::PKROperation(RS_Buffer *reqBuff, RS_Buffer *respBuff, Ndb *ndbObject)
     : request(reqBuff), response(respBuff) {
   this->ndb_object = ndbObject;
 }
@@ -68,7 +68,7 @@ RS_Status PKROperation::SetupTransaction() {
  * @return status
  */
 RS_Status PKROperation::SetupReadOperation() {
-  if (operation != NULL) {
+  if (operation != nullptr) {
     return RS_CLIENT_ERROR(ERROR_006);
   }
 
@@ -90,14 +90,14 @@ RS_Status PKROperation::SetupReadOperation() {
 
   if (request.ReadColumnsCount() > 0) {
     for (Uint32 i = 0; i < request.ReadColumnsCount(); i++) {
-      NdbRecAttr *rec = operation->getValue(request.ReadColumnName(i), NULL);
+      NdbRecAttr *rec = operation->getValue(request.ReadColumnName(i), nullptr);
       recs.insert(recs.begin(), rec);
     }
   } else {
     std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator it =
         non_pk_cols.begin();
     while (it != non_pk_cols.end()) {
-      NdbRecAttr *rec = operation->getValue(it->first.c_str(), NULL);
+      NdbRecAttr *rec = operation->getValue(it->first.c_str(), nullptr);
       it++;
       recs.insert(recs.begin(), rec);
     }
@@ -120,7 +120,7 @@ RS_Status PKROperation::CreateResponse() {
   } else {
     // iterate over all columns
     response.Append_string("{", false, false);
-    if (request.OperationId() != NULL) {
+    if (request.OperationId() != nullptr) {
       response.Append_string("\"operationId\": ", false, false);
       response.Append_string(std::string("\"") + request.OperationId() + std::string("\""), false,
                              true);
@@ -177,40 +177,14 @@ int PKROperation::GetByteArray(const NdbRecAttr *attr, const char **first_byte, 
     *bytes      = static_cast<size_t>(aRef[1]) * 256 + static_cast<size_t>(aRef[0]);
     return 0;
   default:
-    first_byte = NULL;
+    first_byte = nullptr;
     *bytes     = 0;
     return -1;
   }
 }
 
-// https://docs.oracle.com/cd/E17952_01/ndbapi-en/ndbapi-examples-array-simple.html
-int PKROperation::CopyString(const NdbRecAttr *attr, int start) {
-  int attr_bytes;
-  const char *data_start_ptr = NULL;
-
-  /* get stored length and data using get_byte_array */
-  if (GetByteArray(attr, &data_start_ptr, &attr_bytes) == 0) {
-    memcpy(response.GetResponseBuffer() + start, data_start_ptr, attr_bytes);
-
-    std::string str = std::string(data_start_ptr, attr_bytes);
-    /* sprintf(NULL,"PTR: %p\n", data_start_ptr); */
-    /* we have length of the string and start location */
-    //    str = string(data_start_ptr, attr_bytes);
-    //    if (attr->getType() == NdbDictionary::Column::Char) {
-    //      /* Fixed Char : remove blank spaces at the end */
-    //      size_t endpos = str.find_last_not_of(" ");
-    //      if (string::npos != endpos) {
-    //        str = str.substr(0, endpos + 1);
-    //      }
-    //    }
-    response.GetResponseBuffer()[start + attr_bytes] = 0x00;
-    return start + attr_bytes + 1;
-  }
-  return -1;
-}
-
 RS_Status PKROperation::Init() {
-  if (table_dic == NULL) {
+  if (table_dic == nullptr) {
     if (ndb_object->setCatalogName(request.DB()) != 0) {
       return RS_CLIENT_ERROR(ERROR_011 + std::string(" Database: ") + std::string(request.DB()) +
                              " Table: " + request.Table());
@@ -350,7 +324,7 @@ RS_Status PKROperation::PerformOperation() {
 }
 
 RS_Status PKROperation::Abort() {
-  if (transaction != NULL) {
+  if (transaction != nullptr) {
     NdbTransaction::CommitStatusType status = transaction->commitStatus();
     if (status == NdbTransaction::CommitStatusType::Started) {
       transaction->execute(NdbTransaction::Rollback);
@@ -363,8 +337,6 @@ RS_Status PKROperation::Abort() {
 
 RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendComma) {
   const NdbDictionary::Column *col = attr->getColumn();
-  RS_Status status;
-
   if (attr->isNULL()) {
     return response.Append_string("null", false, appendComma);
   }
@@ -376,71 +348,61 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Tinyint: {
     ///< 8 bit. 1 byte signed integer, can be used in array
-    status = response.Append_i8(attr->int8_value(), appendComma);
-    break;
+    return response.Append_i8(attr->int8_value(), appendComma);
   }
   case NdbDictionary::Column::Tinyunsigned: {
     ///< 8 bit. 1 byte unsigned integer, can be used in array
-    status = response.Append_iu8(attr->u_8_value(), appendComma);
-    break;
+    return response.Append_iu8(attr->u_8_value(), appendComma);
   }
   case NdbDictionary::Column::Smallint: {
     ///< 16 bit. 2 byte signed integer, can be used in array
-    status = response.Append_i16(attr->short_value(), appendComma);
-    break;
+    return response.Append_i16(attr->short_value(), appendComma);
   }
   case NdbDictionary::Column::Smallunsigned: {
     ///< 16 bit. 2 byte unsigned integer, can be used in array
-    status = response.Append_iu16(attr->u_short_value(), appendComma);
-    break;
+    return response.Append_iu16(attr->u_short_value(), appendComma);
   }
   case NdbDictionary::Column::Mediumint: {
     ///< 24 bit. 3 byte signed integer, can be used in array
-    status = response.Append_i24(attr->medium_value(), appendComma);
-    break;
+    return response.Append_i24(attr->medium_value(), appendComma);
   }
   case NdbDictionary::Column::Mediumunsigned: {
     ///< 24 bit. 3 byte unsigned integer, can be used in array
-    status = response.Append_iu24(attr->u_medium_value(), appendComma);
-    break;
+    return response.Append_iu24(attr->u_medium_value(), appendComma);
   }
   case NdbDictionary::Column::Int: {
     ///< 32 bit. 4 byte signed integer, can be used in array
-    status = response.Append_i32(attr->int32_value(), appendComma);
-    break;
+    return response.Append_i32(attr->int32_value(), appendComma);
   }
   case NdbDictionary::Column::Unsigned: {
     ///< 32 bit. 4 byte unsigned integer, can be used in array
-    status = response.Append_iu32(attr->u_32_value(), appendComma);
-    break;
+    return response.Append_iu32(attr->u_32_value(), appendComma);
   }
   case NdbDictionary::Column::Bigint: {
     ///< 64 bit. 8 byte signed integer, can be used in array
-    status = response.Append_i64(attr->int64_value(), appendComma);
-    break;
+    return response.Append_i64(attr->int64_value(), appendComma);
   }
   case NdbDictionary::Column::Bigunsigned: {
     ///< 64 Bit. 8 byte signed integer, can be used in array
-    status = response.Append_iu64(attr->u_64_value(), appendComma);
-    break;
+    return response.Append_iu64(attr->u_64_value(), appendComma);
   }
   case NdbDictionary::Column::Float: {
     ///< 32-bit float. 4 bytes float, can be used in array
-    status = response.Append_f32(attr->float_value(), appendComma);
-    break;
+    return response.Append_f32(attr->float_value(), appendComma);
   }
   case NdbDictionary::Column::Double: {
     ///< 64-bit float. 8 byte float, can be used in array
-    status = response.Append_d64(attr->double_value(), appendComma);
-    break;
+    return response.Append_d64(attr->double_value(), appendComma);
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    return RS_CLIENT_ERROR("Not Implemented. MySQL < 5.0 Olddecimal.");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    return RS_CLIENT_ERROR("Not Implemented. MySQL < 5.0 Olddecimalunsigned.");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Decimal:
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
@@ -463,7 +425,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Longvarchar: {
     ///< Length bytes: 2, little-endian
     int attr_bytes;
-    const char *data_start = NULL;
+    const char *data_start = nullptr;
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
@@ -479,7 +441,7 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   case NdbDictionary::Column::Longvarbinary: {
     ///< Length bytes: 2, little-endian
     int attr_bytes;
-    const char *data_start = NULL;
+    const char *data_start = nullptr;
     if (GetByteArray(attr, &data_start, &attr_bytes) != 0) {
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
@@ -492,8 +454,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Datetime")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
@@ -505,13 +467,13 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Blob")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Text: {
     ///< Text blob
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Text")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Bit: {
     //< Bit, length specifies no of bits
@@ -536,8 +498,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Time: {
     ///< Time without date
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Time")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
@@ -546,8 +508,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
-    TRACE(std::string("Getting PK Column: ") + std::string(col->getName()) + " Type: Timestamp")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   ///**
   // * Time types in MySQL 5.6 add microsecond fraction.
@@ -614,11 +576,8 @@ RS_Status PKROperation::WriteColToRespBuff(const NdbRecAttr *attr, bool appendCo
   }
   }
 
-  if (status.http_code != SUCCESS) {
-    return status;
-  } else {
-    return RS_OK;
-  }
+  return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                         " Type: " + std::to_string(col->getType()));
 }
 
 RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uint32 colIdx) {
@@ -833,13 +792,12 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Olddecimal: {
     ///< MySQL < 5.0 signed decimal,  Precision, Scale
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Olddecimal")
-    return RS_CLIENT_ERROR("Not Implemented. Type: Olddecimal");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Olddecimalunsigned: {
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) +
-          " Type: Olddecimalunsigned")
-    return RS_CLIENT_ERROR("Not Implemented. Type: Olddecimalunsigned");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Decimalunsigned: {
     ///< MySQL >= 5.0 signed decimal,  Precision, Scale
@@ -985,8 +943,8 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Datetime: {
     ///< Precision down to 1 sec (sizeof(Datetime) == 8 bytes )
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Datetime")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Date: {
     ///< Precision down to 1 day(sizeof(Date) == 4 bytes )
@@ -1017,23 +975,23 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Blob: {
     ///< Binary large object (see NdbBlob)
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Blob")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Text: {
     ///< Text blob
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Text")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Bit: {
     ///< Bit, length specifies no of bits
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Bit")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Time: {
     ///< Time without date
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Time")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   case NdbDictionary::Column::Year: {
     ///< Year 1901-2155 (1 byte)
@@ -1059,8 +1017,8 @@ RS_Status PKROperation::SetOperationPKCols(const NdbDictionary::Column *col, Uin
   }
   case NdbDictionary::Column::Timestamp: {
     ///< Unix time
-    TRACE(std::string("Setting PK Column: ") + std::string(col->getName()) + " Type: Timestamp")
-    return RS_SERVER_ERROR("Not Implemented");
+    return RS_SERVER_ERROR(ERROR_028 + std::string(" Column: ") + std::string(col->getName()) +
+                           " Type: " + std::to_string(col->getType()));
   }
   ///**
   // * Time types in MySQL 5.6 add microsecond fraction.

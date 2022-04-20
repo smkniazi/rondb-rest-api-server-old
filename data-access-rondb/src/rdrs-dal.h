@@ -39,12 +39,12 @@ typedef struct RS_Status {
   int classification;   // NdbError.ndberror_classification_enum
   int code;             // NdbError.code
   int mysql_code;       // NdbError.mysql_code
-  char *message;        // REST server message. NOTE: receiver's responsibility to free this memory
-  int err_line_no;
-  char *err_file_name;  // NOTE: receiver's responsibility to free this memory
+  char *message;        // error message. NOTE: it is receiver's responsibility to free this memory
+  int err_line_no;      // error line number
+  char *err_file_name;  // NOTE: it is receiver's responsibility to free this memory
 } RS_Status;
 
-// Data return type you can change the return type for the column data
+// Data return type. You can change the return type for the column data
 // int/floats/decimal are returned as JSON Number type (default),
 // varchar/char are returned as strings (default) and varbinary as base64 (default)
 // Right now only default return type is supported
@@ -54,6 +54,12 @@ typedef enum DataReturnType {
 
   __MAX_TYPE_NOT_A_DRT = 1
 } DataReturnType;
+
+// Buffer that contain request or response objects
+typedef struct RS_Buffer {
+  unsigned int size;      // Buffer size
+  char *buffer;  // Buffer
+} RS_Buffer;
 
 /**
  * Initialize connection to the database
@@ -68,7 +74,7 @@ RS_Status Shutdown();
 /**
  * Primary key read operation
  */
-RS_Status PKRead(char *reqBuff, char *respBuff);
+RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff);
 
 #endif
 

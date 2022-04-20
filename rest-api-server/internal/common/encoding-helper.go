@@ -20,19 +20,24 @@ package common
 
 import (
 	"fmt"
+	"unsafe"
+
+	"hopsworks.ai/rdrs/internal/dal"
 )
 
 // copy a go string to the buffer at the specified location.
 // NULL is appended to the string for c/c++ compatibility
-func CopyGoStrToCStr(src []byte, dst []byte, offset uint32, capacity uint32) (uint32, error) {
-	if offset+uint32(len(src))+1 > capacity {
+func CopyGoStrToCStr(src []byte, dst *dal.Native_Buffer, offset uint32) (uint32, error) {
+	dstBuf := unsafe.Slice((*byte)(dst.Buffer), dst.Size)
+
+	if offset+uint32(len(src))+1 > dst.Size {
 		return 0, fmt.Errorf("Trying to write more data than the buffer capacity")
 	}
 
 	for i, j := offset, 0; i < (offset + uint32(len(src))); i, j = i+1, j+1 {
-		dst[i] = src[j]
+		dstBuf[i] = src[j]
 	}
-	dst[offset+uint32(len(src))] = 0x00
+	dstBuf[offset+uint32(len(src))] = 0x00
 	return offset + uint32(len(src)) + 1, nil
 }
 
@@ -47,7 +52,8 @@ func CopyGoStrToCStr(src []byte, dst []byte, offset uint32, capacity uint32) (ui
 // for now we store the length in 2 bytes. Later in the native layer
 // we adjust the size accordingly.
 
-func CopyGoStrToNDBStr(src []byte, dst []byte, offset uint32, capacity uint32) (uint32, error) {
+func CopyGoStrToNDBStr(src []byte, dst *dal.Native_Buffer, offset uint32) (uint32, error) {
+	dstBuf := unsafe.Slice((*byte)(dst.Buffer), dst.Size)
 
 	// remove the quotation marks from string
 	str := string(src)
@@ -55,18 +61,18 @@ func CopyGoStrToNDBStr(src []byte, dst []byte, offset uint32, capacity uint32) (
 		src = []byte(str[1 : len(str)-1])
 	}
 
-	if offset+uint32(len(src))+1+2 > capacity {
+	if offset+uint32(len(src))+1+2 > dst.Size {
 		return 0, fmt.Errorf("Trying to write more data than the buffer capacity")
 	}
 
-	dst[offset] = byte(len(src) % 256)
-	dst[offset+1] = byte(len(src) / 256)
+	dstBuf[offset] = byte(len(src) % 256)
+	dstBuf[offset+1] = byte(len(src) / 256)
 	offset += 2
 
 	for i, j := offset, 0; i < (offset + uint32(len(src))); i, j = i+1, j+1 {
-		dst[i] = src[j]
+		dstBuf[i] = src[j]
 	}
-	dst[offset+uint32(len(src))] = 0x00
+	dstBuf[offset+uint32(len(src))] = 0x00
 	return offset + uint32(len(src)) + 1, nil
 }
 

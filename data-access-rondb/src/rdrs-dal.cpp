@@ -117,7 +117,7 @@ RS_Status CloseNDBObject(Ndb **ndb_object) {
   return RS_OK;
 }
 
-RS_Status PKRead(char *reqBuff, char *respBuff) {
+RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
   Ndb *ndb_object  = nullptr;
   RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
   if (status.http_code != SUCCESS) {
