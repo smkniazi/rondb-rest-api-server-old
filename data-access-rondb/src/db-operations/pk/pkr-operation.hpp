@@ -30,20 +30,21 @@
 
 class PKROperation {
  private:
-  PKRRequest request;
-  PKRResponse response;
+  NdbTransaction *transaction = nullptr;
+  Ndb *ndb_object             = nullptr;
 
-  const NdbDictionary::Table *table_dic = nullptr;
-  NdbTransaction *transaction           = nullptr;
-  NdbOperation *operation               = nullptr;
-  Ndb *ndb_object                       = nullptr;
-
-  std::vector<NdbRecAttr *> recs;  // records that will be read from DB
-  std::unordered_map<std::string, const NdbDictionary::Column *> non_pk_cols;
-  std::unordered_map<std::string, const NdbDictionary::Column *> pk_cols;
+  std::vector<PKRRequest *> requests;
+  std::vector<PKRResponse *> responses;
+  std::vector<NdbOperation *> operations;
+  std::vector<std::vector<NdbRecAttr *>> all_recs;  // records that will be read from DB
+  std::vector<const NdbDictionary::Table *> all_table_dicts;
+  std::vector<std::unordered_map<std::string, const NdbDictionary::Column *>> all_non_pk_cols;
+  std::vector<std::unordered_map<std::string, const NdbDictionary::Column *>> all_pk_cols;
 
  public:
   PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_object);
+
+  ~PKROperation();
 
   /**
    * perform the operation
@@ -105,6 +106,5 @@ class PKROperation {
    * @return status
    */
   RS_Status ValidateRequest();
-
 };
 #endif  // DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_
