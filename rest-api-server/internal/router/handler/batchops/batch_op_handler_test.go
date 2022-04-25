@@ -25,22 +25,30 @@ import (
 
 	"github.com/gin-gonic/gin"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
-	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-func TestBatchOps(t *testing.T) {
-	router := gin.Default()
-	group := router.Group(ds.DBS_OPS_EP_GROUP)
-	group.POST(ds.BATCH_OPERATION, BatchOpsHandler)
-	url := URL()
+// func TestBatchSimple(t *testing.T) {
 
-	operations := NewOperations(t, 3)
-	operationsWrapper := ds.Operations{Operations: &operations}
-	body, _ := json.Marshal(operationsWrapper)
+// testTable := "int_table"
+// testDb := "DB004"
+// validateColumns := []interface{}{"col0", "col1"}
+// tests := map[string]ds.PKTestInfo{
+// "simple1": {
+// PkReq: ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+// ReadColumns: tu.NewReadColumns(t, "col", 2),
+// OperationID: tu.NewOperationID(t, 64),
+// },
+// Table:        testTable,
+// Db:           testDb,
+// HttpCode:     http.StatusOK,
+// BodyContains: "",
+// RespKVs:      validateColumns,
+// },
+// }
 
-	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusOK, "")
-}
+// tu.PkTest(t, tests, BatchOpsHandler, false)
+// }
 
 func TestBatchMissingReqField(t *testing.T) {
 	router := gin.Default()
@@ -49,7 +57,7 @@ func TestBatchMissingReqField(t *testing.T) {
 	url := URL()
 
 	// Test missing method
-	operations := NewOperations(t, 3)
+	operations := NewOperationsTBD(t, 3)
 	operations[1].Method = nil
 	operationsWrapper := ds.Operations{Operations: &operations}
 	body, _ := json.Marshal(operationsWrapper)
@@ -57,7 +65,7 @@ func TestBatchMissingReqField(t *testing.T) {
 		"Error:Field validation for 'Method' failed ")
 
 	// Test missing relative URL
-	operations = NewOperations(t, 3)
+	operations = NewOperationsTBD(t, 3)
 	operations[1].RelativeURL = nil
 	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
@@ -65,7 +73,7 @@ func TestBatchMissingReqField(t *testing.T) {
 		"Error:Field validation for 'RelativeURL' failed ")
 
 	// Test missing body
-	operations = NewOperations(t, 3)
+	operations = NewOperationsTBD(t, 3)
 	operations[1].Body = nil
 	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
@@ -73,7 +81,7 @@ func TestBatchMissingReqField(t *testing.T) {
 		"Error:Field validation for 'Body' failed ")
 
 	// Test missing filter in an operation
-	operations = NewOperations(t, 3)
+	operations = NewOperationsTBD(t, 3)
 	*operations[1].Body = strings.Replace(*operations[1].Body, ds.FILTER_PARAM_NAME, "XXX", -1)
 	operationsWrapper = ds.Operations{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
@@ -81,7 +89,7 @@ func TestBatchMissingReqField(t *testing.T) {
 		"Error:Field validation for 'Filters' failed")
 
 	// Test missing non-required fields
-	operations = NewOperations(t, 1)
+	operations = NewOperationsTBD(t, 1)
 	*operations[0].Body = strings.Replace(*operations[0].Body, ds.READ_COL_PARAM_NAME, "XXX", -1)
 	*operations[0].Body = strings.Replace(*operations[0].Body, ds.OPERATION_ID_PARAM_NAME, "XXX", -1)
 	operationsWrapper = ds.Operations{Operations: &operations}
@@ -89,19 +97,19 @@ func TestBatchMissingReqField(t *testing.T) {
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusOK, "")
 }
 
-func NewOperations(t *testing.T, numOps int) []ds.Operation {
+func NewOperationsTBD(t *testing.T, numOps int) []ds.Operation {
 	operations := make([]ds.Operation, numOps)
 	for i := 0; i < numOps; i++ {
-		operations[i] = NewOperation(t)
+		operations[i] = NewOperationTBD(t)
 	}
 	return operations
 }
 
-func NewOperation(t *testing.T) ds.Operation {
-	opBody, _ := json.MarshalIndent(pkread.NewPKReadReqBody(t), "", "\t")
+func NewOperationTBD(t *testing.T) ds.Operation {
+	opBody, _ := json.MarshalIndent(tu.NewPKReadReqBodyTBD(t), "", "\t")
 	opBodyStr := string(opBody)
 	method := "POST"
-	relativeURL := pkread.NewPKReadURL("db", "table")
+	relativeURL := tu.NewPKReadURL("db", "table")
 
 	op := ds.Operation{
 		Method:      &method,

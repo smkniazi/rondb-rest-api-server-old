@@ -31,3 +31,18 @@ type Operation struct {
 	RelativeURL *string `json:"relative-url"  binding:"required,min=1"`
 	Body        *string `json:"body"          binding:"required,min=1"`
 }
+
+// data structs for testing
+type BatchOperationTestInfo struct {
+	Operation    Operation
+	Table        string
+	Db           string
+	HttpCode     int
+	BodyContains string
+	RespKVs      []interface{}
+}
+
+type BatchOperationsTestInfo struct {
+	Operations BatchOperationTestInfo
+	HttpCode   int
+}

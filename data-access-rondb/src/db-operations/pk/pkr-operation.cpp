@@ -42,11 +42,11 @@ PKROperation::PKROperation(RS_Buffer *reqBuff, RS_Buffer *respBuff, Ndb *ndbObje
 }
 
 PKROperation::~PKROperation() {
-  for(int i = 0; i < requests.size();i++){
+  for(size_t i = 0; i < requests.size();i++){
     delete requests[i];
   }
 
-  for(int i = 0; i < responses.size();i++){
+  for(size_t i = 0; i < responses.size();i++){
     delete responses[i];
   }
 }
