@@ -30,6 +30,11 @@ import (
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
+func RegisterPKTestHandler(e *gin.Engine) {
+	group := e.Group(ds.DB_OPS_EP_GROUP)
+	group.POST(ds.PK_DB_OPERATION, PkReadHandler)
+}
+
 func PkReadHandler(c *gin.Context) {
 
 	pkReadParams := ds.PKReadParams{}
@@ -42,7 +47,7 @@ func PkReadHandler(c *gin.Context) {
 		return
 	}
 
-	request, response, err := createNativeRequest(&pkReadParams)
+	request, response, err := CreateNativeRequest(&pkReadParams)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 		return

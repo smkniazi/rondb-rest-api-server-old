@@ -24,37 +24,61 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/common"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
+	"hopsworks.ai/rdrs/version"
 )
 
-// func TestBatchSimple(t *testing.T) {
+func TestBatchSimple(t *testing.T) {
 
-// testTable := "int_table"
-// testDb := "DB004"
-// validateColumns := []interface{}{"col0", "col1"}
-// tests := map[string]ds.PKTestInfo{
-// "simple1": {
-// PkReq: ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-// ReadColumns: tu.NewReadColumns(t, "col", 2),
-// OperationID: tu.NewOperationID(t, 64),
-// },
-// Table:        testTable,
-// Db:           testDb,
-// HttpCode:     http.StatusOK,
-// BodyContains: "",
-// RespKVs:      validateColumns,
-// },
-// }
+	//int table DB004
+	pkMethod := ds.PK_HTTP_VERB
+	pkr0 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+		ReadColumns: tu.NewReadColumns(t, "col", 2),
+		OperationID: tu.NewOperationID(t, 64),
+	}
+	rurl0 := version.API_VERSION + "/DB004/int_table/" + ds.PK_DB_OPERATION
 
-// tu.PkTest(t, tests, BatchOpsHandler, false)
-// }
+	// Bigint  table "DB005"
+	pkr1 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+		ReadColumns: tu.NewReadColumns(t, "col", 2),
+		OperationID: tu.NewOperationID(t, 64),
+	}
+	rurl1 := version.API_VERSION + "/DB005/bigint_table/" + ds.PK_DB_OPERATION
+
+	operations := make([]ds.Operation, 2)
+	operations[0].Method = &pkMethod
+	operations[0].RelativeURL = &rurl0
+	opBody, _ := json.MarshalIndent(pkr0, "", "\t")
+	opBodyStr := string(opBody)
+	operations[0].Body = &opBodyStr
+
+	operations[1].Method = &pkMethod
+	operations[1].RelativeURL = &rurl1
+	opBody, _ = json.MarshalIndent(pkr1, "", "\t")
+	opBodyStr = string(opBody)
+	operations[1].Body = &opBodyStr
+
+	batchOperation := ds.Operations{Operations: &operations}
+	batchOperationJson, _ := json.MarshalIndent(batchOperation, "", "\t")
+	batchOperationJsonStr := string(batchOperationJson)
+
+	router := gin.Default()
+	group := router.Group(ds.DBS_OPS_EP_GROUP)
+	group.POST(ds.BATCH_OPERATION, BatchOpsHandler)
+	url := BatchURL()
+
+	tu.WithDBs(t, [][][]string{common.Database("DB004"), common.Database("DB005")}, RegisterBatchTestHandler, func(router *gin.Engine) {
+		tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, batchOperationJsonStr, http.StatusOK, "")
+	})
+}
 
 func TestBatchMissingReqField(t *testing.T) {
 	router := gin.Default()
 	group := router.Group(ds.DBS_OPS_EP_GROUP)
 	group.POST(ds.BATCH_OPERATION, BatchOpsHandler)
-	url := URL()
+	url := BatchURL()
 
 	// Test missing method
 	operations := NewOperationsTBD(t, 3)
@@ -87,14 +111,6 @@ func TestBatchMissingReqField(t *testing.T) {
 	body, _ = json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Filters' failed")
-
-	// Test missing non-required fields
-	operations = NewOperationsTBD(t, 1)
-	*operations[0].Body = strings.Replace(*operations[0].Body, ds.READ_COL_PARAM_NAME, "XXX", -1)
-	*operations[0].Body = strings.Replace(*operations[0].Body, ds.OPERATION_ID_PARAM_NAME, "XXX", -1)
-	operationsWrapper = ds.Operations{Operations: &operations}
-	body, _ = json.Marshal(operationsWrapper)
-	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusOK, "")
 }
 
 func NewOperationsTBD(t *testing.T, numOps int) []ds.Operation {
@@ -120,6 +136,6 @@ func NewOperationTBD(t *testing.T) ds.Operation {
 	return op
 }
 
-func URL() string {
+func BatchURL() string {
 	return fmt.Sprintf("%s%s", ds.DBS_OPS_EP_GROUP, ds.BATCH_OPERATION)
 }

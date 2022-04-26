@@ -25,8 +25,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"hopsworks.ai/rdrs/internal/common"
+	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/router/handler/pkread"
+	"hopsworks.ai/rdrs/version"
 )
+
+func RegisterBatchTestHandler(engine *gin.Engine) {
+	engine.POST("/"+version.API_VERSION+"/"+ds.BATCH_OPERATION, BatchOpsHandler)
+}
 
 func BatchOpsHandler(c *gin.Context) {
 	operations := ds.Operations{}
@@ -52,12 +60,45 @@ func BatchOpsHandler(c *gin.Context) {
 		}
 	}
 
-	for _, pkOps := range pkOperations {
-		msg, _ := json.MarshalIndent(pkOps, "", "\t")
-		fmt.Printf("Operation Received %s", msg)
+	reqPtrs := make([]*dal.Native_Buffer, len(pkOperations))
+	respPtrs := make([]*dal.Native_Buffer, len(pkOperations))
+
+	for i, pkOps := range pkOperations {
+		reqPtrs[i], respPtrs[i], err = pkread.CreateNativeRequest(&pkOps)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
+			return
+		}
+	}
+
+	fmt.Printf("Req prt: %d, Resp ptr %d", reqPtrs[0], respPtrs[0])
+
+	dalErr := dal.RonDBPKRead(reqPtrs[0], respPtrs[0])
+
+	var message string
+	if dalErr != nil {
+		if dalErr.HttpCode >= http.StatusInternalServerError {
+			message = fmt.Sprintf("%v File: %v, Line: %v ", dalErr.Message, dalErr.ErrFileName, dalErr.ErrLineNo)
+		} else {
+			message = fmt.Sprintf("%v", dalErr.Message)
+		}
+		setResponseError(c, dalErr.HttpCode, common.Response{OK: false, Message: message})
+	} else {
+		setResponseBodyUnsafe(c, http.StatusOK, respPtrs[0])
 	}
 
 	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
+}
+
+func setResponseError(c *gin.Context, code int, resp common.Response) {
+	b, _ := json.Marshal(resp) // only used in case of errors so not terrible for performance
+	c.String(code, string(b))
+}
+
+func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer) {
+	res := common.Response{OK: true, Message: common.ProcessResponse(resp.Buffer)} // TODO XXX Fix this. Use response writer. Benchmark this part
+	b, _ := json.Marshal(res)
+	c.String(code, string(b))
 }
 
 func parseOperation(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
@@ -98,7 +139,6 @@ func parsePKRead(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
 
 	//split the relative url to extract path parameters
 	splits := strings.Split(*operation.RelativeURL, "/")
-	fmt.Printf(" Splits: %-v", splits)
 	if len(splits) != 4 {
 		return fmt.Errorf("Failed to extract database and table information from relative url")
 	}

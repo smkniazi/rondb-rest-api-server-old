@@ -31,10 +31,11 @@ import (
 )
 
 func TestPKReadOmitRequired(t *testing.T) {
-	router, err := tu.InitRouter(t, PkReadHandler)
+	router, err := tu.InitRouter(t)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	RegisterPKTestHandler(router)
 
 	// Test. Omitting filter should result in 400 error
 	param := ds.PKReadBody{
@@ -66,10 +67,11 @@ func TestPKReadOmitRequired(t *testing.T) {
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
-	router, err := tu.InitRouter(t, PkReadHandler)
+	router, err := tu.InitRouter(t)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	RegisterPKTestHandler(router)
 
 	// Test. Large filter column names.
 	col := tu.RandString(65)
@@ -116,10 +118,11 @@ func TestPKReadLargeColumns(t *testing.T) {
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
-	router, err := tu.InitRouter(t, PkReadHandler)
+	router, err := tu.InitRouter(t)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	RegisterPKTestHandler(router)
 
 	//Valid chars [ U+0001 .. U+007F] and [ U+0080 .. U+FFFF]
 
@@ -164,10 +167,11 @@ func TestPKInvalidIdentifier(t *testing.T) {
 }
 
 func TestPKUniqueParams(t *testing.T) {
-	router, err := tu.InitRouter(t, PkReadHandler)
+	router, err := tu.InitRouter(t)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+	RegisterPKTestHandler(router)
 
 	// Test. unique read columns
 	readColumns := make([]ds.ReadColumn, 2)
@@ -214,7 +218,7 @@ func TestPKUniqueParams(t *testing.T) {
 // DB/Table does not exist
 func TestPKERROR_011(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB001")}, PkReadHandler, func(router *gin.Engine) {
+	tu.WithDBs(t, [][][]string{common.Database("DB001")}, RegisterPKTestHandler, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := ds.PKReadBody{
@@ -236,7 +240,7 @@ func TestPKERROR_011(t *testing.T) {
 // column does not exist
 func TestPKERROR_012(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB001")}, PkReadHandler, func(router *gin.Engine) {
+	tu.WithDBs(t, [][][]string{common.Database("DB001")}, RegisterPKTestHandler, func(router *gin.Engine) {
 		pkCol := "id0"
 		pkVal := "1"
 		param := ds.PKReadBody{
@@ -255,7 +259,7 @@ func TestPKERROR_012(t *testing.T) {
 // Primary key test.
 func TestPKERROR_013_ERROR_014(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB002")}, PkReadHandler, func(router *gin.Engine) {
+	tu.WithDBs(t, [][][]string{common.Database("DB002")}, RegisterPKTestHandler, func(router *gin.Engine) {
 		// send an other request with one column missing from def
 		// //		// one PK col is missing
 		param := ds.PKReadBody{

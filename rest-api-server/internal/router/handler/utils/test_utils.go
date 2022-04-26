@@ -36,6 +36,8 @@ import (
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
+type RegisterTestHandler func(*gin.Engine)
+
 func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	url string, body string, expectedStatus int, expectedMsg string) common.Response {
 
@@ -303,7 +305,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func WithDBs(t *testing.T, dbs [][][]string, handler gin.HandlerFunc, fn func(router *gin.Engine)) {
+func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler, fn func(router *gin.Engine)) {
 	t.Helper()
 
 	//user:password@tcp(IP:Port)/
@@ -325,7 +327,9 @@ func WithDBs(t *testing.T, dbs [][][]string, handler gin.HandlerFunc, fn func(ro
 		runSQLQueries(t, dbConnection, db[0])
 	}
 
-	router, err := InitRouter(t, handler)
+	router, err := InitRouter(t)
+	registerHandler(router)
+
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -344,13 +348,10 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 	}
 }
 
-func InitRouter(t *testing.T, handler gin.HandlerFunc) (*gin.Engine, error) {
+func InitRouter(t *testing.T) (*gin.Engine, error) {
 	t.Helper()
 	//router := gin.Default()
 	router := gin.New()
-
-	group := router.Group(ds.DB_OPS_EP_GROUP)
-	group.POST(ds.PK_DB_OPERATION, handler)
 	err := dal.InitRonDBConnection(config.ConnectionString(), true)
 	if err != nil {
 		return nil, err
@@ -367,26 +368,10 @@ func shutDownRouter(t *testing.T, router *gin.Engine) error {
 	return nil
 }
 
-func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, handler gin.HandlerFunc, isBinaryData bool) {
+func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, registerHandler RegisterTestHandler, isBinaryData bool) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
-			WithDBs(t, [][][]string{common.Database(testInfo.Db)}, handler, func(router *gin.Engine) {
-				url := NewPKReadURL(testInfo.Db, testInfo.Table)
-				body, _ := json.MarshalIndent(testInfo.PkReq, "", "\t")
-				res := ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
-					string(body), testInfo.HttpCode, testInfo.BodyContains)
-				if res.OK {
-					ValidateResArrayData(t, testInfo, res, isBinaryData)
-				}
-			})
-		})
-	}
-}
-
-func BatchTest(t *testing.T, tests map[string]ds.PKTestInfo, handler gin.HandlerFunc, isBinaryData bool) {
-	for name, testInfo := range tests {
-		t.Run(name, func(t *testing.T) {
-			WithDBs(t, [][][]string{common.Database(testInfo.Db)}, handler, func(router *gin.Engine) {
+			WithDBs(t, [][][]string{common.Database(testInfo.Db)}, registerHandler, func(router *gin.Engine) {
 				url := NewPKReadURL(testInfo.Db, testInfo.Table)
 				body, _ := json.MarshalIndent(testInfo.PkReq, "", "\t")
 				res := ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
