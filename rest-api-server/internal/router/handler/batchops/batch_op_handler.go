@@ -37,7 +37,7 @@ func RegisterBatchTestHandler(engine *gin.Engine) {
 }
 
 func BatchOpsHandler(c *gin.Context) {
-	operations := ds.Operations{}
+	operations := ds.BatchOperation{}
 	err := c.ShouldBindJSON(&operations)
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v\n", err)
@@ -108,7 +108,7 @@ func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer, ap
 	}
 }
 
-func parseOperation(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
+func parseOperation(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParams) error {
 
 	//remove leading / character
 	if strings.HasPrefix(*operation.RelativeURL, "/") {
@@ -130,7 +130,7 @@ func parseOperation(operation *ds.Operation, pkReadarams *ds.PKReadParams) error
 	return nil
 }
 
-func parsePKRead(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {
+func parsePKRead(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParams) error {
 	req, err := http.NewRequest(*operation.Method, *operation.RelativeURL,
 		strings.NewReader(*operation.Body))
 	if err != nil {

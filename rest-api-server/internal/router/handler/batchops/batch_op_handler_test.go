@@ -46,7 +46,7 @@ func TestBatchSimple1(t *testing.T) {
 	}
 	rurl1 := version.API_VERSION + "/DB005/bigint_table/" + ds.PK_DB_OPERATION
 
-	operations := make([]ds.Operation, 2)
+	operations := make([]ds.BatchSubOperation, 2)
 	operations[0].Method = &pkMethod
 	operations[0].RelativeURL = &rurl0
 	opBody0, _ := json.MarshalIndent(pkr0, "", "\t")
@@ -59,7 +59,7 @@ func TestBatchSimple1(t *testing.T) {
 	opBodyStr1 := string(opBody1)
 	operations[1].Body = &opBodyStr1
 
-	batchOperation := ds.Operations{Operations: &operations}
+	batchOperation := ds.BatchOperation{Operations: &operations}
 	batchOperationJson, _ := json.MarshalIndent(batchOperation, "", "\t")
 	batchOperationJsonStr := string(batchOperationJson)
 
@@ -82,7 +82,7 @@ func TestBatchMissingReqField(t *testing.T) {
 	// Test missing method
 	operations := NewOperationsTBD(t, 3)
 	operations[1].Method = nil
-	operationsWrapper := ds.Operations{Operations: &operations}
+	operationsWrapper := ds.BatchOperation{Operations: &operations}
 	body, _ := json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Method' failed ")
@@ -90,7 +90,7 @@ func TestBatchMissingReqField(t *testing.T) {
 	// Test missing relative URL
 	operations = NewOperationsTBD(t, 3)
 	operations[1].RelativeURL = nil
-	operationsWrapper = ds.Operations{Operations: &operations}
+	operationsWrapper = ds.BatchOperation{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'RelativeURL' failed ")
@@ -98,7 +98,7 @@ func TestBatchMissingReqField(t *testing.T) {
 	// Test missing body
 	operations = NewOperationsTBD(t, 3)
 	operations[1].Body = nil
-	operationsWrapper = ds.Operations{Operations: &operations}
+	operationsWrapper = ds.BatchOperation{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Body' failed ")
@@ -106,27 +106,27 @@ func TestBatchMissingReqField(t *testing.T) {
 	// Test missing filter in an operation
 	operations = NewOperationsTBD(t, 3)
 	*operations[1].Body = strings.Replace(*operations[1].Body, ds.FILTER_PARAM_NAME, "XXX", -1)
-	operationsWrapper = ds.Operations{Operations: &operations}
+	operationsWrapper = ds.BatchOperation{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Error:Field validation for 'Filters' failed")
 }
 
-func NewOperationsTBD(t *testing.T, numOps int) []ds.Operation {
-	operations := make([]ds.Operation, numOps)
+func NewOperationsTBD(t *testing.T, numOps int) []ds.BatchSubOperation {
+	operations := make([]ds.BatchSubOperation, numOps)
 	for i := 0; i < numOps; i++ {
 		operations[i] = NewOperationTBD(t)
 	}
 	return operations
 }
 
-func NewOperationTBD(t *testing.T) ds.Operation {
+func NewOperationTBD(t *testing.T) ds.BatchSubOperation {
 	opBody, _ := json.MarshalIndent(tu.NewPKReadReqBodyTBD(t), "", "\t")
 	opBodyStr := string(opBody)
 	method := "POST"
 	relativeURL := tu.NewPKReadURL("db", "table")
 
-	op := ds.Operation{
+	op := ds.BatchSubOperation{
 		Method:      &method,
 		RelativeURL: &relativeURL,
 		Body:        &opBodyStr,

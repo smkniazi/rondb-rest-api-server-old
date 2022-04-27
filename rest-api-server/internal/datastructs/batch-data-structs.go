@@ -22,11 +22,11 @@ const DBS_OPS_EP_GROUP = "/" + version.API_VERSION + "/"
 const BATCH_OPERATION = "batch"
 const BATCH_HTTP_VERB = "POST"
 
-type Operations struct {
-	Operations *[]Operation `json:"operations" binding:"required,min=1,max=4096,unique,dive"`
+type BatchOperation struct {
+	Operations *[]BatchSubOperation `json:"operations" binding:"required,min=1,max=4096,unique,dive"`
 }
 
-type Operation struct {
+type BatchSubOperation struct {
 	Method      *string `json:"method"        binding:"required,oneof=POST"`
 	RelativeURL *string `json:"relative-url"  binding:"required,min=1"`
 	Body        *string `json:"body"          binding:"required,min=1"`
@@ -34,7 +34,7 @@ type Operation struct {
 
 // data structs for testing
 type BatchOperationTestInfo struct {
-	Operation    Operation
+	Operation    BatchSubOperation
 	Table        string
 	Db           string
 	HttpCode     int
