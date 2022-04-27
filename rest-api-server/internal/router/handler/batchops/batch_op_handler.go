@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
@@ -116,7 +115,7 @@ func parseOperation(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParam
 		operation.RelativeURL = &trimmed
 	}
 
-	match, err := regexp.MatchString("^[0-9].[0-9].[0-9]/[a-zA-Z0-9$_]*/[a-zA-Z0-9$_]*/pk-read",
+	match, err := regexp.MatchString("^[a-zA-Z0-9$_]+/[a-zA-Z0-9$_]+/pk-read",
 		*operation.RelativeURL)
 	if !match || err != nil {
 		return fmt.Errorf("Invalid Relative URL: %s", *operation.RelativeURL)
@@ -124,34 +123,22 @@ func parseOperation(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParam
 		err := parsePKRead(operation, pkReadarams)
 		if err != nil {
 			return err
-		} else {
 		}
 	}
 	return nil
 }
 
 func parsePKRead(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParams) error {
-	req, err := http.NewRequest(*operation.Method, *operation.RelativeURL,
-		strings.NewReader(*operation.Body))
-	if err != nil {
-		return err
-	}
-
-	b := binding.JSON
-	params := ds.PKReadBody{}
-	err = b.Bind(req, &params)
-	if err != nil {
-		return err
-	}
+	params := *operation.Body
 
 	//split the relative url to extract path parameters
 	splits := strings.Split(*operation.RelativeURL, "/")
-	if len(splits) != 4 {
+	if len(splits) != 3 {
 		return fmt.Errorf("Failed to extract database and table information from relative url")
 	}
 
-	pkReadarams.DB = &splits[1]
-	pkReadarams.Table = &splits[2]
+	pkReadarams.DB = &splits[0]
+	pkReadarams.Table = &splits[1]
 	pkReadarams.Filters = params.Filters
 	pkReadarams.ReadColumns = params.ReadColumns
 	pkReadarams.OperationID = params.OperationID

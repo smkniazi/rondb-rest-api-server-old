@@ -33,6 +33,7 @@ class PKROperation {
   Uint32 no_ops;
   NdbTransaction *transaction = nullptr;
   Ndb *ndb_object             = nullptr;
+  bool isBatch = false;
 
   std::vector<PKRRequest *> requests;
   std::vector<PKRResponse *> responses;

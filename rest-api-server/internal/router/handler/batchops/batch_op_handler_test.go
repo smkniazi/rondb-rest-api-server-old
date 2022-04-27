@@ -20,14 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/internal/common"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
-	"hopsworks.ai/rdrs/version"
 )
 
 func TestBatchSimple1(t *testing.T) {
@@ -37,27 +35,23 @@ func TestBatchSimple1(t *testing.T) {
 		ReadColumns: tu.NewReadColumns(t, "col", 2),
 		OperationID: tu.NewOperationID(t, 5),
 	}
-	rurl0 := version.API_VERSION + "/DB004/int_table/" + ds.PK_DB_OPERATION
+	rurl0 := "DB004/int_table/" + ds.PK_DB_OPERATION
 
 	// Bigint  table "DB005"
 	pkr1 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 1, "id1", 1),
 		ReadColumns: tu.NewReadColumns(t, "col", 2),
 		OperationID: tu.NewOperationID(t, 5),
 	}
-	rurl1 := version.API_VERSION + "/DB005/bigint_table/" + ds.PK_DB_OPERATION
+	rurl1 := "DB005/bigint_table/" + ds.PK_DB_OPERATION
 
 	operations := make([]ds.BatchSubOperation, 2)
 	operations[0].Method = &pkMethod
 	operations[0].RelativeURL = &rurl0
-	opBody0, _ := json.MarshalIndent(pkr0, "", "\t")
-	opBodyStr0 := string(opBody0)
-	operations[0].Body = &opBodyStr0
+	operations[0].Body = &pkr0
 
 	operations[1].Method = &pkMethod
 	operations[1].RelativeURL = &rurl1
-	opBody1, _ := json.MarshalIndent(pkr1, "", "\t")
-	opBodyStr1 := string(opBody1)
-	operations[1].Body = &opBodyStr1
+	operations[1].Body = &pkr1
 
 	batchOperation := ds.BatchOperation{Operations: &operations}
 	batchOperationJson, _ := json.MarshalIndent(batchOperation, "", "\t")
@@ -105,7 +99,7 @@ func TestBatchMissingReqField(t *testing.T) {
 
 	// Test missing filter in an operation
 	operations = NewOperationsTBD(t, 3)
-	*operations[1].Body = strings.Replace(*operations[1].Body, ds.FILTER_PARAM_NAME, "XXX", -1)
+	*&operations[1].Body.Filters = nil
 	operationsWrapper = ds.BatchOperation{Operations: &operations}
 	body, _ = json.Marshal(operationsWrapper)
 	tu.ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url, string(body), http.StatusBadRequest,
@@ -121,15 +115,14 @@ func NewOperationsTBD(t *testing.T, numOps int) []ds.BatchSubOperation {
 }
 
 func NewOperationTBD(t *testing.T) ds.BatchSubOperation {
-	opBody, _ := json.MarshalIndent(tu.NewPKReadReqBodyTBD(t), "", "\t")
-	opBodyStr := string(opBody)
+	pkOp := tu.NewPKReadReqBodyTBD(t)
 	method := "POST"
 	relativeURL := tu.NewPKReadURL("db", "table")
 
 	op := ds.BatchSubOperation{
 		Method:      &method,
 		RelativeURL: &relativeURL,
-		Body:        &opBodyStr,
+		Body:        &pkOp,
 	}
 
 	return op

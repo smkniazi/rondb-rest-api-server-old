@@ -51,6 +51,7 @@ PKROperation::PKROperation(Uint32 no_ops, pRS_Buffer *req_buffs, pRS_Buffer *res
     this->responses.push_back(new PKRResponse(resp_buffs[i]));
   }
   this->ndb_object = ndb_object;
+  this->isBatch = true;
 }
 
 PKROperation::~PKROperation() {
@@ -141,7 +142,6 @@ RS_Status PKROperation::Execute() {
 }
 
 RS_Status PKROperation::CreateResponse() {
-  bool multiOps = no_ops > 1;
   for (size_t i = 0; i < no_ops; i++) {
     PKRRequest *req                = requests[i];
     PKRResponse *resp              = responses[i];
@@ -159,7 +159,7 @@ RS_Status PKROperation::CreateResponse() {
       }
 
       // Append status
-      if (multiOps) {
+      if (isBatch) {
         ret = AppendStatus(req, resp, SUCCESS);
         if (ret.http_code != SUCCESS) {
           return ret;
@@ -182,7 +182,7 @@ RS_Status PKROperation::CreateResponse() {
         return ret;
       }
 
-      if (multiOps) {
+      if (isBatch) {
         ret = resp->Append_string("}", false, false);
         if (ret.http_code != SUCCESS) {
           return ret;

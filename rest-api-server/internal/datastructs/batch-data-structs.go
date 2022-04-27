@@ -27,14 +27,14 @@ type BatchOperation struct {
 }
 
 type BatchSubOperation struct {
-	Method      *string `json:"method"        binding:"required,oneof=POST"`
-	RelativeURL *string `json:"relative-url"  binding:"required,min=1"`
-	Body        *string `json:"body"          binding:"required,min=1"`
+	Method      *string     `json:"method"        binding:"required,oneof=POST"`
+	RelativeURL *string     `json:"relative-url"  binding:"required,min=1"`
+	Body        *PKReadBody `json:"body"          binding:"required,min=1"`
 }
 
 // data structs for testing
-type BatchOperationTestInfo struct {
-	Operation    BatchSubOperation
+type BatchSubOperationTestInfo struct {
+	SubOperation BatchSubOperation
 	Table        string
 	Db           string
 	HttpCode     int
@@ -42,7 +42,7 @@ type BatchOperationTestInfo struct {
 	RespKVs      []interface{}
 }
 
-type BatchOperationsTestInfo struct {
-	Operations BatchOperationTestInfo
+type BatchOperationTestInfo struct {
+	Operations []BatchSubOperationTestInfo
 	HttpCode   int
 }
