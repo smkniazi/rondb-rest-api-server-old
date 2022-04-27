@@ -60,20 +60,22 @@ func BatchOpsHandler(c *gin.Context) {
 		}
 	}
 
-	reqPtrs := make([]*dal.Native_Buffer, len(pkOperations))
-	respPtrs := make([]*dal.Native_Buffer, len(pkOperations))
+	noOps := uint32(len(pkOperations))
+	reqPtrs := make([]*dal.Native_Buffer, noOps)
+	respPtrs := make([]*dal.Native_Buffer, noOps)
 
-	for i, pkOps := range pkOperations {
-		reqPtrs[i], respPtrs[i], err = pkread.CreateNativeRequest(&pkOps)
+	for i, pkOp := range pkOperations {
+		b, _ := json.Marshal(pkOp)
+
+		fmt.Printf("%s\n", string(b))
+		reqPtrs[i], respPtrs[i], err = pkread.CreateNativeRequest(&pkOp)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 			return
 		}
 	}
 
-	fmt.Printf("Req prt: %d, Resp ptr %d", reqPtrs[0], respPtrs[0])
-
-	dalErr := dal.RonDBPKRead(reqPtrs[0], respPtrs[0])
+	dalErr := dal.RonDBBatchedPKRead(noOps, reqPtrs, respPtrs)
 
 	var message string
 	if dalErr != nil {
@@ -82,23 +84,28 @@ func BatchOpsHandler(c *gin.Context) {
 		} else {
 			message = fmt.Sprintf("%v", dalErr.Message)
 		}
-		setResponseError(c, dalErr.HttpCode, common.Response{OK: false, Message: message})
+		setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
 	} else {
-		setResponseBodyUnsafe(c, http.StatusOK, respPtrs[0])
-	}
 
-	c.JSON(http.StatusOK, gin.H{"OK": true, "msg": "All Good"})
+		c.Writer.Write(([]byte)(string("[")))
+		for i := uint32(0); i < noOps; i++ {
+			setResponseBodyUnsafe(c, http.StatusOK, respPtrs[i], i != (noOps-1))
+		}
+		c.Writer.Write(([]byte)(string("]")))
+	}
 }
 
-func setResponseError(c *gin.Context, code int, resp common.Response) {
+func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
 	b, _ := json.Marshal(resp) // only used in case of errors so not terrible for performance
 	c.String(code, string(b))
 }
 
-func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer) {
-	res := common.Response{OK: true, Message: common.ProcessResponse(resp.Buffer)} // TODO XXX Fix this. Use response writer. Benchmark this part
-	b, _ := json.Marshal(res)
-	c.String(code, string(b))
+func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer, appendComma bool) {
+	c.Writer.WriteHeader(code)
+	c.Writer.Write(([]byte)(common.ProcessResponse(resp.Buffer)))
+	if appendComma {
+		c.Writer.Write(([]byte)(string(",")))
+	}
 }
 
 func parseOperation(operation *ds.Operation, pkReadarams *ds.PKReadParams) error {

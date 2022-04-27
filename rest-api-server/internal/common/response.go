@@ -23,9 +23,8 @@ import (
 	"unsafe"
 )
 
-type Response struct {
-	OK      bool   `json:"OK"   form:"OK"   binding:"required"`
-	Message string `json:"message"    form:"message"    binding:"required"`
+type ErrorResponse struct {
+	Error string `json:"error"    form:"error"    binding:"required"`
 }
 
 func ProcessResponse(buffer unsafe.Pointer) string {

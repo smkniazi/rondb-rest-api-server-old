@@ -35,18 +35,30 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/beast/core/detail/base64.hpp>
 
-PKROperation::PKROperation(RS_Buffer *reqBuff, RS_Buffer *respBuff, Ndb *ndbObject) {
-  this->requests.push_back(new PKRRequest(reqBuff));
-  this->responses.push_back(new PKRResponse(respBuff));
-  this->ndb_object = ndbObject;
+PKROperation::PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_object) {
+  this->requests.push_back(new PKRRequest(req_buff));
+  this->responses.push_back(new PKRResponse(resp_buff));
+  this->ndb_object = ndb_object;
+  this->no_ops     = 1;
+}
+
+PKROperation::PKROperation(Uint32 no_ops, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs,
+                           Ndb *ndb_object) {
+
+  this->no_ops = no_ops;
+  for (Uint32 i = 0; i < no_ops; i++) {
+    this->requests.push_back(new PKRRequest(req_buffs[i]));
+    this->responses.push_back(new PKRResponse(resp_buffs[i]));
+  }
+  this->ndb_object = ndb_object;
 }
 
 PKROperation::~PKROperation() {
-  for(size_t i = 0; i < requests.size();i++){
+  for (size_t i = 0; i < no_ops; i++) {
     delete requests[i];
   }
 
-  for(size_t i = 0; i < responses.size();i++){
+  for (size_t i = 0; i < responses.size(); i++) {
     delete responses[i];
   }
 }
@@ -76,11 +88,10 @@ RS_Status PKROperation::SetupReadOperation() {
     return RS_CLIENT_ERROR(ERROR_006);
   }
 
-  for (size_t i = 0; i < requests.size(); i++) {
+  for (size_t i = 0; i < no_ops; i++) {
     PKRRequest *req                        = requests[i];
     const NdbDictionary::Table *table_dict = all_table_dicts[i];
     NdbOperation *op                       = transaction->getNdbOperation(table_dict);
-    std::unordered_map<std::string, const NdbDictionary::Column *> non_pk_cols = all_non_pk_cols[i];
     if (op == nullptr) {
       return RS_RONDB_SERVER_ERROR(transaction->getNdbError(), ERROR_007);
     } else {
@@ -102,15 +113,17 @@ RS_Status PKROperation::SetupReadOperation() {
     if (req->ReadColumnsCount() > 0) {
       for (Uint32 i = 0; i < req->ReadColumnsCount(); i++) {
         NdbRecAttr *rec = op->getValue(req->ReadColumnName(i), nullptr);
-        recs.insert(recs.begin(), rec);
+        recs.push_back(rec);
       }
     } else {
+      std::unordered_map<std::string, const NdbDictionary::Column *> non_pk_cols =
+          all_non_pk_cols[i];
       std::unordered_map<std::string, const NdbDictionary::Column *>::const_iterator it =
           non_pk_cols.begin();
       while (it != non_pk_cols.end()) {
         NdbRecAttr *rec = op->getValue(it->first.c_str(), nullptr);
         it++;
-        recs.insert(recs.begin(), rec);
+        recs.push_back(rec);
       }
     }
     all_recs.push_back(recs);
@@ -128,39 +141,114 @@ RS_Status PKROperation::Execute() {
 }
 
 RS_Status PKROperation::CreateResponse() {
-  for (size_t i = 0; i < requests.size(); i++) {
-    PKRRequest *req = requests[i];
-    PKRResponse *resp = responses[i];
-    const NdbOperation *op = operations[i];
+  bool multiOps = no_ops > 1;
+  for (size_t i = 0; i < no_ops; i++) {
+    PKRRequest *req                = requests[i];
+    PKRResponse *resp              = responses[i];
+    const NdbOperation *op         = operations[i];
     std::vector<NdbRecAttr *> recs = all_recs[i];
 
     if (op->getNdbError().classification == NdbError::NoDataFound) {
       return RS_CLIENT_404_ERROR();
     } else {
       // iterate over all columns
-      resp->Append_string("{", false, false);
-      if (req->OperationId() != nullptr) {
-        resp->Append_string("\"operationId\": ", false, false);
-        resp->Append_string(std::string("\"") + req->OperationId() + std::string("\""), false,
-                            true);
+      RS_Status ret;
+      ret = resp->Append_string("{", false, false);
+      if (ret.http_code != SUCCESS) {
+        return ret;
       }
-      resp->Append_string("\"Data\": {", false, false);
 
-      for (Uint32 i = 0; i < recs.size(); i++) {
-        RS_Status status = resp->Append_string(
-            std::string("\"") + recs[i]->getColumn()->getName() + std::string("\":"), false, false);
-        if (status.http_code != SUCCESS) {
-          return status;
+      // Append status
+      if (multiOps) {
+        ret = AppendStatus(req, resp, SUCCESS);
+        if (ret.http_code != SUCCESS) {
+          return ret;
         }
 
-        status = WriteColToRespBuff(recs[i], resp, i == (recs.size() - 1) ? false : true);
-        if (status.http_code != SUCCESS) {
-          return status;
+        ret = resp->Append_string("\"Body\": {", false, false);
+        if (ret.http_code != SUCCESS) {
+          return ret;
         }
       }
-      resp->Append_string("} } ", false, false);
+
+      // Append Operation ID
+      ret = AppendOpId(req, resp);
+      if (ret.http_code != SUCCESS) {
+        return ret;
+      }
+
+      ret = AppendOpRecs(req, resp, &recs);
+      if (ret.http_code != SUCCESS) {
+        return ret;
+      }
+
+      if (multiOps) {
+        ret = resp->Append_string("}", false, false);
+        if (ret.http_code != SUCCESS) {
+          return ret;
+        }
+      }
+
+      resp->Append_string("} ", false, false);
       resp->Append_NULL();
-      return RS_OK;
+    }
+  }
+  return RS_OK;
+}
+
+RS_Status PKROperation::AppendOpRecs(PKRRequest *req, PKRResponse *resp,
+                                     std::vector<NdbRecAttr *> *recs) {
+
+  RS_Status status = resp->Append_string("\"Data\": {", false, false);
+  if (status.http_code != SUCCESS) {
+    return status;
+  }
+
+  for (Uint32 i = 0; i < recs->size(); i++) {
+    status = resp->Append_string(
+        std::string("\"") + (*recs)[i]->getColumn()->getName() + std::string("\":"), false, false);
+    if (status.http_code != SUCCESS) {
+      return status;
+    }
+
+    status = WriteColToRespBuff((*recs)[i], resp, i == (recs->size() - 1) ? false : true);
+    if (status.http_code != SUCCESS) {
+      return status;
+    }
+  }
+
+  resp->Append_string("} ", false, false);
+  if (status.http_code != SUCCESS) {
+    return status;
+  }
+
+  return RS_OK;
+}
+
+RS_Status PKROperation::AppendOpId(PKRRequest *req, PKRResponse *resp) {
+  if (req->OperationId() != nullptr) {
+    RS_Status ret = resp->Append_string("\"operationId\": ", false, false);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+    ret = resp->Append_string(std::string("\"") + req->OperationId() + std::string("\""), false,
+                              true);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+  }
+  return RS_OK;
+}
+
+RS_Status PKROperation::AppendStatus(PKRRequest *req, PKRResponse *resp, Int32 code) {
+  if (req->OperationId() != nullptr) {
+    RS_Status ret = resp->Append_string("\"code\": ", false, false);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+    ret = resp->Append_i32(code, true);
+    if (ret.http_code != SUCCESS) {
+      return ret;
     }
   }
   return RS_OK;
@@ -168,7 +256,7 @@ RS_Status PKROperation::CreateResponse() {
 
 RS_Status PKROperation::Init() {
 
-  for (size_t i = 0; i < requests.size(); i++) {
+  for (size_t i = 0; i < no_ops; i++) {
 
     PKRRequest *req = requests[i];
     std::unordered_map<std::string, const NdbDictionary::Column *> pk_cols;
@@ -177,7 +265,7 @@ RS_Status PKROperation::Init() {
       return RS_CLIENT_ERROR(ERROR_011 + std::string(" Database: ") + std::string(req->DB()) +
                              " Table: " + req->Table());
     }
-    const NdbDictionary::Dictionary *dict = ndb_object->getDictionary();
+    const NdbDictionary::Dictionary *dict  = ndb_object->getDictionary();
     const NdbDictionary::Table *table_dict = dict->getTable(req->Table());
 
     if (table_dict == nullptr) {
@@ -211,7 +299,7 @@ RS_Status PKROperation::Init() {
 RS_Status PKROperation::ValidateRequest() {
   // Check primary key columns
 
-  for (size_t i = 0; i < requests.size(); i++) {
+  for (size_t i = 0; i < no_ops; i++) {
     PKRRequest *req                                                            = requests[i];
     std::unordered_map<std::string, const NdbDictionary::Column *> pk_cols     = all_pk_cols[i];
     std::unordered_map<std::string, const NdbDictionary::Column *> non_pk_cols = all_non_pk_cols[i];

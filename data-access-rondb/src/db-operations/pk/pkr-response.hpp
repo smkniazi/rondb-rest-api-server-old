@@ -29,9 +29,7 @@
 class PKRResponse {
  private:
   const RS_Buffer *resp;
-  Uint32 capacity    = 512;  // TODO(salman) FIX ME
   Uint32 writeHeader = 0;
-
 
  public:
   explicit PKRResponse(const RS_Buffer *respBuff);
@@ -73,7 +71,7 @@ class PKRResponse {
   /**
    * Get pointer to the writing end of the buffer
    */
-  void* GetWritePointer();
+  void *GetWritePointer();
 
   /**
    * Append to response buffer

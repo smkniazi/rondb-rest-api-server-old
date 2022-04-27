@@ -322,8 +322,8 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
     ///< Len
     // we get the data in base64
     const char *encodedStr = request->PKValueCStr(colIdx);
-    size_t decoded_size    = boost::beast::detail::base64::decoded_size(request->PKValueLen(colIdx));
-    int maxlen             = std::max(col->getLength(), static_cast<int>(decoded_size));
+    size_t decoded_size = boost::beast::detail::base64::decoded_size(request->PKValueLen(colIdx));
+    int maxlen          = std::max(col->getLength(), static_cast<int>(decoded_size));
 
     char pk[maxlen];
     for (int i = 0; i < col->getLength(); i++) {
@@ -352,8 +352,8 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
     ///< Length bytes: 2, little-endian
 
     const char *encodedStr = request->PKValueCStr(colIdx);
-    size_t decoded_size    = boost::beast::detail::base64::decoded_size(request->PKValueLen(colIdx));
-    int additional_len     = 1;
+    size_t decoded_size = boost::beast::detail::base64::decoded_size(request->PKValueLen(colIdx));
+    int additional_len  = 1;
     if (col->getType() == NdbDictionary::Column::Longvarbinary) {
       additional_len = 2;
     }
@@ -594,7 +594,6 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
   return RS_OK;
 }
 
-
 RS_Status WriteColToRespBuff(const NdbRecAttr *attr, PKRResponse *response, bool appendComma) {
   const NdbDictionary::Column *col = attr->getColumn();
   if (attr->isNULL()) {
@@ -690,7 +689,7 @@ RS_Status WriteColToRespBuff(const NdbRecAttr *attr, PKRResponse *response, bool
       return RS_CLIENT_ERROR(ERROR_019);
     } else {
       return response->Append_char(data_start, attr_bytes, attr->getColumn()->getCharset(),
-                                  appendComma);
+                                   appendComma);
     }
   }
   case NdbDictionary::Column::Binary:

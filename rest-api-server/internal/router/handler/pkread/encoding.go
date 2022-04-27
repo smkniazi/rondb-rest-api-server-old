@@ -180,11 +180,6 @@ func CreateNativeRequest(pkrParams *ds.PKReadParams) (*dal.Native_Buffer, *dal.N
 	iBuf[C.PKR_READ_COLS_IDX] = uint32(readColsOffset)
 	iBuf[C.PKR_OP_ID_IDX] = uint32(opIdOffset)
 
-	//response buffer header
-	respBuf := unsafe.Slice((*uint32)(response.Buffer), response.Size)
-	respBuf[C.PKR_OP_TYPE_IDX] = uint32(C.RDRS_PK_REQ_ID)
-	respBuf[C.PKR_CAPACITY_IDX] = uint32(response.Size)
-	respBuf[C.PKR_LENGTH_IDX] = uint32(C.ADDRESS_SIZE * 2)
 	//xxd.Print(0, bBuf[:])
 	return request, response, nil
 }

@@ -30,6 +30,7 @@
 
 class PKROperation {
  private:
+  Uint32 no_ops;
   NdbTransaction *transaction = nullptr;
   Ndb *ndb_object             = nullptr;
 
@@ -43,6 +44,8 @@ class PKROperation {
 
  public:
   PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_object);
+
+  PKROperation(Uint32 noOps, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs, Ndb *ndb_object);
 
   ~PKROperation();
 
@@ -106,5 +109,24 @@ class PKROperation {
    * @return status
    */
   RS_Status ValidateRequest();
+
+  /**
+   * Append operation records to response buffer 
+   * @return status
+   */
+  RS_Status AppendOpRecs(PKRRequest *req, PKRResponse *resp,  std::vector<NdbRecAttr *> *recs);
+  
+  /**
+   * Append operation ID to response buffer 
+   * @return status
+   */
+  RS_Status AppendOpId(PKRRequest *req, PKRResponse *resp);
+
+  /**
+   * Append status of the operation to response buffer 
+   * @return status
+   */
+  RS_Status AppendStatus(PKRRequest *req, PKRResponse *resp, Int32 code);
+
 };
 #endif  // DATA_ACCESS_RONDB_SRC_PK_READ_PKR_OPERATION_HPP_

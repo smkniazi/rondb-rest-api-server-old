@@ -135,6 +135,36 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
   return RS_OK;
 }
 
+/**
+ * Batched primary key read operation
+ */
+
+RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs) {
+  Ndb *ndb_object  = nullptr;
+  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
+  if (status.http_code != SUCCESS) {
+    return status;
+  }
+
+  PKROperation pkread(no_req, req_buffs, resp_buffs, ndb_object);
+
+  status = pkread.PerformOperation();
+  CloseNDBObject(&ndb_object);
+  if (status.http_code != SUCCESS) {
+    return status;
+  }
+
+  return RS_OK;
+}
+
+pRS_Buffer *AllocRSBufferArray(unsigned int len) {
+  return (pRS_Buffer *)malloc(len * sizeof(pRS_Buffer));
+}
+
+void FreeRSBufferArray(pRS_Buffer *p) {
+  free(p);
+}
+
 static int LastConnectedInodeID = -1;
 /*
  * NDB API does not support gracefull disconnection form the

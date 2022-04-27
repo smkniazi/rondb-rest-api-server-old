@@ -94,6 +94,37 @@ func RonDBPKRead(request *Native_Buffer, response *Native_Buffer) *DalError {
 	return nil
 }
 
+func RonDBBatchedPKRead(noOps uint32, requests []*Native_Buffer, responses []*Native_Buffer) *DalError {
+	cReqs := C.AllocRSBufferArray(C.uint(noOps))
+	cResps := C.AllocRSBufferArray(C.uint(noOps))
+	defer C.FreeRSBufferArray(cReqs)
+	defer C.FreeRSBufferArray(cResps)
+
+	scReqs := unsafe.Slice((*C.pRS_Buffer)(cReqs), noOps)
+	scResps := unsafe.Slice((*C.pRS_Buffer)(cResps), noOps)
+
+	for i := 0; i < int(noOps); i++ {
+		var crequest C.RS_Buffer
+		var cresponse C.RS_Buffer
+		crequest.buffer = (*C.char)(requests[i].Buffer)
+		crequest.size = C.uint(requests[i].Size)
+		scReqs[i] = &crequest
+
+		cresponse.buffer = (*C.char)(responses[i].Buffer)
+		cresponse.size = C.uint(responses[i].Size)
+		scResps[i] = &cresponse
+	}
+
+	ret := C.PKBatchRead(C.uint(noOps), (*C.pRS_Buffer)(cReqs), (*C.pRS_Buffer)(cResps))
+	defer cleanUp(&ret)
+	if ret.http_code != http.StatusOK {
+		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
+			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
+	}
+
+	return nil
+}
+
 func cleanUp(ret *C.RS_Status) {
 	if ret.message != nil {
 		defer C.free(unsafe.Pointer(ret.message))

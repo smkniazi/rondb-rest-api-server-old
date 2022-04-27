@@ -57,10 +57,11 @@ typedef enum DataReturnType {
 
 // Buffer that contain request or response objects
 typedef struct RS_Buffer {
-  unsigned int size;      // Buffer size
-  char *buffer;  // Buffer
+  unsigned int size;  // Buffer size
+  char *buffer;       // Buffer
 } RS_Buffer;
 
+typedef RS_Buffer *pRS_Buffer;
 /**
  * Initialize connection to the database
  */
@@ -75,6 +76,15 @@ RS_Status Shutdown();
  * Primary key read operation
  */
 RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff);
+
+/**
+ * Batched primary key read operation
+ */
+RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs);
+
+pRS_Buffer *AllocRSBufferArray(unsigned int len);
+
+void FreeRSBufferArray(pRS_Buffer *p);
 
 #endif
 

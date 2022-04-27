@@ -34,7 +34,7 @@ char *PKRResponse::GetResponseBuffer() {
 }
 
 Uint32 PKRResponse::GetMaxCapacity() {
-  return this->capacity;
+  return this->resp->size;
 }
 
 Uint32 PKRResponse::GetRemainingCapacity() {
@@ -70,7 +70,7 @@ RS_Status PKRResponse::Append_string(std::string str, bool add_quotes, bool appe
 
 RS_Status PKRResponse::Append_cstring(const char *str, bool appendComma) {
   int strl = strlen(str);
-  if (strl + writeHeader >= capacity) {
+  if (static_cast<Uint32>(strl + (appendComma ? 1 : 0)) > GetRemainingCapacity()) {
     return RS_SERVER_ERROR(ERROR_016);
   }
 

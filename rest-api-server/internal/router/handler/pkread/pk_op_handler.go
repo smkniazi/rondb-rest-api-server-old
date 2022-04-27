@@ -43,7 +43,7 @@ func PkReadHandler(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v\n", err)
 		c.AbortWithError(http.StatusBadRequest, err)
-		setResponseError(c, http.StatusBadRequest, common.Response{OK: false, Message: fmt.Sprintf("%-v", err)})
+		setResponseError(c, http.StatusBadRequest, common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
 		return
 	}
 
@@ -62,21 +62,20 @@ func PkReadHandler(c *gin.Context) {
 		} else {
 			message = fmt.Sprintf("%v", dalErr.Message)
 		}
-		setResponseError(c, dalErr.HttpCode, common.Response{OK: false, Message: message})
+		setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
 	} else {
 		setResponseBodyUnsafe(c, http.StatusOK, response)
 	}
 }
 
-func setResponseError(c *gin.Context, code int, resp common.Response) {
-	b, _ := json.Marshal(resp) // only used in case of errors so not terrible for performance
+func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
+	b, _ := json.Marshal(resp)
 	c.String(code, string(b))
 }
 
 func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer) {
-	res := common.Response{OK: true, Message: common.ProcessResponse(resp.Buffer)} // TODO XXX Fix this. Use response writer. Benchmark this part
-	b, _ := json.Marshal(res)
-	c.String(code, string(b))
+	c.Writer.WriteHeader(code)
+	c.Writer.Write(([]byte)(common.ProcessResponse(resp.Buffer)))
 }
 
 func parseRequest(c *gin.Context, pkReadParams *ds.PKReadParams) error {

@@ -33,19 +33,21 @@ type Native_Buffer struct {
 	Buffer unsafe.Pointer
 }
 
-const BUFFER_SIZE = 512
+const buff_size = 512
 
 func init() {
 	if C.ADDRESS_SIZE != 4 {
 		panic(fmt.Sprintf("Only 4 byte address are supported"))
 	}
 
-	if BUFFER_SIZE%C.ADDRESS_SIZE != 0 {
+	if buff_size%C.ADDRESS_SIZE != 0 {
 		panic(fmt.Sprintf("Buffer size must be multiple of %d", C.ADDRESS_SIZE))
 	}
 }
 
 func GetBuffer() *Native_Buffer {
-	buff := Native_Buffer{Buffer: C.malloc(C.size_t(BUFFER_SIZE)), Size: BUFFER_SIZE}
+	buff := Native_Buffer{Buffer: C.malloc(C.size_t(buff_size)), Size: buff_size}
+	dstBuf := unsafe.Slice((*byte)(buff.Buffer), buff_size)
+	dstBuf[0] = 0x00 // reset buffer by putting null terminator in the begenning
 	return &buff
 }

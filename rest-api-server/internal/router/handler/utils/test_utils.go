@@ -17,6 +17,7 @@
 package utils
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -27,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -39,14 +41,19 @@ import (
 type RegisterTestHandler func(*gin.Engine)
 
 func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
-	url string, body string, expectedStatus int, expectedMsg string) common.Response {
+	url string, body string, expectedStatus int, expectedMsg string) (int, string) {
 
 	t.Helper()
 	req, _ := http.NewRequest(httpVerb, url, strings.NewReader(body))
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
-	fmt.Printf("Response Body. %v\n", resp.Body)
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, resp.Body.Bytes(), "", "\t")
+	if err != nil {
+		fmt.Printf("Error %v \n", err)
+	}
+	fmt.Printf("Response Body. %s\n", string(prettyJSON.Bytes()))
 	if resp.Code != expectedStatus || !strings.Contains(resp.Body.String(), expectedMsg) {
 		if resp.Code != expectedStatus {
 			t.Fatalf("Test failed. Expected: %d, Got: %d. Complete Response Body: %v ", expectedStatus, resp.Code, resp.Body)
@@ -56,13 +63,10 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 		}
 	}
 
-	r := common.Response{}
-	json.Unmarshal(resp.Body.Bytes(), &r)
-	// fmt.Printf("Response Body: %v\n", r)
-	return r
+	return resp.Code, string(resp.Body.Bytes())
 }
 
-func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp common.Response, isBinaryData bool) {
+func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp string, isBinaryData bool) {
 	t.Helper()
 
 	for i := 0; i < len(testInfo.RespKVs); i++ {
@@ -84,7 +88,7 @@ func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp common.Resp
 	}
 }
 
-func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo, resp common.Response) (string, bool) {
+func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo, resp string) (string, bool) {
 	t.Helper()
 
 	if colName[0:1] != "\"" && colName[len(colName)-1:] != "\"" {
@@ -94,7 +98,7 @@ func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo,
 	kvMap := make(map[string]string)
 
 	var result map[string]json.RawMessage
-	json.Unmarshal([]byte(resp.Message), &result)
+	json.Unmarshal([]byte(resp), &result)
 
 	dataStr := string(result["Data"])
 	dl := len(dataStr)
@@ -308,6 +312,8 @@ func RandString(n int) string {
 func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler, fn func(router *gin.Engine)) {
 	t.Helper()
 
+	rand.Seed(int64(time.Now().Nanosecond()))
+
 	//user:password@tcp(IP:Port)/
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
 		config.SqlServerIP(), config.SqlServerPort())
@@ -374,9 +380,9 @@ func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, registerHandler Regist
 			WithDBs(t, [][][]string{common.Database(testInfo.Db)}, registerHandler, func(router *gin.Engine) {
 				url := NewPKReadURL(testInfo.Db, testInfo.Table)
 				body, _ := json.MarshalIndent(testInfo.PkReq, "", "\t")
-				res := ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
+				httpCode, res := ProcessRequest(t, router, ds.PK_HTTP_VERB, url,
 					string(body), testInfo.HttpCode, testInfo.BodyContains)
-				if res.OK {
+				if httpCode == http.StatusOK {
 					ValidateResArrayData(t, testInfo, res, isBinaryData)
 				}
 			})

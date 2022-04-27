@@ -30,35 +30,34 @@ import (
 	"hopsworks.ai/rdrs/version"
 )
 
-func TestBatchSimple(t *testing.T) {
-
+func TestBatchSimple1(t *testing.T) {
 	//int table DB004
 	pkMethod := ds.PK_HTTP_VERB
 	pkr0 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
 		ReadColumns: tu.NewReadColumns(t, "col", 2),
-		OperationID: tu.NewOperationID(t, 64),
+		OperationID: tu.NewOperationID(t, 5),
 	}
 	rurl0 := version.API_VERSION + "/DB004/int_table/" + ds.PK_DB_OPERATION
 
 	// Bigint  table "DB005"
-	pkr1 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+	pkr1 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 1, "id1", 1),
 		ReadColumns: tu.NewReadColumns(t, "col", 2),
-		OperationID: tu.NewOperationID(t, 64),
+		OperationID: tu.NewOperationID(t, 5),
 	}
 	rurl1 := version.API_VERSION + "/DB005/bigint_table/" + ds.PK_DB_OPERATION
 
 	operations := make([]ds.Operation, 2)
 	operations[0].Method = &pkMethod
 	operations[0].RelativeURL = &rurl0
-	opBody, _ := json.MarshalIndent(pkr0, "", "\t")
-	opBodyStr := string(opBody)
-	operations[0].Body = &opBodyStr
+	opBody0, _ := json.MarshalIndent(pkr0, "", "\t")
+	opBodyStr0 := string(opBody0)
+	operations[0].Body = &opBodyStr0
 
 	operations[1].Method = &pkMethod
 	operations[1].RelativeURL = &rurl1
-	opBody, _ = json.MarshalIndent(pkr1, "", "\t")
-	opBodyStr = string(opBody)
-	operations[1].Body = &opBodyStr
+	opBody1, _ := json.MarshalIndent(pkr1, "", "\t")
+	opBodyStr1 := string(opBody1)
+	operations[1].Body = &opBodyStr1
 
 	batchOperation := ds.Operations{Operations: &operations}
 	batchOperationJson, _ := json.MarshalIndent(batchOperation, "", "\t")
