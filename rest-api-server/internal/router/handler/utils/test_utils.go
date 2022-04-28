@@ -36,6 +36,7 @@ import (
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/version"
 )
 
 type RegisterTestHandler func(*gin.Engine)
@@ -72,12 +73,13 @@ func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp string, isB
 	for i := 0; i < len(testInfo.RespKVs); i++ {
 		key := string(testInfo.RespKVs[i].(string))
 
-		jsonVal, found := getColumnDataFromJson(t, key, testInfo, resp)
+		jsonVal, found := getColumnDataFromJson(t, key, resp)
 		if !found {
 			t.Fatalf("Key not found in the response. Key %s", key)
 		}
 
-		dbVal, err := getColumnDataFromDB(t, testInfo, key, isBinaryData)
+		dbVal, err := getColumnDataFromDB(t, testInfo.Db, testInfo.Table,
+			testInfo.PkReq.Filters, key, isBinaryData)
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
@@ -88,7 +90,7 @@ func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp string, isB
 	}
 }
 
-func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo, resp string) (string, bool) {
+func getColumnDataFromJson(t *testing.T, colName string, resp string) (string, bool) {
 	t.Helper()
 
 	if colName[0:1] != "\"" && colName[len(colName)-1:] != "\"" {
@@ -100,7 +102,7 @@ func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo,
 	var result map[string]json.RawMessage
 	json.Unmarshal([]byte(resp), &result)
 
-	dataStr := string(result["Data"])
+	dataStr := string(result["data"])
 	dl := len(dataStr)
 	core := dataStr[1 : dl-1] // remove the curly braces
 	strs := strings.Split(core, ",")
@@ -126,40 +128,40 @@ func getColumnDataFromJson(t *testing.T, colName string, testInfo ds.PKTestInfo,
 	}
 }
 
-func getColumnDataFromDB(t *testing.T, testInfo ds.PKTestInfo, col string, isBinary bool) (string, error) {
+func getColumnDataFromDB(t *testing.T, db string, table string, filters *[]ds.Filter, col string, isBinary bool) (string, error) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
 		config.SqlServerIP(), config.SqlServerPort())
-	db, err := sql.Open("mysql", connectionString)
-	defer db.Close()
+	dbConn, err := sql.Open("mysql", connectionString)
+	defer dbConn.Close()
 	if err != nil {
 		t.Fatalf("failed to connect to db. %v", err)
 	}
 
-	command := "use " + testInfo.Db
-	_, err = db.Exec(command)
+	command := "use " + db
+	_, err = dbConn.Exec(command)
 	if err != nil {
 		t.Fatalf("failed to run command. %s. Error: %v", command, err)
 	}
 
 	if isBinary {
-		command = fmt.Sprintf("select replace(replace(to_base64(%s), '\\r',''), '\\n', '') from %s where ", col, testInfo.Table)
+		command = fmt.Sprintf("select replace(replace(to_base64(%s), '\\r',''), '\\n', '') from %s where ", col, table)
 	} else {
-		command = fmt.Sprintf("select %s from %s where ", col, testInfo.Table)
+		command = fmt.Sprintf("select %s from %s where ", col, table)
 	}
 	where := ""
-	for i := 0; i < len(*testInfo.PkReq.Filters); i++ {
+	for i := 0; i < len(*filters); i++ {
 		if where != "" {
 			where += " and "
 		}
 		if isBinary {
-			where = fmt.Sprintf("%s %s = from_base64(%s)", where, *(*testInfo.PkReq.Filters)[i].Column, string(*(*testInfo.PkReq.Filters)[i].Value))
+			where = fmt.Sprintf("%s %s = from_base64(%s)", where, *(*filters)[i].Column, string(*(*filters)[i].Value))
 		} else {
-			where = fmt.Sprintf("%s %s = %s", where, *(*testInfo.PkReq.Filters)[i].Column, string(*(*testInfo.PkReq.Filters)[i].Value))
+			where = fmt.Sprintf("%s %s = %s", where, *(*filters)[i].Column, string(*(*filters)[i].Value))
 		}
 	}
 
 	command = fmt.Sprintf(" %s %s\n ", command, where)
-	rows, err := db.Query(command)
+	rows, err := dbConn.Query(command)
 	if err != nil {
 		return "", err
 	}
@@ -240,6 +242,10 @@ func NewPKReadURL(db string, table string) string {
 	url = strings.Replace(url, ":"+ds.DB_PP, db, 1)
 	url = strings.Replace(url, ":"+ds.TABLE_PP, table, 1)
 	return url
+}
+
+func NewBatchReadURL() string {
+	return "/" + version.API_VERSION + "/" + ds.BATCH_OPERATION
 }
 
 func NewOperationID(t *testing.T, size int) *string {
@@ -388,4 +394,121 @@ func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, registerHandler Regist
 			})
 		})
 	}
+}
+
+func BatchTest(t *testing.T, tests map[string]ds.BatchOperationTestInfo, registerHandler RegisterTestHandler, isBinaryData bool) {
+	for name, testInfo := range tests {
+		t.Run(name, func(t *testing.T) {
+
+			// all databases used in this test
+			dbsMap := map[string]bool{}
+			dbNames := make([]string, 0, len(dbsMap))
+			for _, op := range testInfo.Operations {
+				if _, ok := dbsMap[op.DB]; !ok {
+					dbsMap[op.DB] = true
+				}
+			}
+			dbs := [][][]string{}
+			for k := range dbsMap {
+				dbNames = append(dbNames, k)
+				dbs = append(dbs, common.Database(k))
+			}
+
+			//batch operation
+			subOps := []ds.BatchSubOperation{}
+			for _, op := range testInfo.Operations {
+				subOps = append(subOps, op.SubOperation)
+			}
+			batch := ds.BatchOperation{Operations: &subOps}
+
+			WithDBs(t, dbs, registerHandler, func(router *gin.Engine) {
+				url := NewBatchReadURL()
+				body, _ := json.MarshalIndent(batch, "", "\t")
+				httpCode, res := ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url,
+					string(body), testInfo.HttpCode, "")
+				if httpCode == http.StatusOK {
+					validateBatchResponse(t, testInfo, res, isBinaryData)
+				}
+			})
+		})
+	}
+}
+
+func validateBatchResponse(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
+	t.Helper()
+	validateBatchResponseOpIdsNCode(t, testInfo, resp)
+	validateBatchResponseMsg(t, testInfo, resp)
+	validateBatchResponseValues(t, testInfo, resp, isBinaryData)
+
+}
+
+func validateBatchResponseOpIdsNCode(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string) {
+	var res []struct {
+		Code int
+		Body struct {
+			OperationId string
+		}
+	}
+	json.Unmarshal([]byte(resp), &res)
+
+	if len(res) != len(testInfo.Operations) {
+		t.Fatal("Wrong number of operation responses received")
+	}
+
+	for i := 0; i < len(res); i++ {
+		expectingId := testInfo.Operations[i].SubOperation.Body.OperationID
+		if expectingId != nil {
+			idGot := res[i].Body.OperationId
+			if *expectingId != idGot {
+				t.Fatalf("Operation ID does not match. Expecting: %s, Got: %s", *expectingId, idGot)
+			}
+		}
+
+		expectingCode := testInfo.Operations[i].HttpCode
+		codeGot := res[i].Code
+		if expectingCode != codeGot {
+			t.Fatalf("Operation ID does not match. Expecting: %d, Got: %d", expectingCode, codeGot)
+		}
+	}
+}
+
+func validateBatchResponseMsg(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string) {
+
+	var res []json.RawMessage
+	json.Unmarshal([]byte(resp), &res)
+
+	for i := 0; i < len(testInfo.Operations); i++ {
+		if !strings.Contains(string(res[i]), testInfo.Operations[i].BodyContains) {
+			t.Fatalf("Test failed. Response body does not contain %s. Body: %s",
+				testInfo.Operations[i].BodyContains, string(res[i]))
+		}
+	}
+}
+
+func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
+	var res []struct {
+		Body json.RawMessage
+	}
+	json.Unmarshal([]byte(resp), &res)
+
+	for o := 0; o < len(testInfo.Operations); o++ {
+		for i := 0; i < len(testInfo.Operations[o].RespKVs); i++ {
+			key := string(testInfo.Operations[i].RespKVs[i].(string))
+			bodyGot := string(res[i].Body)
+			jsonVal, found := getColumnDataFromJson(t, key, bodyGot)
+			if !found {
+				t.Fatalf("Key not found in the response. Key %s", key)
+			}
+			dbVal, err := getColumnDataFromDB(t, testInfo.Operations[i].DB, testInfo.Operations[i].Table,
+				testInfo.Operations[i].SubOperation.Body.Filters, key, isBinaryData)
+			if err != nil {
+				t.Fatalf("%v", err)
+			}
+
+			if string(jsonVal) != string(dbVal) {
+				t.Fatalf("The read value for key %s does not match. Got from REST Server: %s, Got from MYSQL Server: %s", key, jsonVal, dbVal)
+			}
+		}
+	}
+
 }

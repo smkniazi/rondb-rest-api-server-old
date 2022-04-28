@@ -36,7 +36,7 @@ type BatchSubOperation struct {
 type BatchSubOperationTestInfo struct {
 	SubOperation BatchSubOperation
 	Table        string
-	Db           string
+	DB           string
 	HttpCode     int
 	BodyContains string
 	RespKVs      []interface{}

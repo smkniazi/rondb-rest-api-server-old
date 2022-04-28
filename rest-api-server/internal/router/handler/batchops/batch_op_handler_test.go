@@ -30,6 +30,52 @@ import (
 
 func TestBatchSimple1(t *testing.T) {
 	//int table DB004
+
+	tests := map[string]ds.BatchOperationTestInfo{
+		"simple": {
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "int_table",
+					DB:           "DB004",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "bigint_table",
+					DB:           "DB005",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func TestBatchSimple2(t *testing.T) {
+	//int table DB004
 	pkMethod := ds.PK_HTTP_VERB
 	pkr0 := ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
 		ReadColumns: tu.NewReadColumns(t, "col", 2),

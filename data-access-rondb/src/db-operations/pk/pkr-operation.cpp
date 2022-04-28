@@ -165,7 +165,7 @@ RS_Status PKROperation::CreateResponse() {
           return ret;
         }
 
-        ret = resp->Append_string("\"Body\": {", false, false);
+        ret = resp->Append_string("\"body\": {", false, false);
         if (ret.http_code != SUCCESS) {
           return ret;
         }
@@ -199,7 +199,7 @@ RS_Status PKROperation::CreateResponse() {
 RS_Status PKROperation::AppendOpRecs(PKRRequest *req, PKRResponse *resp,
                                      std::vector<NdbRecAttr *> *recs) {
 
-  RS_Status status = resp->Append_string("\"Data\": {", false, false);
+  RS_Status status = resp->Append_string("\"data\": {", false, false);
   if (status.http_code != SUCCESS) {
     return status;
   }
