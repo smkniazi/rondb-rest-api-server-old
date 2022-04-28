@@ -19,6 +19,7 @@ package utils
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -467,7 +468,7 @@ func validateBatchResponseOpIdsNCode(t *testing.T, testInfo ds.BatchOperationTes
 		expectingCode := testInfo.Operations[i].HttpCode
 		codeGot := res[i].Code
 		if expectingCode != codeGot {
-			t.Fatalf("Operation ID does not match. Expecting: %d, Got: %d", expectingCode, codeGot)
+			t.Fatalf("Return code does not match. Expecting: %d, Got: %d", expectingCode, codeGot)
 		}
 	}
 }
@@ -487,13 +488,17 @@ func validateBatchResponseMsg(t *testing.T, testInfo ds.BatchOperationTestInfo, 
 
 func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
 	var res []struct {
+		Code int
 		Body json.RawMessage
 	}
 	json.Unmarshal([]byte(resp), &res)
 
 	for o := 0; o < len(testInfo.Operations); o++ {
-		operation := testInfo.Operations[o]
+		if res[o].Code != http.StatusOK {
+			continue // data is null if the status is not OK
+		}
 
+		operation := testInfo.Operations[o]
 		for i := 0; i < len(operation.RespKVs); i++ {
 			key := string(operation.RespKVs[i].(string))
 			bodyGot := string(res[o].Body)
@@ -512,5 +517,29 @@ func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInf
 			}
 		}
 	}
+}
 
+func Encode(data string, binary bool, colWidth int, padding bool) string {
+
+	if binary {
+
+		newData := []byte(data)
+		if padding {
+			length := colWidth
+			if length < len(data) {
+				length = len(data)
+			}
+
+			newData = make([]byte, length)
+			for i := 0; i < length; i++ {
+				newData[i] = 0x00
+			}
+			for i := 0; i < len(data); i++ {
+				newData[i] = data[i]
+			}
+		}
+		return base64.StdEncoding.EncodeToString(newData)
+	} else {
+		return data
+	}
 }

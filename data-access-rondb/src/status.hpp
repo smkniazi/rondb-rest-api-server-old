@@ -51,7 +51,7 @@ inline RS_Status __RS_ERROR_RONDB(const struct NdbError &error, std::string msg,
                         " MySQL Code: " + std::to_string(error.mysql_code) +
                         " Message: " + error.message;
   return __RS_ERROR(SERVER_ERROR, error.status, error.classification, error.code, error.mysql_code,
-                    __strToCharArr(msg), 0, __strToCharArr(""));
+                    __strToCharArr(msg), lineNo, fileName);
 }
 
 #define __MYFILENAME__ __FILE__

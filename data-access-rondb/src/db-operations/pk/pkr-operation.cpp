@@ -51,7 +51,7 @@ PKROperation::PKROperation(Uint32 no_ops, pRS_Buffer *req_buffs, pRS_Buffer *res
     this->responses.push_back(new PKRResponse(resp_buffs[i]));
   }
   this->ndb_object = ndb_object;
-  this->isBatch = true;
+  this->isBatch    = true;
 }
 
 PKROperation::~PKROperation() {
@@ -106,7 +106,7 @@ RS_Status PKROperation::SetupReadOperation() {
     for (Uint32 i = 0; i < req->PKColumnsCount(); i++) {
       RS_Status status = SetOperationPKCol(table_dict->getColumn(req->PKName(i)), op, req, i);
       if (status.http_code != SUCCESS) {
-        return status;
+        // return status;
       }
     }
 
@@ -142,84 +142,97 @@ RS_Status PKROperation::Execute() {
 }
 
 RS_Status PKROperation::CreateResponse() {
+  bool found = true;
   for (size_t i = 0; i < no_ops; i++) {
     PKRRequest *req                = requests[i];
     PKRResponse *resp              = responses[i];
     const NdbOperation *op         = operations[i];
     std::vector<NdbRecAttr *> recs = all_recs[i];
 
+    found = true;
     if (op->getNdbError().classification == NdbError::NoDataFound) {
-      return RS_CLIENT_404_ERROR();
-    } else {
-      // iterate over all columns
-      RS_Status ret;
-      ret = resp->Append_string("{", false, false);
-      if (ret.http_code != SUCCESS) {
-        return ret;
-      }
-
-      // Append status
-      if (isBatch) {
-        ret = AppendStatus(req, resp, SUCCESS);
-        if (ret.http_code != SUCCESS) {
-          return ret;
-        }
-
-        ret = resp->Append_string("\"body\": {", false, false);
-        if (ret.http_code != SUCCESS) {
-          return ret;
-        }
-      }
-
-      // Append Operation ID
-      ret = AppendOpId(req, resp);
-      if (ret.http_code != SUCCESS) {
-        return ret;
-      }
-
-      ret = AppendOpRecs(req, resp, &recs);
-      if (ret.http_code != SUCCESS) {
-        return ret;
-      }
-
-      if (isBatch) {
-        ret = resp->Append_string("}", false, false);
-        if (ret.http_code != SUCCESS) {
-          return ret;
-        }
-      }
-
-      resp->Append_string("} ", false, false);
-      resp->Append_NULL();
+      found = false;
     }
+
+    // iterate over all columns
+    RS_Status ret;
+    ret = resp->Append_string("{", false, false);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+
+    // Append status
+    if (isBatch) {
+      ret = AppendStatus(req, resp, found ? SUCCESS : NOT_FOUND);
+      if (ret.http_code != SUCCESS) {
+        return ret;
+      }
+
+      ret = resp->Append_string("\"body\": {", false, false);
+      if (ret.http_code != SUCCESS) {
+        return ret;
+      }
+    }
+
+    // Append Operation ID
+    ret = AppendOpId(req, resp);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+
+    ret = AppendOpRecs(found, req, resp, &recs);
+    if (ret.http_code != SUCCESS) {
+      return ret;
+    }
+
+    if (isBatch) {
+      ret = resp->Append_string("}", false, false);
+      if (ret.http_code != SUCCESS) {
+        return ret;
+      }
+    }
+
+    resp->Append_string("} ", false, false);
+    resp->Append_NULL();
+  }
+
+  if (!found && !isBatch) {
+    return RS_CLIENT_404_ERROR();
   }
   return RS_OK;
 }
 
-RS_Status PKROperation::AppendOpRecs(PKRRequest *req, PKRResponse *resp,
+RS_Status PKROperation::AppendOpRecs(bool found, PKRRequest *req, PKRResponse *resp,
                                      std::vector<NdbRecAttr *> *recs) {
-
-  RS_Status status = resp->Append_string("\"data\": {", false, false);
-  if (status.http_code != SUCCESS) {
-    return status;
-  }
-
-  for (Uint32 i = 0; i < recs->size(); i++) {
-    status = resp->Append_string(
-        std::string("\"") + (*recs)[i]->getColumn()->getName() + std::string("\":"), false, false);
+  if (!found) {
+    RS_Status status = resp->Append_string("\"data\": null", false, false);
+    if (status.http_code != SUCCESS) {
+      return status;
+    }
+  } else {
+    RS_Status status = resp->Append_string("\"data\": {", false, false);
     if (status.http_code != SUCCESS) {
       return status;
     }
 
-    status = WriteColToRespBuff((*recs)[i], resp, i == (recs->size() - 1) ? false : true);
+    for (Uint32 i = 0; i < recs->size(); i++) {
+      status = resp->Append_string(std::string("\"") + (*recs)[i]->getColumn()->getName() +
+                                       std::string("\":"),
+                                   false, false);
+      if (status.http_code != SUCCESS) {
+        return status;
+      }
+
+      status = WriteColToRespBuff((*recs)[i], resp, i == (recs->size() - 1) ? false : true);
+      if (status.http_code != SUCCESS) {
+        return status;
+      }
+    }
+
+    resp->Append_string("} ", false, false);
     if (status.http_code != SUCCESS) {
       return status;
     }
-  }
-
-  resp->Append_string("} ", false, false);
-  if (status.http_code != SUCCESS) {
-    return status;
   }
 
   return RS_OK;

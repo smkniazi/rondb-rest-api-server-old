@@ -27,11 +27,11 @@ import (
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
-func TestBatchSimple(t *testing.T) {
+func TestBatchSimple1(t *testing.T) {
 	//int table DB004
 
 	tests := map[string]ds.BatchOperationTestInfo{
-		"simple1": {
+		"simple1": { //single operation batch
 			HttpCode: http.StatusOK,
 			Operations: []ds.BatchSubOperationTestInfo{
 				ds.BatchSubOperationTestInfo{
@@ -52,7 +52,7 @@ func TestBatchSimple(t *testing.T) {
 				},
 			},
 		},
-		"simple2": {
+		"simple2": { //small batch operation
 			HttpCode: http.StatusOK,
 			Operations: []ds.BatchSubOperationTestInfo{
 				ds.BatchSubOperationTestInfo{
@@ -89,9 +89,198 @@ func TestBatchSimple(t *testing.T) {
 				},
 			},
 		},
+		"simple3": { // bigger batch of numbers table
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "int_table",
+					DB:           "DB004",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "bigint_table",
+					DB:           "DB005",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB006/tinyint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", -128, "id1", 0),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "tinyint_table",
+					DB:           "DB006",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB007/smallint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 32767, "id1", 65535),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "smallint_table",
+					DB:           "DB007",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB007/smallint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 1, "id1", 1),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "smallint_table",
+					DB:           "DB007",
+					HttpCode:     http.StatusOK,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+			},
+		},
+		"notfound": { // a batch operation with operations throwing 404
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 100, "id1", 100),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "int_table",
+					DB:           "DB004",
+					HttpCode:     http.StatusNotFound,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+				ds.BatchSubOperationTestInfo{
+					SubOperation: ds.BatchSubOperation{
+						Method:      &[]string{ds.PK_HTTP_VERB}[0],
+						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
+						Body: &ds.PKReadBody{
+							Filters:     tu.NewFiltersKVs(t, "id0", 100, "id1", 100),
+							ReadColumns: tu.NewReadColumns(t, "col", 2),
+							OperationID: tu.NewOperationID(t, 64),
+						},
+					},
+					Table:        "bigint_table",
+					DB:           "DB005",
+					HttpCode:     http.StatusNotFound,
+					BodyContains: "",
+					RespKVs:      []interface{}{"col0", "col1"},
+				},
+			},
+		},
 	}
 
 	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func TestBatchArrayTableChar(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB012", false, 100, true)
+}
+
+func TestBatchArrayTableVarchar(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB014", false, 50, false)
+}
+
+func TestBatchArrayTableLongVarchar(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB015", false, 256, false)
+}
+
+func TestBatchArrayTableBinary(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB016", true, 100, true)
+}
+
+func TestBatchArrayTableVarbinary(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB017", true, 100, false)
+}
+
+func TestBatchArrayTableLongVarbinary(t *testing.T) {
+	ArrayColumnBatchTest(t, "table1", "DB018", true, 256, false)
+}
+
+func ArrayColumnBatchTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
+
+	arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound)
+	tests := map[string]ds.BatchOperationTestInfo{
+		"simple1": { // bigger batch of array column table
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, *tu.NewOperationID(t, colWidth+1), http.StatusNotFound),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "1", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "2", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "3", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "4", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "这是一个测验", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "5", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "6", http.StatusOK),
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func arrayColumnBatchTestSubOp(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool, pk string, expectedStatus int) ds.BatchSubOperationTestInfo {
+	respKVs := []interface{}{"col0"}
+	return ds.BatchSubOperationTestInfo{
+		SubOperation: ds.BatchSubOperation{
+			Method:      &[]string{ds.PK_HTTP_VERB}[0],
+			RelativeURL: &[]string{string(database + "/" + table + "/" + ds.PK_DB_OPERATION)}[0],
+			Body: &ds.PKReadBody{
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode(pk, isBinary, colWidth, padding)),
+				ReadColumns: tu.NewReadColumns(t, "col", 1),
+				OperationID: tu.NewOperationID(t, 5),
+			},
+		},
+		Table:        table,
+		DB:           database,
+		HttpCode:     expectedStatus,
+		BodyContains: "",
+		RespKVs:      respKVs,
+	}
 }
 
 func TestBatchMissingReqField(t *testing.T) {

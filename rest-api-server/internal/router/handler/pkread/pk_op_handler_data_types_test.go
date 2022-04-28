@@ -18,7 +18,6 @@
 package pkread
 
 import (
-	"encoding/base64"
 	"net/http"
 	"testing"
 
@@ -787,30 +786,30 @@ func TestDataTypesBlobs(t *testing.T) {
 }
 
 func TestDataTypesChar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB012", false, 100, true)
+	ArrayColumnTest(t, "table1", "DB012", false, 100, true)
 }
 
 func TestDataTypesVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB014", false, 50, false)
+	ArrayColumnTest(t, "table1", "DB014", false, 50, false)
 }
 
 func TestDataTypesLongVarchar(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB015", false, 256, false)
+	ArrayColumnTest(t, "table1", "DB015", false, 256, false)
 }
 
 func TestDataTypesBinary(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB016", true, 100, true)
+	ArrayColumnTest(t, "table1", "DB016", true, 100, true)
 }
 
 func TestDataTypesVarbinary(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB017", true, 100, false)
+	ArrayColumnTest(t, "table1", "DB017", true, 100, false)
 }
 
 func TestDataTypesLongVarbinary(t *testing.T) {
-	CharacterColumnTest(t, "table1", "DB018", true, 256, false)
+	ArrayColumnTest(t, "table1", "DB018", true, 256, false)
 }
 
-func CharacterColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
+func ArrayColumnTest(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool) {
 	t.Helper()
 	testTable := table
 	testDb := database
@@ -819,7 +818,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"notfound1": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("-1", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("-1", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -832,7 +831,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"notfound2": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode(*tu.NewOperationID(t, colWidth+1), isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode(*tu.NewOperationID(t, colWidth+1), isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -845,7 +844,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"simple1": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("1", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("1", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -858,7 +857,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"simple2": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("2", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("2", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -871,7 +870,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"simple3": { // new line char in string
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("3", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("3", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -884,7 +883,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"simple4": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("4", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("4", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -897,7 +896,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"simple5": { //unicode pk
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("这是一个测验", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("这是一个测验", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -910,7 +909,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"nulltest": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("5", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("5", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -923,7 +922,7 @@ func CharacterColumnTest(t *testing.T, table string, database string, isBinary b
 
 		"escapedChars": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("6", isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("6", isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -1568,7 +1567,7 @@ func TestDataTypesBitColumn(t *testing.T) {
 
 		"simple1": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("1", true, 100, true)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("1", true, 100, true)),
 				ReadColumns: tu.NewReadColumns(t, "col", 5),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -1580,7 +1579,7 @@ func TestDataTypesBitColumn(t *testing.T) {
 		},
 		"simple2": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("2", true, 100, true)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("2", true, 100, true)),
 				ReadColumns: tu.NewReadColumns(t, "col", 5),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -1593,7 +1592,7 @@ func TestDataTypesBitColumn(t *testing.T) {
 
 		"null": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", encode("3", true, 100, true)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode("3", true, 100, true)),
 				ReadColumns: tu.NewReadColumns(t, "col", 5),
 				OperationID: tu.NewOperationID(t, 5),
 			},
@@ -1605,29 +1604,4 @@ func TestDataTypesBitColumn(t *testing.T) {
 		},
 	}
 	tu.PkTest(t, tests, RegisterPKTestHandler, true)
-}
-
-func encode(data string, binary bool, colWidth int, padding bool) string {
-
-	if binary {
-
-		newData := []byte(data)
-		if padding {
-			length := colWidth
-			if length < len(data) {
-				length = len(data)
-			}
-
-			newData = make([]byte, length)
-			for i := 0; i < length; i++ {
-				newData[i] = 0x00
-			}
-			for i := 0; i < len(data); i++ {
-				newData[i] = data[i]
-			}
-		}
-		return base64.StdEncoding.EncodeToString(newData)
-	} else {
-		return data
-	}
 }
