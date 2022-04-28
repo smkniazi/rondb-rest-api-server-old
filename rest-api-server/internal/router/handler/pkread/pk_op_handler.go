@@ -57,12 +57,18 @@ func PkReadHandler(c *gin.Context) {
 
 	var message string
 	if dalErr != nil {
-		if dalErr.HttpCode >= http.StatusInternalServerError {
-			message = fmt.Sprintf("%v File: %v, Line: %v ", dalErr.Message, dalErr.ErrFileName, dalErr.ErrLineNo)
+
+		if dalErr.HttpCode == http.StatusNotFound {
+			setResponseBodyUnsafe(c, http.StatusNotFound, response)
 		} else {
-			message = fmt.Sprintf("%v", dalErr.Message)
+			if dalErr.HttpCode >= http.StatusInternalServerError {
+				message = fmt.Sprintf("%v File: %v, Line: %v ", dalErr.Message, dalErr.ErrFileName, dalErr.ErrLineNo)
+			} else {
+				message = fmt.Sprintf("%v", dalErr.Message)
+			}
+			setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
 		}
-		setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
+
 	} else {
 		setResponseBodyUnsafe(c, http.StatusOK, response)
 	}

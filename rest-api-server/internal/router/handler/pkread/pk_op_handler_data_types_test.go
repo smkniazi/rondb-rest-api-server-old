@@ -35,6 +35,18 @@ func TestDataTypesInt(t *testing.T) {
 	testDb := "DB004"
 	validateColumns := []interface{}{"col0", "col1"}
 	tests := map[string]ds.PKTestInfo{
+		"notfound": {
+			PkReq: ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 100, "id1", 100),
+				ReadColumns: tu.NewReadColumns(t, "col", 2),
+				OperationID: tu.NewOperationID(t, 64),
+			},
+			Table:        testTable,
+			Db:           testDb,
+			HttpCode:     http.StatusNotFound,
+			BodyContains: "",
+			RespKVs:      validateColumns,
+		},
+
 		"simple1": {
 			PkReq: ds.PKReadBody{Filters: tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
 				ReadColumns: tu.NewReadColumns(t, "col", 2),
