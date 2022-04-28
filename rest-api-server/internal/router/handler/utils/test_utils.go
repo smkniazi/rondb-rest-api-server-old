@@ -492,15 +492,17 @@ func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInf
 	json.Unmarshal([]byte(resp), &res)
 
 	for o := 0; o < len(testInfo.Operations); o++ {
-		for i := 0; i < len(testInfo.Operations[o].RespKVs); i++ {
-			key := string(testInfo.Operations[i].RespKVs[i].(string))
-			bodyGot := string(res[i].Body)
+		operation := testInfo.Operations[o]
+
+		for i := 0; i < len(operation.RespKVs); i++ {
+			key := string(operation.RespKVs[i].(string))
+			bodyGot := string(res[o].Body)
 			jsonVal, found := getColumnDataFromJson(t, key, bodyGot)
 			if !found {
 				t.Fatalf("Key not found in the response. Key %s", key)
 			}
-			dbVal, err := getColumnDataFromDB(t, testInfo.Operations[i].DB, testInfo.Operations[i].Table,
-				testInfo.Operations[i].SubOperation.Body.Filters, key, isBinaryData)
+			dbVal, err := getColumnDataFromDB(t, operation.DB, operation.Table,
+				operation.SubOperation.Body.Filters, key, isBinaryData)
 			if err != nil {
 				t.Fatalf("%v", err)
 			}
