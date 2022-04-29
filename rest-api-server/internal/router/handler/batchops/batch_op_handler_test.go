@@ -248,7 +248,6 @@ func ArrayColumnBatchTest(t *testing.T, table string, database string, isBinary 
 			HttpCode: http.StatusOK,
 			Operations: []ds.BatchSubOperationTestInfo{
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound),
-				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, *tu.NewOperationID(t, colWidth+1), http.StatusNotFound),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "1", http.StatusOK),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "2", http.StatusOK),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "3", http.StatusOK),
@@ -260,7 +259,35 @@ func ArrayColumnBatchTest(t *testing.T, table string, database string, isBinary 
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, isBinary)
+}
+
+/*
+* A bad sub operation fails the entire batch
+ */
+func TestBatchBadSubOp(t *testing.T) {
+	table := "table1"
+	database := "DB018"
+	isBinary := true
+	padding := false
+	colWidth := 256
+
+	arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound)
+	tests := map[string]ds.BatchOperationTestInfo{
+		"simple1": { // bigger batch of array column table
+			HttpCode: http.StatusBadRequest,
+			Operations: []ds.BatchSubOperationTestInfo{
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound),
+				//This is bad operation. data is longer than the column width
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, *tu.NewOperationID(t, colWidth*4+1), http.StatusNotFound),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "1", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "2", http.StatusOK),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "3", http.StatusOK),
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, isBinary)
 }
 
 func arrayColumnBatchTestSubOp(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool, pk string, expectedStatus int) ds.BatchSubOperationTestInfo {

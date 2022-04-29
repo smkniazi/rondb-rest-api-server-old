@@ -513,6 +513,7 @@ func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInf
 			}
 
 			if string(jsonVal) != string(dbVal) {
+
 				t.Fatalf("The read value for key %s does not match. Got from REST Server: %s, Got from MYSQL Server: %s", key, jsonVal, dbVal)
 			}
 		}

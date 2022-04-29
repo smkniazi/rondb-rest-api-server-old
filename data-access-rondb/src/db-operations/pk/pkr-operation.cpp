@@ -106,7 +106,7 @@ RS_Status PKROperation::SetupReadOperation() {
     for (Uint32 i = 0; i < req->PKColumnsCount(); i++) {
       RS_Status status = SetOperationPKCol(table_dict->getColumn(req->PKName(i)), op, req, i);
       if (status.http_code != SUCCESS) {
-        // return status;
+        return status;
       }
     }
 

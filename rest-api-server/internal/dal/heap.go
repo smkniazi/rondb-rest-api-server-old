@@ -33,7 +33,7 @@ type Native_Buffer struct {
 	Buffer unsafe.Pointer
 }
 
-const buff_size = 512
+const buff_size = 4 * 1024
 
 func init() {
 	if C.ADDRESS_SIZE != 4 {

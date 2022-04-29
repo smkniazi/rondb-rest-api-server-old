@@ -22,6 +22,10 @@ package common
 */
 import "C"
 
+func ERROR_008() string {
+	return C.ERROR_008
+}
+
 func ERROR_011() string {
 	return C.ERROR_011
 }

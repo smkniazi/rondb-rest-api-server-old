@@ -843,14 +843,14 @@ func ArrayColumnTest(t *testing.T, table string, database string, isBinary bool,
 
 		"notfound2": {
 			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode(*tu.NewOperationID(t, colWidth+1), isBinary, colWidth, padding)),
+				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode(*tu.NewOperationID(t, colWidth*4+1), isBinary, colWidth, padding)),
 				ReadColumns: tu.NewReadColumns(t, "col", 1),
 				OperationID: tu.NewOperationID(t, 5),
 			},
 			Table:        testTable,
 			Db:           testDb,
-			HttpCode:     http.StatusNotFound,
-			BodyContains: "",
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_008(),
 			RespKVs:      validateColumns,
 		},
 
@@ -990,8 +990,8 @@ func TestDataTypesDateColumn(t *testing.T) {
 			},
 			Table:        testTable,
 			Db:           testDb,
-			HttpCode:     http.StatusNotFound,
-			BodyContains: "",
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_008(),
 			RespKVs:      []interface{}{},
 		},
 
@@ -1003,8 +1003,8 @@ func TestDataTypesDateColumn(t *testing.T) {
 			},
 			Table:        testTable,
 			Db:           testDb,
-			HttpCode:     http.StatusNotFound,
-			BodyContains: "",
+			HttpCode:     http.StatusBadRequest,
+			BodyContains: common.ERROR_008(),
 			RespKVs:      []interface{}{},
 		},
 

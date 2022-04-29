@@ -279,10 +279,7 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
 
     const int len = request->PKValueLen(colIdx);
     if (len > col->getLength()) {
-      // the user is searching a key greater than all the possible keys so return 404
-      // additionally using a pk greater in size than the table definition
-      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
-      return RS_CLIENT_404_ERROR();
+      return RS_CLIENT_ERROR(std::string(ERROR_008)+" Data len is greater than column length. Column: "+std::string(col->getName()));
     }
 
     const char *charStr = request->PKValueCStr(colIdx);
@@ -304,14 +301,11 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
     ///< Length bytes: 2, little-endian
     const int len = request->PKValueLen(colIdx);
     if (len > col->getLength()) {
-      // the user is searching a key greater than all the possible keys so return 404
-      // additionally using a pk greater in size than the table definition
-      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
-      return RS_CLIENT_404_ERROR();
+      return RS_CLIENT_ERROR(std::string(ERROR_008)+" Data len is greater than column length. Column: "+std::string(col->getName()));
     }
     char *charStr;
     if (request->PKValueNDBStr(colIdx, col, &charStr) != 0) {
-      return RS_SERVER_ERROR(ERROR_019);
+      return RS_CLIENT_ERROR(ERROR_019);
     }
     if (operation->equal(request->PKName(colIdx), charStr, len) != 0) {
       return RS_SERVER_ERROR(ERROR_023);
@@ -334,10 +328,7 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
         boost::beast::detail::base64::decode(pk, encodedStr, request->PKValueLen(colIdx));
 
     if (static_cast<int>(ret.first) > col->getLength()) {
-      // the user is searching a key greater than all the possible keys so return 404
-      // additionally using a pk greater in size than the table definition
-      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
-      return RS_CLIENT_404_ERROR();
+      return RS_CLIENT_ERROR(std::string(ERROR_008)+" Data len is greater than column length. Column: "+std::string(col->getName()));
     }
 
     if (operation->equal(request->PKName(colIdx), pk, col->getLength()) != 0) {
@@ -368,10 +359,7 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
         pk + additional_len, encodedStr, request->PKValueLen(colIdx));
 
     if (static_cast<int>(ret.first) > col->getLength()) {
-      // the user is searching a key greater than all the possible keys so return 404
-      // additionally using a pk greater in size than the table definition
-      // causes seg fault https://github.com/logicalclocks/rondb/issues/122
-      return RS_CLIENT_404_ERROR();
+      return RS_CLIENT_ERROR(std::string(ERROR_008)+" Data len is greater than column length. Column: "+std::string(col->getName()));
     }
 
     // insert the length at the begenning of the array
@@ -408,8 +396,7 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
     }
 
     if (l_time.hour != 0 || l_time.minute != 0 || l_time.second != 0 || l_time.second_part != 0) {
-      // the user has also specified time. as we only store YYMMDD therefore return 404 error
-      return RS_CLIENT_404_ERROR();
+      return RS_CLIENT_ERROR(std::string(ERROR_008)+" Expecting only date data. Column: "+std::string(col->getName()));
     }
 
     unsigned char packed[col->getSizeInBytes()];
