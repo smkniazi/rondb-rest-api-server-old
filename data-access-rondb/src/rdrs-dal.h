@@ -33,15 +33,17 @@ typedef enum HTTP_CODE {
   SERVER_ERROR = 500
 } HTTP_CODE;
 
+#define RS_STATUS_MSG_LEN  256
+#define RS_STATUS_FILE_NAME_LEN  256
 typedef struct RS_Status {
-  HTTP_CODE http_code;  // rest server return code. 200 for successful operation
-  int status;           // NdbError.ndberror_status_enum
-  int classification;   // NdbError.ndberror_classification_enum
-  int code;             // NdbError.code
-  int mysql_code;       // NdbError.mysql_code
-  char *message;        // error message. NOTE: it is receiver's responsibility to free this memory
-  int err_line_no;      // error line number
-  char *err_file_name;  // NOTE: it is receiver's responsibility to free this memory
+  HTTP_CODE http_code;      // rest server return code. 200 for successful operation
+  int status;               // NdbError.ndberror_status_enum
+  int classification;       // NdbError.ndberror_classification_enum
+  int code;                 // NdbError.code
+  int mysql_code;           // NdbError.mysql_code
+  char message[RS_STATUS_MSG_LEN];        // error message.
+  int err_line_no;          // error line number
+  char err_file_name[RS_STATUS_FILE_NAME_LEN];  // error file name.
 } RS_Status;
 
 // Data return type. You can change the return type for the column data

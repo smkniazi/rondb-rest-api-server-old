@@ -51,11 +51,9 @@ func InitRonDBConnection(connStr string, find_available_node_id bool) *DalError 
 	cs := C.CString(connStr)
 	defer C.free(unsafe.Pointer(cs))
 	ret := C.Init(cs, C.bool(find_available_node_id))
-	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
+		return cToGoRet(&ret)
 	}
 
 	return nil
@@ -63,11 +61,9 @@ func InitRonDBConnection(connStr string, find_available_node_id bool) *DalError 
 
 func ShutdownConnection() *DalError {
 	ret := C.Shutdown()
-	defer cleanUp(&ret)
 
 	if ret.http_code != http.StatusOK {
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
+		return cToGoRet(&ret)
 	}
 	return nil
 }
@@ -85,10 +81,8 @@ func RonDBPKRead(request *Native_Buffer, response *Native_Buffer) *DalError {
 
 	ret := C.PKRead(&crequest, &cresponse)
 
-	defer cleanUp(&ret)
 	if ret.http_code != http.StatusOK {
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
+		return cToGoRet(&ret)
 	}
 
 	return nil
@@ -116,21 +110,14 @@ func RonDBBatchedPKRead(noOps uint32, requests []*Native_Buffer, responses []*Na
 	}
 
 	ret := C.PKBatchRead(C.uint(noOps), (*C.pRS_Buffer)(cReqs), (*C.pRS_Buffer)(cResps))
-	defer cleanUp(&ret)
 	if ret.http_code != http.StatusOK {
-		return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(ret.message),
-			ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(ret.err_file_name)}
+		return cToGoRet(&ret)
 	}
 
 	return nil
 }
 
-func cleanUp(ret *C.RS_Status) {
-	if ret.message != nil {
-		defer C.free(unsafe.Pointer(ret.message))
-	}
-
-	if ret.err_file_name != nil {
-		defer C.free(unsafe.Pointer(ret.err_file_name))
-	}
+func cToGoRet(ret *C.RS_Status) *DalError {
+	return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(&ret.message[0]),
+		ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(&ret.err_file_name[0])}
 }
