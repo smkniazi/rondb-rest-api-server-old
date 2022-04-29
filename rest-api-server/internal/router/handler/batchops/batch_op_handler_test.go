@@ -216,6 +216,126 @@ func TestBatchSimple1(t *testing.T) {
 	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
 }
 
+func TestBatchDate(t *testing.T) {
+	//int table DB004
+
+	tests := map[string]ds.BatchOperationTestInfo{
+		"date": { //single operation batch
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "date_table", "DB019", "1111-11-11", http.StatusOK),
+				createSubOperation(t, "date_table", "DB019", "1111-11-11 00:00:00", http.StatusOK),
+				createSubOperation(t, "date_table", "DB019", "1111-11-12", http.StatusOK),
+			},
+		},
+		"wrong_sub_op": { //single operation batch
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "date_table", "DB019", "1111-11-11", http.StatusOK),
+				createSubOperation(t, "date_table", "DB019", "1111-11-11 00:00:00", http.StatusOK),
+				createSubOperation(t, "date_table", "DB019", "1111-11-12", http.StatusOK),
+				createSubOperation(t, "date_table", "DB019", "1111-13-12", http.StatusOK),
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func TestBatchDateTime(t *testing.T) {
+	//int table DB004
+
+	tests := map[string]ds.BatchOperationTestInfo{
+		"date": { //single operation batch
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "date_table0", "DB020", "1111-11-11 11:11:11", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-11 11:11:11.123", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-11 11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "date_table0", "DB020", "1111-11-11 11:11:11.123123", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-11 11:11:11.123000", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-11 -11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "date_table0", "DB020", "1111-11-12 11:11:11", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-12 11:11:11.123", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-12 11:11:11.123456", http.StatusOK),
+			},
+		},
+		"wrong_sub_op": { //single operation batch
+			HttpCode: http.StatusBadRequest,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "date_table0", "DB020", "1111-11-11 11:11:11", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-11 11:11:11.123", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-11 11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "date_table0", "DB020", "1111-11-11 11:11:11.123123", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-11 11:11:11.123000", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-11 -11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "date_table0", "DB020", "1111-11-12 11:11:11", http.StatusOK),
+				createSubOperation(t, "date_table3", "DB020", "1111-11-12 11:11:11.123", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-11-12 11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "date_table6", "DB020", "1111-13-11 11:11:11", http.StatusOK), //wrong op
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func TestBatchTime(t *testing.T) {
+	//int table DB004
+
+	tests := map[string]ds.BatchOperationTestInfo{
+		"date": { //single operation batch
+			HttpCode: http.StatusOK,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "time_table0", "DB021", "11:11:11", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "11:11:11.123", http.StatusOK),
+				createSubOperation(t, "time_table6", "DB021", "11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "time_table0", "DB021", "11:11:11.123123", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "11:11:11.123000", http.StatusOK),
+				createSubOperation(t, "time_table0", "DB021", "12:11:11", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "12:11:11.123", http.StatusOK),
+				createSubOperation(t, "time_table6", "DB021", "12:11:11.123456", http.StatusOK),
+			},
+		},
+		"wrong_sub_op": { //single operation batch
+			HttpCode: http.StatusBadRequest,
+			Operations: []ds.BatchSubOperationTestInfo{
+				createSubOperation(t, "time_table0", "DB021", "11:11:11", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "11:11:11.123", http.StatusOK),
+				createSubOperation(t, "time_table6", "DB021", "11:11:11.123456", http.StatusOK),
+				createSubOperation(t, "time_table0", "DB021", "11:11:11.123123", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "11:11:11.123000", http.StatusOK),
+				createSubOperation(t, "time_table0", "DB021", "12:11:11", http.StatusOK),
+				createSubOperation(t, "time_table3", "DB021", "12:11:11.123", http.StatusOK),
+				createSubOperation(t, "time_table6", "DB021", "12:11:11.123456", http.StatusOK),
+				createSubOperation(t, "time_table6", "DB021", "11:61:11", http.StatusOK),
+			},
+		},
+	}
+
+	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+}
+
+func createSubOperation(t *testing.T, table string, database string, pk string, expectedStatus int) ds.BatchSubOperationTestInfo {
+	respKVs := []interface{}{"col0"}
+	return ds.BatchSubOperationTestInfo{
+		SubOperation: ds.BatchSubOperation{
+			Method:      &[]string{ds.PK_HTTP_VERB}[0],
+			RelativeURL: &[]string{string(database + "/" + table + "/" + ds.PK_DB_OPERATION)}[0],
+			Body: &ds.PKReadBody{
+				Filters:     tu.NewFiltersKVs(t, "id0", pk),
+				ReadColumns: tu.NewReadColumns(t, "col", 1),
+				OperationID: tu.NewOperationID(t, 5),
+			},
+		},
+		Table:        table,
+		DB:           database,
+		HttpCode:     expectedStatus,
+		BodyContains: "",
+		RespKVs:      respKVs,
+	}
+}
+
 func TestBatchArrayTableChar(t *testing.T) {
 	ArrayColumnBatchTest(t, "table1", "DB012", false, 100, true)
 }

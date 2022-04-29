@@ -1021,19 +1021,6 @@ func TestDataTypesDateColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 
-		"nulltest2": {
-			PkReq: ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", "1111-11-11"),
-				ReadColumns: tu.NewReadColumns(t, "col", 1),
-				OperationID: tu.NewOperationID(t, 5),
-			},
-			Table:        testTable,
-			Db:           testDb,
-			HttpCode:     http.StatusOK,
-			BodyContains: "",
-			RespKVs:      validateColumns,
-		},
-
 		"error": {
 			PkReq: ds.PKReadBody{
 				Filters:     tu.NewFiltersKVs(t, "id0", "1111-13-11"),
