@@ -17,12 +17,21 @@
 
 package stat
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/dal"
+	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/version"
+)
 
 const PATH = "/stat"
 
+func RegisterStatTestHandler(engine *gin.Engine) {
+	engine.GET("/"+version.API_VERSION+"/"+ds.STAT_OPERATION, StatHandler)
+}
+
 func StatHandler(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "Allt Bra",
-	})
+	var stats ds.StatInfo
+	dal.GetRonDBStats(&stats)
+	c.JSON(200, stats)
 }

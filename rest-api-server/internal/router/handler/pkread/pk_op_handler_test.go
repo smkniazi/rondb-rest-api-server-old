@@ -31,7 +31,7 @@ import (
 )
 
 func TestPKReadOmitRequired(t *testing.T) {
-	router, err := tu.InitRouter(t, RegisterPKTestHandler)
+	router, err := tu.InitRouter(t, []tu.RegisterTestHandler{RegisterPKTestHandler})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -66,7 +66,7 @@ func TestPKReadOmitRequired(t *testing.T) {
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
-	router, err := tu.InitRouter(t, RegisterPKTestHandler)
+	router, err := tu.InitRouter(t, []tu.RegisterTestHandler{RegisterPKTestHandler})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -116,7 +116,7 @@ func TestPKReadLargeColumns(t *testing.T) {
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
-	router, err := tu.InitRouter(t, RegisterPKTestHandler)
+	router, err := tu.InitRouter(t, []tu.RegisterTestHandler{RegisterPKTestHandler})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -164,7 +164,7 @@ func TestPKInvalidIdentifier(t *testing.T) {
 }
 
 func TestPKUniqueParams(t *testing.T) {
-	router, err := tu.InitRouter(t, RegisterPKTestHandler)
+	router, err := tu.InitRouter(t, []tu.RegisterTestHandler{RegisterPKTestHandler})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -214,69 +214,72 @@ func TestPKUniqueParams(t *testing.T) {
 // DB/Table does not exist
 func TestPKERROR_011(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB001")}, RegisterPKTestHandler, func(router *gin.Engine) {
-		pkCol := "id0"
-		pkVal := "1"
-		param := ds.PKReadBody{
-			Filters:     tu.NewFilter(t, &pkCol, pkVal),
-			ReadColumns: tu.NewReadColumn(t, "col_0"),
-			OperationID: tu.NewOperationID(t, 64),
-		}
+	tu.WithDBs(t, [][][]string{common.Database("DB001")},
+		[]tu.RegisterTestHandler{RegisterPKTestHandler}, func(router *gin.Engine) {
+			pkCol := "id0"
+			pkVal := "1"
+			param := ds.PKReadBody{
+				Filters:     tu.NewFilter(t, &pkCol, pkVal),
+				ReadColumns: tu.NewReadColumn(t, "col_0"),
+				OperationID: tu.NewOperationID(t, 64),
+			}
 
-		body, _ := json.MarshalIndent(param, "", "\t")
+			body, _ := json.MarshalIndent(param, "", "\t")
 
-		url := tu.NewPKReadURL("DB001_XXX", "table_1")
-		tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
+			url := tu.NewPKReadURL("DB001_XXX", "table_1")
+			tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
 
-		url = tu.NewPKReadURL("DB001", "table_1_XXX")
-		tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
-	})
+			url = tu.NewPKReadURL("DB001", "table_1_XXX")
+			tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_011())
+		})
 }
 
 // column does not exist
 func TestPKERROR_012(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB001")}, RegisterPKTestHandler, func(router *gin.Engine) {
-		pkCol := "id0"
-		pkVal := "1"
-		param := ds.PKReadBody{
-			Filters:     tu.NewFilter(t, &pkCol, pkVal),
-			ReadColumns: tu.NewReadColumn(t, "col_0_XXX"),
-			OperationID: tu.NewOperationID(t, 64),
-		}
+	tu.WithDBs(t, [][][]string{common.Database("DB001")},
+		[]tu.RegisterTestHandler{RegisterPKTestHandler}, func(router *gin.Engine) {
+			pkCol := "id0"
+			pkVal := "1"
+			param := ds.PKReadBody{
+				Filters:     tu.NewFilter(t, &pkCol, pkVal),
+				ReadColumns: tu.NewReadColumn(t, "col_0_XXX"),
+				OperationID: tu.NewOperationID(t, 64),
+			}
 
-		body, _ := json.MarshalIndent(param, "", "\t")
+			body, _ := json.MarshalIndent(param, "", "\t")
 
-		url := tu.NewPKReadURL("DB001", "table_1")
-		tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_012())
-	})
+			url := tu.NewPKReadURL("DB001", "table_1")
+			tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_012())
+		})
 }
 
 // Primary key test.
 func TestPKERROR_013_ERROR_014(t *testing.T) {
 
-	tu.WithDBs(t, [][][]string{common.Database("DB002")}, RegisterPKTestHandler, func(router *gin.Engine) {
-		// send an other request with one column missing from def
-		// //		// one PK col is missing
-		param := ds.PKReadBody{
-			Filters:     tu.NewFilters(t, "id", 1), // PK has two cols. should thow an exception as we have define only one col in PK
-			ReadColumns: tu.NewReadColumn(t, "col_0"),
-			OperationID: tu.NewOperationID(t, 64),
-		}
-		body, _ := json.MarshalIndent(param, "", "\t")
-		url := tu.NewPKReadURL("DB002", "table_1")
-		tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_013())
+	tu.WithDBs(t, [][][]string{common.Database("DB002")},
+		[]tu.RegisterTestHandler{RegisterPKTestHandler}, func(router *gin.Engine) {
+			// send an other request with one column missing from def
+			// //		// one PK col is missing
+			param := ds.PKReadBody{
+				Filters:     tu.NewFilters(t, "id", 1), // PK has two cols. should thow an exception as we have define only one col in PK
+				ReadColumns: tu.NewReadColumn(t, "col_0"),
+				OperationID: tu.NewOperationID(t, 64),
+			}
+			body, _ := json.MarshalIndent(param, "", "\t")
+			url := tu.NewPKReadURL("DB002", "table_1")
+			tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_013())
 
-		// send an other request with two pk cols but wrong names
-		param = ds.PKReadBody{
-			Filters:     tu.NewFilters(t, "idx", 2),
-			ReadColumns: tu.NewReadColumn(t, "col_0"),
-			OperationID: tu.NewOperationID(t, 64),
-		}
-		body, _ = json.MarshalIndent(param, "", "\t")
-		url = tu.NewPKReadURL("DB002", "table_1")
-		tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_014())
+			// send an other request with two pk cols but wrong names
+			param = ds.PKReadBody{
+				Filters:     tu.NewFilters(t, "idx", 2),
+				ReadColumns: tu.NewReadColumn(t, "col_0"),
+				OperationID: tu.NewOperationID(t, 64),
+			}
+			body, _ = json.MarshalIndent(param, "", "\t")
+			url = tu.NewPKReadURL("DB002", "table_1")
+			tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest, common.ERROR_014())
 
-		// no of pk cols matches but the column names are different
-	})
+			// no of pk cols matches but the column names are different
+		})
 }

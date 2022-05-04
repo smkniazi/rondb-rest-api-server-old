@@ -28,7 +28,6 @@ import (
 )
 
 func TestBatchSimple1(t *testing.T) {
-	//int table DB004
 
 	tests := map[string]ds.BatchOperationTestInfo{
 		"simple1": { //single operation batch
@@ -213,11 +212,10 @@ func TestBatchSimple1(t *testing.T) {
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+	tu.BatchTest(t, tests, false, RegisterBatchTestHandler)
 }
 
 func TestBatchDate(t *testing.T) {
-	//int table DB004
 
 	tests := map[string]ds.BatchOperationTestInfo{
 		"date": { //single operation batch
@@ -239,11 +237,10 @@ func TestBatchDate(t *testing.T) {
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+	tu.BatchTest(t, tests, false, RegisterBatchTestHandler)
 }
 
 func TestBatchDateTime(t *testing.T) {
-	//int table DB004
 
 	tests := map[string]ds.BatchOperationTestInfo{
 		"date": { //single operation batch
@@ -277,11 +274,10 @@ func TestBatchDateTime(t *testing.T) {
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+	tu.BatchTest(t, tests, false, RegisterBatchTestHandler)
 }
 
 func TestBatchTime(t *testing.T) {
-	//int table DB004
 
 	tests := map[string]ds.BatchOperationTestInfo{
 		"date": { //single operation batch
@@ -313,7 +309,7 @@ func TestBatchTime(t *testing.T) {
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, false)
+	tu.BatchTest(t, tests, false, RegisterBatchTestHandler)
 }
 
 func createSubOperation(t *testing.T, table string, database string, pk string, expectedStatus int) ds.BatchSubOperationTestInfo {
@@ -379,7 +375,7 @@ func ArrayColumnBatchTest(t *testing.T, table string, database string, isBinary 
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, isBinary)
+	tu.BatchTest(t, tests, isBinary, RegisterBatchTestHandler)
 }
 
 /*
@@ -407,7 +403,7 @@ func TestBatchBadSubOp(t *testing.T) {
 		},
 	}
 
-	tu.BatchTest(t, tests, RegisterBatchTestHandler, isBinary)
+	tu.BatchTest(t, tests, isBinary, RegisterBatchTestHandler)
 }
 
 func arrayColumnBatchTestSubOp(t *testing.T, table string, database string, isBinary bool, colWidth int, padding bool, pk string, expectedStatus int) ds.BatchSubOperationTestInfo {

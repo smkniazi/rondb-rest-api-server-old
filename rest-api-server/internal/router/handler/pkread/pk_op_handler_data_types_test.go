@@ -165,7 +165,7 @@ func TestDataTypesInt(t *testing.T) {
 		},
 	}
 
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesBigInt(t *testing.T) {
@@ -263,7 +263,7 @@ func TestDataTypesBigInt(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesTinyInt(t *testing.T) {
@@ -360,7 +360,7 @@ func TestDataTypesTinyInt(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesSmallInt(t *testing.T) {
@@ -457,7 +457,7 @@ func TestDataTypesSmallInt(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesMediumInt(t *testing.T) {
@@ -554,7 +554,7 @@ func TestDataTypesMediumInt(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesFloat(t *testing.T) {
@@ -613,7 +613,7 @@ func TestDataTypesFloat(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesDouble(t *testing.T) {
@@ -672,7 +672,7 @@ func TestDataTypesDouble(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesDecimal(t *testing.T) {
@@ -733,7 +733,7 @@ func TestDataTypesDecimal(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesBlobs(t *testing.T) {
@@ -794,7 +794,7 @@ func TestDataTypesBlobs(t *testing.T) {
 		},
 	}
 
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesChar(t *testing.T) {
@@ -946,7 +946,7 @@ func ArrayColumnTest(t *testing.T, table string, database string, isBinary bool,
 		},
 	}
 
-	tu.PkTest(t, tests, RegisterPKTestHandler, isBinary)
+	tu.PkTest(t, tests, isBinary, RegisterPKTestHandler)
 }
 
 func TestDataTypesDateColumn(t *testing.T) {
@@ -1034,7 +1034,7 @@ func TestDataTypesDateColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesDatetimeColumn(t *testing.T) {
@@ -1169,7 +1169,7 @@ func TestDataTypesDatetimeColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesTimeColumn(t *testing.T) {
@@ -1291,7 +1291,7 @@ func TestDataTypesTimeColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesTimestampColumn(t *testing.T) {
@@ -1465,7 +1465,7 @@ func TestDataTypesTimestampColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesYearColumn(t *testing.T) {
@@ -1554,7 +1554,7 @@ func TestDataTypesYearColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, false)
+	tu.PkTest(t, tests, false, RegisterPKTestHandler)
 }
 
 func TestDataTypesBitColumn(t *testing.T) {
@@ -1602,5 +1602,5 @@ func TestDataTypesBitColumn(t *testing.T) {
 			RespKVs:      validateColumns,
 		},
 	}
-	tu.PkTest(t, tests, RegisterPKTestHandler, true)
+	tu.PkTest(t, tests, true, RegisterPKTestHandler)
 }

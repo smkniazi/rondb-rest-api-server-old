@@ -30,6 +30,7 @@
 #include "src/logger.hpp"
 #include "db-operations/pk/pkr-operation.hpp"
 #include "src/status.hpp"
+#include "src/ndb_object_pool.hpp"
 
 int GetAvailableAPINode(const char *connection_string);
 
@@ -81,26 +82,10 @@ RS_Status Init(const char *connection_string, _Bool find_available_node_id) {
 RS_Status Shutdown() {
   try {
     // ndb_end(0); // causes seg faults when called repeated from unit tests*/
+    NdbObjectPool::GetInstance()->Close();
     delete ndb_connection;
   } catch (...) {
     std::cout << "------> Exception in Shutdown <------" << std::endl;
-  }
-  return RS_OK;
-}
-
-/**
- * Creats a new NDB Object
- *
- * @param[in] ndb_connection
- * @param[out] ndb_object
- *
- * @return status
- */
-RS_Status GetNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndb_object) {
-  *ndb_object = new Ndb(ndb_connection);
-  int retCode = (*ndb_object)->init();
-  if (retCode != 0) {
-    return RS_SERVER_ERROR(ERROR_004 + std::string(" RetCode: ") + std::to_string(retCode));
   }
   return RS_OK;
 }
@@ -112,14 +97,14 @@ RS_Status GetNDBObject(Ndb_cluster_connection *ndb_connection, Ndb **ndb_object)
  *
  * @return status
  */
-RS_Status CloseNDBObject(Ndb **ndb_object) {
-  delete *ndb_object;
+RS_Status CloseNDBObject(Ndb *ndb_object) {
+  NdbObjectPool::GetInstance()->ReturnResource(ndb_object);
   return RS_OK;
 }
 
 RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
   Ndb *ndb_object  = nullptr;
-  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
+  RS_Status status = NdbObjectPool::GetInstance()->GetNdbObject(ndb_connection, &ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
@@ -127,7 +112,7 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
   PKROperation pkread(reqBuff, respBuff, ndb_object);
 
   status = pkread.PerformOperation();
-  CloseNDBObject(&ndb_object);
+  CloseNDBObject(ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
@@ -141,7 +126,7 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
 
 RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs) {
   Ndb *ndb_object  = nullptr;
-  RS_Status status = GetNDBObject(ndb_connection, &ndb_object);
+  RS_Status status = NdbObjectPool::GetInstance()->GetNdbObject(ndb_connection, &ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
@@ -149,7 +134,7 @@ RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *re
   PKROperation pkread(no_req, req_buffs, resp_buffs, ndb_object);
 
   status = pkread.PerformOperation();
-  CloseNDBObject(&ndb_object);
+  CloseNDBObject(ndb_object);
   if (status.http_code != SUCCESS) {
     return status;
   }
@@ -163,6 +148,19 @@ pRS_Buffer *AllocRSBufferArray(unsigned int len) {
 
 void FreeRSBufferArray(pRS_Buffer *p) {
   free(p);
+}
+
+/**
+ * Deallocate pointer array
+ */
+RS_Status GetRonDBStats(RonDB_Stats *stats) {
+  RonDB_Stats ret              = NdbObjectPool::GetInstance()->GetStats();
+  stats->ndb_objects_created   = ret.ndb_objects_created;
+  stats->ndb_objects_deleted   = ret.ndb_objects_deleted;
+  stats->ndb_objects_count     = ret.ndb_objects_count;
+  stats->ndb_objects_available = ret.ndb_objects_available;
+
+  return RS_OK;
 }
 
 static int LastConnectedInodeID = -1;

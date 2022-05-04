@@ -33,16 +33,16 @@ typedef enum HTTP_CODE {
   SERVER_ERROR = 500
 } HTTP_CODE;
 
-#define RS_STATUS_MSG_LEN  256
-#define RS_STATUS_FILE_NAME_LEN  256
+#define RS_STATUS_MSG_LEN       256
+#define RS_STATUS_FILE_NAME_LEN 256
 typedef struct RS_Status {
-  HTTP_CODE http_code;      // rest server return code. 200 for successful operation
-  int status;               // NdbError.ndberror_status_enum
-  int classification;       // NdbError.ndberror_classification_enum
-  int code;                 // NdbError.code
-  int mysql_code;           // NdbError.mysql_code
-  char message[RS_STATUS_MSG_LEN];        // error message.
-  int err_line_no;          // error line number
+  HTTP_CODE http_code;              // rest server return code. 200 for successful operation
+  int status;                       // NdbError.ndberror_status_enum
+  int classification;               // NdbError.ndberror_classification_enum
+  int code;                         // NdbError.code
+  int mysql_code;                   // NdbError.mysql_code
+  char message[RS_STATUS_MSG_LEN];  // error message.
+  int err_line_no;                  // error line number
   char err_file_name[RS_STATUS_FILE_NAME_LEN];  // error file name.
 } RS_Status;
 
@@ -64,6 +64,15 @@ typedef struct RS_Buffer {
 } RS_Buffer;
 
 typedef RS_Buffer *pRS_Buffer;
+
+// RonDB stats
+typedef struct RonDB_Stats {
+  unsigned int ndb_objects_created;
+  unsigned int ndb_objects_deleted;
+  unsigned int ndb_objects_count;
+  unsigned int ndb_objects_available;
+} RonDB_Stats;
+
 /**
  * Initialize connection to the database
  */
@@ -84,9 +93,20 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff);
  */
 RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs);
 
+/**
+ * Allocate pointer array to pass request and response buffers from go layer
+ */
 pRS_Buffer *AllocRSBufferArray(unsigned int len);
 
+/**
+ * Deallocate pointer array
+ */
 void FreeRSBufferArray(pRS_Buffer *p);
+
+/**
+ * Deallocate pointer array
+ */
+RS_Status GetRonDBStats(RonDB_Stats *stats);
 
 #endif
 

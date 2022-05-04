@@ -33,6 +33,8 @@ import "C"
 import (
 	"net/http"
 	"unsafe"
+
+	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
 type DalError struct {
@@ -120,4 +122,23 @@ func RonDBBatchedPKRead(noOps uint32, requests []*NativeBuffer, responses []*Nat
 func cToGoRet(ret *C.RS_Status) *DalError {
 	return &DalError{HttpCode: int(ret.http_code), Message: C.GoString(&ret.message[0]),
 		ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(&ret.err_file_name[0])}
+}
+
+func GetRonDBStats(stats *ds.StatInfo) *DalError {
+
+	p := (*C.RonDB_Stats)(C.malloc(C.size_t(unsafe.Sizeof(C.struct_student{}))))
+	defer C.free(unsafe.Pointer(p))
+
+	ret := C.GetRonDBStats(p)
+
+	if ret.http_code != http.StatusOK {
+		return cToGoRet(&ret)
+	}
+
+	stats.NdbObjectsCreationCount = uint64(p.ndb_objects_created)
+	stats.NdbObjectsDeletionCount = uint64(p.ndb_objects_deleted)
+	stats.NdbObjectsTotalCount = uint64(p.ndb_objects_count)
+	stats.NdbObjectsFreeCount = uint64(p.ndb_objects_available)
+
+	return nil
 }

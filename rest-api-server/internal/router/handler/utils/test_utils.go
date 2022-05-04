@@ -249,6 +249,10 @@ func NewBatchReadURL() string {
 	return "/" + version.API_VERSION + "/" + ds.BATCH_OPERATION
 }
 
+func NewStatURL() string {
+	return "/" + version.API_VERSION + "/" + ds.STAT_OPERATION
+}
+
 func NewOperationID(t *testing.T, size int) *string {
 	opID := RandString(size)
 	return &opID
@@ -316,7 +320,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler,
+func WithDBs(t *testing.T, dbs [][][]string, registerHandlers []RegisterTestHandler,
 	fn func(router *gin.Engine)) {
 	t.Helper()
 
@@ -341,7 +345,7 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler
 		runSQLQueries(t, dbConnection, db[0])
 	}
 
-	router, err := InitRouter(t, registerHandler)
+	router, err := InitRouter(t, registerHandlers)
 
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -366,7 +370,7 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 	}
 }
 
-func InitRouter(t *testing.T, registerHandler RegisterTestHandler) (*gin.Engine, error) {
+func InitRouter(t *testing.T, registerHandlers []RegisterTestHandler) (*gin.Engine, error) {
 	t.Helper()
 	//router := gin.Default()
 	router := gin.New()
@@ -375,7 +379,9 @@ func InitRouter(t *testing.T, registerHandler RegisterTestHandler) (*gin.Engine,
 		return nil, err
 	}
 
-	registerHandler(router)
+	for _, handler := range registerHandlers {
+		handler(router)
+	}
 	if !dal.BuffersInitialized() {
 		dal.InitializeBuffers()
 	}
@@ -392,7 +398,7 @@ func shutDownRouter(t *testing.T, router *gin.Engine) error {
 	return nil
 }
 
-func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, registerHandler RegisterTestHandler, isBinaryData bool) {
+func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, isBinaryData bool, registerHandler ...RegisterTestHandler) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
 			WithDBs(t, [][][]string{common.Database(testInfo.Db)}, registerHandler, func(router *gin.Engine) {
@@ -408,7 +414,8 @@ func PkTest(t *testing.T, tests map[string]ds.PKTestInfo, registerHandler Regist
 	}
 }
 
-func BatchTest(t *testing.T, tests map[string]ds.BatchOperationTestInfo, registerHandler RegisterTestHandler, isBinaryData bool) {
+func BatchTest(t *testing.T, tests map[string]ds.BatchOperationTestInfo, isBinaryData bool,
+	registerHandlers ...RegisterTestHandler) {
 	for name, testInfo := range tests {
 		t.Run(name, func(t *testing.T) {
 
@@ -433,7 +440,7 @@ func BatchTest(t *testing.T, tests map[string]ds.BatchOperationTestInfo, registe
 			}
 			batch := ds.BatchOperation{Operations: &subOps}
 
-			WithDBs(t, dbs, registerHandler, func(router *gin.Engine) {
+			WithDBs(t, dbs, registerHandlers, func(router *gin.Engine) {
 				url := NewBatchReadURL()
 				body, _ := json.MarshalIndent(batch, "", "\t")
 				httpCode, res := ProcessRequest(t, router, ds.BATCH_HTTP_VERB, url,

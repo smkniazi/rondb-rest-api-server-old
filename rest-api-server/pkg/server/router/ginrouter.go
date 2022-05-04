@@ -46,7 +46,7 @@ var _ Router = (*RouterConext)(nil)
 func (rc *RouterConext) SetupRouter() error {
 	rc.Engine = gin.Default()
 
-	rc.Engine.GET("/"+rc.APIVersion+"/ping", stat.StatHandler)
+	rc.Engine.GET("/"+rc.APIVersion+"/"+ds.STAT_OPERATION, stat.StatHandler)
 	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+ds.PK_DB_OPERATION, pkread.PkReadHandler)
 	rc.Engine.POST("/"+rc.APIVersion+"/"+ds.BATCH_OPERATION, batchops.BatchOpsHandler)
 
