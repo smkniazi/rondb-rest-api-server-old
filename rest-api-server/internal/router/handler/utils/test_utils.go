@@ -316,7 +316,8 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler, fn func(router *gin.Engine)) {
+func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler,
+	fn func(router *gin.Engine)) {
 	t.Helper()
 
 	rand.Seed(int64(time.Now().Nanosecond()))
@@ -340,8 +341,7 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler
 		runSQLQueries(t, dbConnection, db[0])
 	}
 
-	router, err := InitRouter(t)
-	registerHandler(router)
+	router, err := InitRouter(t, registerHandler)
 
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -349,6 +349,11 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandler RegisterTestHandler
 	defer shutDownRouter(t, router)
 
 	fn(router)
+	stats := dal.GetBuffersStats()
+	if stats.BuffersCount != stats.FreeBuffers {
+		t.Fatalf("Number of free buffers do not match. Expecting: %d, Got: %d",
+			stats.BuffersCount, stats.FreeBuffers)
+	}
 }
 
 func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
@@ -361,7 +366,7 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 	}
 }
 
-func InitRouter(t *testing.T) (*gin.Engine, error) {
+func InitRouter(t *testing.T, registerHandler RegisterTestHandler) (*gin.Engine, error) {
 	t.Helper()
 	//router := gin.Default()
 	router := gin.New()
@@ -369,6 +374,12 @@ func InitRouter(t *testing.T) (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	registerHandler(router)
+	if !dal.BuffersInitialized() {
+		dal.InitializeBuffers()
+	}
+
 	return router, nil
 }
 

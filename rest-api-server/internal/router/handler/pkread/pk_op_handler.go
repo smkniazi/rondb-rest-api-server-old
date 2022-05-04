@@ -52,6 +52,8 @@ func PkReadHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 		return
 	}
+	defer dal.ReturnBuffer(request)
+	defer dal.ReturnBuffer(response)
 
 	dalErr := dal.RonDBPKRead(request, response)
 
@@ -79,7 +81,7 @@ func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
 	c.String(code, string(b))
 }
 
-func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer) {
+func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.NativeBuffer) {
 	c.Writer.WriteHeader(code)
 	c.Writer.Write(([]byte)(common.ProcessResponse(resp.Buffer)))
 }

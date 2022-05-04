@@ -31,11 +31,10 @@ import (
 )
 
 func TestPKReadOmitRequired(t *testing.T) {
-	router, err := tu.InitRouter(t)
+	router, err := tu.InitRouter(t, RegisterPKTestHandler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	RegisterPKTestHandler(router)
 
 	// Test. Omitting filter should result in 400 error
 	param := ds.PKReadBody{
@@ -67,11 +66,10 @@ func TestPKReadOmitRequired(t *testing.T) {
 }
 
 func TestPKReadLargeColumns(t *testing.T) {
-	router, err := tu.InitRouter(t)
+	router, err := tu.InitRouter(t, RegisterPKTestHandler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	RegisterPKTestHandler(router)
 
 	// Test. Large filter column names.
 	col := tu.RandString(65)
@@ -118,11 +116,10 @@ func TestPKReadLargeColumns(t *testing.T) {
 }
 
 func TestPKInvalidIdentifier(t *testing.T) {
-	router, err := tu.InitRouter(t)
+	router, err := tu.InitRouter(t, RegisterPKTestHandler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	RegisterPKTestHandler(router)
 
 	//Valid chars [ U+0001 .. U+007F] and [ U+0080 .. U+FFFF]
 
@@ -167,11 +164,10 @@ func TestPKInvalidIdentifier(t *testing.T) {
 }
 
 func TestPKUniqueParams(t *testing.T) {
-	router, err := tu.InitRouter(t)
+	router, err := tu.InitRouter(t, RegisterPKTestHandler)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	RegisterPKTestHandler(router)
 
 	// Test. unique read columns
 	readColumns := make([]ds.ReadColumn, 2)

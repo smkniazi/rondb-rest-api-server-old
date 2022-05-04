@@ -40,5 +40,5 @@ clean:
 	rm -rf ./bin/*
 
 test: 
-	go test ./... -coverprofile coverage.out 
+	go test -p 1 ./... -coverprofile coverage.out 
 	go tool cover -html=coverage.out -o coverage.html && xdg-open coverage.html

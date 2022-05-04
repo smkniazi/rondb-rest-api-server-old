@@ -229,7 +229,7 @@ func TestBatchDate(t *testing.T) {
 			},
 		},
 		"wrong_sub_op": { //single operation batch
-			HttpCode: http.StatusOK,
+			HttpCode: http.StatusBadRequest,
 			Operations: []ds.BatchSubOperationTestInfo{
 				createSubOperation(t, "date_table", "DB019", "1111-11-11", http.StatusOK),
 				createSubOperation(t, "date_table", "DB019", "1111-11-11 00:00:00", http.StatusOK),

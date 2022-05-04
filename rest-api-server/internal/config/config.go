@@ -54,3 +54,11 @@ func SqlServerIP() string {
 func SqlServerPort() int32 {
 	return 3306
 }
+
+func BufferSize() uint32 {
+	return 320 * 1024
+}
+
+func PreAllocBuffers() uint32 {
+	return 1
+}

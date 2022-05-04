@@ -25,29 +25,104 @@ package dal
 import "C"
 import (
 	"fmt"
+	"sync"
 	"unsafe"
+
+	"hopsworks.ai/rdrs/internal/config"
 )
 
-type Native_Buffer struct {
+type NativeBuffer struct {
 	Size   uint32
 	Buffer unsafe.Pointer
 }
 
-const buff_size = 4 * 1024
+type NativeBufferStats struct {
+	AllocationsCount   uint64
+	DeallocationsCount uint64
+	BuffersCount       uint64
+	FreeBuffers        uint64
+}
 
-func init() {
+var buffers []*NativeBuffer
+var buffersStats NativeBufferStats
+var initialized bool
+var mutex sync.Mutex
+
+func InitializeBuffers() {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if initialized {
+		panic(fmt.Sprintf("Native buffers are already initialized"))
+	}
+
 	if C.ADDRESS_SIZE != 4 {
 		panic(fmt.Sprintf("Only 4 byte address are supported"))
 	}
 
-	if buff_size%C.ADDRESS_SIZE != 0 {
+	if config.BufferSize()%C.ADDRESS_SIZE != 0 {
 		panic(fmt.Sprintf("Buffer size must be multiple of %d", C.ADDRESS_SIZE))
 	}
+
+	for i := uint32(0); i < config.PreAllocBuffers(); i++ {
+		buffers = append(buffers, __allocateBuffer())
+	}
+
+	buffersStats.AllocationsCount = uint64(config.PreAllocBuffers())
+	buffersStats.BuffersCount = buffersStats.AllocationsCount
+	buffersStats.DeallocationsCount = 0
+
+	initialized = true
 }
 
-func GetBuffer() *Native_Buffer {
-	buff := Native_Buffer{Buffer: C.malloc(C.size_t(buff_size)), Size: buff_size}
-	dstBuf := unsafe.Slice((*byte)(buff.Buffer), buff_size)
+func __allocateBuffer() *NativeBuffer {
+	buff := NativeBuffer{Buffer: C.malloc(C.size_t(config.BufferSize())), Size: config.BufferSize()}
+	dstBuf := unsafe.Slice((*byte)(buff.Buffer), config.BufferSize())
 	dstBuf[0] = 0x00 // reset buffer by putting null terminator in the begenning
 	return &buff
+}
+
+func GetBuffer() *NativeBuffer {
+	if !initialized {
+		panic(fmt.Sprintf("Native buffers are not initialized"))
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	var buff *NativeBuffer
+	if len(buffers) > 0 {
+		buff = buffers[len(buffers)-1]
+		buffers = buffers[:len(buffers)-1]
+	} else {
+		buff = __allocateBuffer()
+		buffersStats.BuffersCount++
+		buffersStats.AllocationsCount++
+	}
+
+	return buff
+}
+
+func ReturnBuffer(buffer *NativeBuffer) {
+	if !initialized {
+		panic(fmt.Sprintf("Native buffers are not initialized"))
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+	buffers = append(buffers, __allocateBuffer())
+}
+
+func GetBuffersStats() NativeBufferStats {
+	if !initialized {
+		panic(fmt.Sprintf("Native buffers are not initialized"))
+	}
+	//update the free buffers cound
+	mutex.Lock()
+	defer mutex.Unlock()
+	buffersStats.FreeBuffers = uint64(len(buffers))
+	return buffersStats
+}
+
+func BuffersInitialized() bool {
+	return initialized
 }

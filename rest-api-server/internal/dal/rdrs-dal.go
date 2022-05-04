@@ -68,7 +68,7 @@ func ShutdownConnection() *DalError {
 	return nil
 }
 
-func RonDBPKRead(request *Native_Buffer, response *Native_Buffer) *DalError {
+func RonDBPKRead(request *NativeBuffer, response *NativeBuffer) *DalError {
 	// unsafe.Pointer
 	// create C structs for  buffers
 	var crequest C.RS_Buffer
@@ -88,7 +88,7 @@ func RonDBPKRead(request *Native_Buffer, response *Native_Buffer) *DalError {
 	return nil
 }
 
-func RonDBBatchedPKRead(noOps uint32, requests []*Native_Buffer, responses []*Native_Buffer) *DalError {
+func RonDBBatchedPKRead(noOps uint32, requests []*NativeBuffer, responses []*NativeBuffer) *DalError {
 	cReqs := C.AllocRSBufferArray(C.uint(noOps))
 	cResps := C.AllocRSBufferArray(C.uint(noOps))
 	defer C.FreeRSBufferArray(cReqs)

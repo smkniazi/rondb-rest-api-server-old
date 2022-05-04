@@ -69,7 +69,7 @@ import (
 //    null terminated  operation Id
 //
 
-func CreateNativeRequest(pkrParams *ds.PKReadParams) (*dal.Native_Buffer, *dal.Native_Buffer, error) {
+func CreateNativeRequest(pkrParams *ds.PKReadParams) (*dal.NativeBuffer, *dal.NativeBuffer, error) {
 	response := dal.GetBuffer()
 	request := dal.GetBuffer()
 	iBuf := unsafe.Slice((*uint32)(request.Buffer), request.Size)

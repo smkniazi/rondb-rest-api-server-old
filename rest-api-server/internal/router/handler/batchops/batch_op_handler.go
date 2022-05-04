@@ -60,14 +60,16 @@ func BatchOpsHandler(c *gin.Context) {
 	}
 
 	noOps := uint32(len(pkOperations))
-	reqPtrs := make([]*dal.Native_Buffer, noOps)
-	respPtrs := make([]*dal.Native_Buffer, noOps)
+	reqPtrs := make([]*dal.NativeBuffer, noOps)
+	respPtrs := make([]*dal.NativeBuffer, noOps)
 
 	for i, pkOp := range pkOperations {
 		b, _ := json.Marshal(pkOp)
 
 		fmt.Printf("%s\n", string(b))
 		reqPtrs[i], respPtrs[i], err = pkread.CreateNativeRequest(&pkOp)
+		defer dal.ReturnBuffer(reqPtrs[i])
+		defer dal.ReturnBuffer(respPtrs[i])
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"OK": false, "msg": fmt.Sprintf("%v", err)})
 			return
@@ -99,7 +101,7 @@ func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
 	c.String(code, string(b))
 }
 
-func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.Native_Buffer, appendComma bool) {
+func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.NativeBuffer, appendComma bool) {
 	c.Writer.WriteHeader(code)
 	c.Writer.Write(([]byte)(common.ProcessResponse(resp.Buffer)))
 	if appendComma {
