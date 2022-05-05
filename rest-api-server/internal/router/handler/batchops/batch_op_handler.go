@@ -134,6 +134,11 @@ func parsePKRead(operation *ds.BatchSubOperation, pkReadarams *ds.PKReadParams) 
 		return fmt.Errorf("Failed to extract database and table information from relative url")
 	}
 
+	err := pkread.ValidateBody(&params)
+	if err != nil {
+		return err
+	}
+
 	pkReadarams.DB = &splits[0]
 	pkReadarams.Table = &splits[1]
 	pkReadarams.Filters = params.Filters

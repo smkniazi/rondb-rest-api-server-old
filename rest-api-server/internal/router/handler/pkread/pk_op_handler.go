@@ -109,6 +109,16 @@ func ParseBody(req *http.Request, params *ds.PKReadBody) error {
 		return err
 	}
 
+	err = ValidateBody(params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ValidateBody(params *ds.PKReadBody) error {
+
 	for _, filter := range *params.Filters {
 		// make sure filter columns are valid
 		if err := validateDBIdentifier(*filter.Column); err != nil {
