@@ -112,7 +112,7 @@ func ReturnBuffer(buffer *NativeBuffer) {
 	buffers = append(buffers, __allocateBuffer())
 }
 
-func GetBuffersStats() NativeBufferStats {
+func GetNativeBuffersStats() NativeBufferStats {
 	if !initialized {
 		panic(fmt.Sprintf("Native buffers are not initialized"))
 	}

@@ -20,7 +20,10 @@ package common
 
 import "C"
 import (
+	"encoding/json"
 	"unsafe"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ErrorResponse struct {
@@ -29,4 +32,9 @@ type ErrorResponse struct {
 
 func ProcessResponse(buffer unsafe.Pointer) string {
 	return C.GoString((*C.char)(buffer))
+}
+
+func SetResponseError(c *gin.Context, code int, resp ErrorResponse) {
+	b, _ := json.Marshal(resp)
+	c.String(code, string(b))
 }

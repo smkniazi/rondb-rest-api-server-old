@@ -67,10 +67,10 @@ typedef RS_Buffer *pRS_Buffer;
 
 // RonDB stats
 typedef struct RonDB_Stats {
-  unsigned int ndb_objects_created;
-  unsigned int ndb_objects_deleted;
-  unsigned int ndb_objects_count;
-  unsigned int ndb_objects_available;
+  volatile unsigned int ndb_objects_created;
+  volatile unsigned int ndb_objects_deleted;
+  volatile unsigned int ndb_objects_count;
+  volatile unsigned int ndb_objects_available;
 } RonDB_Stats;
 
 /**

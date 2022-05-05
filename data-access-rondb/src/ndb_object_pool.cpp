@@ -36,44 +36,40 @@ NdbObjectPool *NdbObjectPool::GetInstance() {
 }
 
 RS_Status NdbObjectPool::GetNdbObject(Ndb_cluster_connection *ndb_connection, Ndb **ndb_object) {
-  __mutex.lock();
+  std::lock_guard<std::mutex> guard(__mutex);
   RS_Status ret_status = RS_OK;
   if (__ndb_objects.empty()) {
-    std::cout << "Creating new." << std::endl;
 
     *ndb_object = new Ndb(ndb_connection);
     int retCode = (*ndb_object)->init();
     if (retCode != 0) {
       ret_status = RS_SERVER_ERROR(ERROR_004 + std::string(" RetCode: ") + std::to_string(retCode));
     }
-    stats.ndb_objects_created++;
-    stats.ndb_objects_count++;
+    __atomic_fetch_add(&stats.ndb_objects_created, 1, __ATOMIC_SEQ_CST);
+    __atomic_fetch_add(&stats.ndb_objects_count, 1, __ATOMIC_SEQ_CST);
   } else {
     *ndb_object = __ndb_objects.front();
     __ndb_objects.pop_front();
   }
-  __mutex.unlock();
   return ret_status;
 }
 
 void NdbObjectPool::ReturnResource(Ndb *object) {
-  __mutex.lock();
+  std::lock_guard<std::mutex> guard(__mutex);
   // reset transaction and cleanup
   __ndb_objects.push_back(object);
-  __mutex.unlock();
 }
 
 RonDB_Stats NdbObjectPool::GetStats() {
-  __mutex.lock();
+  std::lock_guard<std::mutex> guard(__mutex);
 
   stats.ndb_objects_available = __ndb_objects.size();
 
-  __mutex.unlock();
   return stats;
 }
 
 RS_Status NdbObjectPool::Close() {
-  __mutex.lock();
+  std::lock_guard<std::mutex> guard(__mutex);
 
   while (__ndb_objects.size() > 0) {
     Ndb *ndb_object = __ndb_objects.front();
@@ -85,6 +81,5 @@ RS_Status NdbObjectPool::Close() {
   stats.ndb_objects_count     = 0;
   stats.ndb_objects_created   = 0;
   stats.ndb_objects_deleted   = 0;
-  __mutex.unlock();
   return RS_OK;
 }

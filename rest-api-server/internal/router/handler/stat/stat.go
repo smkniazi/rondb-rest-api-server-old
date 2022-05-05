@@ -18,7 +18,11 @@
 package stat
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 	"hopsworks.ai/rdrs/version"
@@ -32,6 +36,17 @@ func RegisterStatTestHandler(engine *gin.Engine) {
 
 func StatHandler(c *gin.Context) {
 	var stats ds.StatInfo
-	dal.GetRonDBStats(&stats)
+	rondbStats, err := dal.GetRonDBStats()
+	if err != nil {
+		common.SetResponseError(c, http.StatusInternalServerError,
+			common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
+		return
+	}
+
+	nativeBuffersStats := dal.GetNativeBuffersStats()
+
+	stats.NativeBufferStats = nativeBuffersStats
+	stats.RonDBStats = *rondbStats
+
 	c.JSON(200, stats)
 }

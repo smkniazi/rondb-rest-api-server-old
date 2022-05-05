@@ -33,8 +33,6 @@ import "C"
 import (
 	"net/http"
 	"unsafe"
-
-	ds "hopsworks.ai/rdrs/internal/datastructs"
 )
 
 type DalError struct {
@@ -46,6 +44,13 @@ type DalError struct {
 
 func (e *DalError) Error() string {
 	return e.Message
+}
+
+type RonDBStats struct {
+	NdbObjectsCreationCount uint64
+	NdbObjectsDeletionCount uint64
+	NdbObjectsTotalCount    uint64
+	NdbObjectsFreeCount     uint64
 }
 
 func InitRonDBConnection(connStr string, find_available_node_id bool) *DalError {
@@ -124,7 +129,7 @@ func cToGoRet(ret *C.RS_Status) *DalError {
 		ErrLineNo: int(ret.err_line_no), ErrFileName: C.GoString(&ret.err_file_name[0])}
 }
 
-func GetRonDBStats(stats *ds.StatInfo) *DalError {
+func GetRonDBStats() (*RonDBStats, *DalError) {
 
 	p := (*C.RonDB_Stats)(C.malloc(C.size_t(unsafe.Sizeof(C.struct_student{}))))
 	defer C.free(unsafe.Pointer(p))
@@ -132,13 +137,13 @@ func GetRonDBStats(stats *ds.StatInfo) *DalError {
 	ret := C.GetRonDBStats(p)
 
 	if ret.http_code != http.StatusOK {
-		return cToGoRet(&ret)
+		return nil, cToGoRet(&ret)
 	}
+	var rstats RonDBStats
+	rstats.NdbObjectsCreationCount = uint64(p.ndb_objects_created)
+	rstats.NdbObjectsDeletionCount = uint64(p.ndb_objects_deleted)
+	rstats.NdbObjectsTotalCount = uint64(p.ndb_objects_count)
+	rstats.NdbObjectsFreeCount = uint64(p.ndb_objects_available)
 
-	stats.NdbObjectsCreationCount = uint64(p.ndb_objects_created)
-	stats.NdbObjectsDeletionCount = uint64(p.ndb_objects_deleted)
-	stats.NdbObjectsTotalCount = uint64(p.ndb_objects_count)
-	stats.NdbObjectsFreeCount = uint64(p.ndb_objects_available)
-
-	return nil
+	return &rstats, nil
 }

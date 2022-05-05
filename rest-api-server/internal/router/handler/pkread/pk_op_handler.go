@@ -19,7 +19,6 @@
 package pkread
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -43,7 +42,7 @@ func PkReadHandler(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("Unable to parse request. Error: %v\n", err)
 		c.AbortWithError(http.StatusBadRequest, err)
-		setResponseError(c, http.StatusBadRequest, common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
+		common.SetResponseError(c, http.StatusBadRequest, common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
 		return
 	}
 
@@ -68,17 +67,12 @@ func PkReadHandler(c *gin.Context) {
 			} else {
 				message = fmt.Sprintf("%v", dalErr.Message)
 			}
-			setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
+			common.SetResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
 		}
 
 	} else {
 		setResponseBodyUnsafe(c, http.StatusOK, response)
 	}
-}
-
-func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
-	b, _ := json.Marshal(resp)
-	c.String(code, string(b))
 }
 
 func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.NativeBuffer) {

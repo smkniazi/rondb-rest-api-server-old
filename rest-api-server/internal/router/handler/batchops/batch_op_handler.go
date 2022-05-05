@@ -85,7 +85,7 @@ func BatchOpsHandler(c *gin.Context) {
 		} else {
 			message = fmt.Sprintf("%v", dalErr.Message)
 		}
-		setResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
+		common.SetResponseError(c, dalErr.HttpCode, common.ErrorResponse{Error: message})
 	} else {
 
 		c.Writer.Write(([]byte)(string("[")))
@@ -94,11 +94,6 @@ func BatchOpsHandler(c *gin.Context) {
 		}
 		c.Writer.Write(([]byte)(string("]")))
 	}
-}
-
-func setResponseError(c *gin.Context, code int, resp common.ErrorResponse) {
-	b, _ := json.Marshal(resp) // only used in case of errors so not terrible for performance
-	c.String(code, string(b))
 }
 
 func setResponseBodyUnsafe(c *gin.Context, code int, resp *dal.NativeBuffer, appendComma bool) {

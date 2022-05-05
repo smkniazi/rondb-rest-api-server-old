@@ -18,6 +18,7 @@
 package stat
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,7 +26,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"hopsworks.ai/rdrs/version"
 
+	"hopsworks.ai/rdrs/internal/common"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
 
@@ -43,43 +46,59 @@ func TestPing(t *testing.T) {
 	}
 }
 
-//func TestStat(t *testing.T) {
-//	//int table DB004
-//
-//	tests := map[string]ds.BatchOperationTestInfo{
-//		"date": { //single operation batch
-//			HttpCode: http.StatusOK,
-//			Operations: []ds.BatchSubOperationTestInfo{
-//				createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//				// createSubOperation(t, "int_table", "DB004", 0, 0, http.StatusOK),
-//			},
-//		},
-//	}
-//
-//	tu.BatchTest(t, tests, false, batchops.RegisterBatchTestHandler, RegisterStatTestHandler)
-//}
+func TestStat(t *testing.T) {
 
-func createSubOperation(t *testing.T, table string, database string, pk1 int, pk2 int, expectedStatus int) ds.BatchSubOperationTestInfo {
-	respKVs := []interface{}{"col0"}
-	return ds.BatchSubOperationTestInfo{
-		SubOperation: ds.BatchSubOperation{
-			Method:      &[]string{ds.PK_HTTP_VERB}[0],
-			RelativeURL: &[]string{string(database + "/" + table + "/" + ds.PK_DB_OPERATION)}[0],
-			Body: &ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", pk1, "id1", pk2),
-				ReadColumns: tu.NewReadColumns(t, "col", 2),
-				OperationID: tu.NewOperationID(t, 5),
-			},
-		},
-		Table:        table,
-		DB:           database,
-		HttpCode:     expectedStatus,
-		BodyContains: "",
-		RespKVs:      respKVs,
+	db := "DB004"
+	table := "int_table"
+
+	ch := make(chan int)
+
+	numOps := 10
+
+	tu.WithDBs(t, [][][]string{common.Database(db)},
+		[]tu.RegisterTestHandler{pkread.RegisterPKTestHandler, RegisterStatTestHandler}, func(router *gin.Engine) {
+			for i := 0; i < numOps; i++ {
+				go performPkOp(t, router, db, table, ch)
+			}
+			for i := 0; i < numOps; i++ {
+				<-ch
+			}
+
+			// get stats
+			stats := getStats(t, router)
+			if stats.NativeBufferStats.AllocationsCount != uint64(2*numOps) || stats.NativeBufferStats.BuffersCount != uint64(2*numOps) || stats.NativeBufferStats.FreeBuffers != uint64(2*numOps) {
+				t.Fatalf("Native buffer stats do not match")
+			}
+
+			if stats.RonDBStats.NdbObjectsCreationCount != uint64(numOps) || stats.RonDBStats.NdbObjectsTotalCount != uint64(numOps) || stats.RonDBStats.NdbObjectsFreeCount != uint64(numOps) {
+				t.Fatalf("RonDB stats do not match")
+			}
+
+		})
+}
+
+func performPkOp(t *testing.T, router *gin.Engine, db string, table string, ch chan int) {
+	param := ds.PKReadBody{
+		Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
+		ReadColumns: tu.NewReadColumn(t, "col0"),
 	}
+	body, _ := json.MarshalIndent(param, "", "\t")
+
+	url := tu.NewPKReadURL(db, table)
+	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusOK, "")
+
+	ch <- 0
+}
+
+func getStats(t *testing.T, router *gin.Engine) ds.StatInfo {
+	body := ""
+	url := tu.NewStatURL()
+	_, respBody := tu.ProcessRequest(t, router, ds.STAT_HTTP_VERB, url, string(body), http.StatusOK, "")
+
+	var stats ds.StatInfo
+	err := json.Unmarshal([]byte(respBody), &stats)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	return stats
 }

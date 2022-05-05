@@ -353,7 +353,7 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandlers []RegisterTestHand
 	defer shutDownRouter(t, router)
 
 	fn(router)
-	stats := dal.GetBuffersStats()
+	stats := dal.GetNativeBuffersStats()
 	if stats.BuffersCount != stats.FreeBuffers {
 		t.Fatalf("Number of free buffers do not match. Expecting: %d, Got: %d",
 			stats.BuffersCount, stats.FreeBuffers)
