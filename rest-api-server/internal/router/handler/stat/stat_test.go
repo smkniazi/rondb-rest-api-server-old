@@ -20,31 +20,15 @@ package stat
 import (
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"hopsworks.ai/rdrs/version"
 
 	"hopsworks.ai/rdrs/internal/common"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
 )
-
-func TestPing(t *testing.T) {
-	router := gin.Default()
-	group := router.Group("/" + version.API_VERSION)
-	group.GET(PATH, StatHandler)
-	req, _ := http.NewRequest("GET", group.BasePath()+PATH, nil)
-	resp := httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-	if resp.Code != 200 {
-		t.Errorf("Test failed. Expected: %d, Got: %d", http.StatusOK, resp.Code)
-	} else {
-		t.Logf("Correct response received from the server")
-	}
-}
 
 func TestStat(t *testing.T) {
 
