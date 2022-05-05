@@ -22,7 +22,7 @@ const (
 	VERSION = "0.1.0"
 
 	//TODO: manually update
-	API_VERSION = "1.0.0"
+	API_VERSION = "0.1.0"
 )
 
 var (
