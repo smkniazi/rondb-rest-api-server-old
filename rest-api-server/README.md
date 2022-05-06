@@ -1,9 +1,25 @@
 # RonDB REST API Server 
 
-Currently, the REST API server only supports (non-)batched  primary key operations.
+Currently, the REST API server only supports (non-)batched  primary key operations. Default mapping of MySQL data types to JSON data types are as follows
 
 
-Assume we have the following table 
+| MySQL Data Type | JSON Data Type |
+| --------------- | -------------- |
+| TINYINT, SMALLINT MEDIUMINT, INT, BIGINT  | number |
+| FLOAT, DOUBLE, DECIMAL  | number |
+| CHAR, VARCHAR  | escaped string |
+| BINARY, VARBINARY  | base64 encoded string |
+| DATE, DATETIME, TIME, TIMESTAMP, YEAR   | string |
+| YEAR   | number |
+| BIT    | base64 encoded string |
+
+
+
+## POST /0.1.0/{database}/{table}/pk-read
+
+Is used to perform a primary key read operation. 
+
+Assume we have the following table.
 
 ```
 CREATE TABLE `my_table` (                                            
@@ -14,10 +30,6 @@ CREATE TABLE `my_table` (
   PRIMARY KEY (`id0`,`id1`)                                           
 ) ENGINE=ndbcluster DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 ```
-
-## POST /0.1.0/{database}/{table}/pk-read
-
-Is used to perform a primary key read operation. 
 
 **Path Parameters:**
 
@@ -56,6 +68,7 @@ Is used to perform a primary key read operation.
 
   - **filters** : This is mandatory parameter. It is an array of objects one for each column that forms the primary key. 
   - **readColumns** : It is an optional parameter that is used to perform projections. If it is omitted then all the columns of the table will be read
+    - **dataReturnType** : It is an optional parameter. It can be used to control in which format the data is returned, for example, hex, base64, etc. However, in this version (0.1.0) we only support the default return type.  
   - **operationId** : It is an optional parameter. It is a *string* parameter and it can be up to 64 characters long. 
 
 **Response**

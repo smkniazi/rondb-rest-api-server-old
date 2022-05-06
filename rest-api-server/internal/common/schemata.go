@@ -438,7 +438,7 @@ func init() {
 		},
 
 		{ // clean up commands
-			// "DROP DATABASE " + db,
+			"DROP DATABASE " + db,
 		},
 	}
 }
