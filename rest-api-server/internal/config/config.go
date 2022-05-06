@@ -17,6 +17,10 @@
 
 package config
 
+import (
+	"hopsworks.ai/rdrs/version"
+)
+
 var ronDBConnString = "localhost:1186"
 
 func RestAPIIP() string {
@@ -28,7 +32,7 @@ func RestAPIPort() int32 {
 }
 
 func RestAPIVersion() string {
-	return "1.0.0"
+	return version.API_VERSION
 }
 
 func SetConnectionString(conStr string) {

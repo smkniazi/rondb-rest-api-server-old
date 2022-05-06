@@ -51,6 +51,7 @@ func (rc *RouterConext) SetupRouter() error {
 	rc.Engine.POST("/"+rc.APIVersion+"/"+ds.BATCH_OPERATION, batchops.BatchOpsHandler)
 
 	// connect to RonDB
+	dal.InitializeBuffers()
 	err := dal.InitRonDBConnection(rc.ConnStr, false)
 	if err != nil {
 		return err
