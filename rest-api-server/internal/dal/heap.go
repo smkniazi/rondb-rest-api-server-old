@@ -109,7 +109,8 @@ func ReturnBuffer(buffer *NativeBuffer) {
 	}
 	mutex.Lock()
 	defer mutex.Unlock()
-	buffers = append(buffers, __allocateBuffer())
+
+	buffers = append(buffers, buffer)
 }
 
 func GetNativeBuffersStats() NativeBufferStats {

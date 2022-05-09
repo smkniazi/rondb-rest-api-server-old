@@ -106,17 +106,23 @@ func RonDBBatchedPKRead(noOps uint32, requests []*NativeBuffer, responses []*Nat
 
 	for i := 0; i < int(noOps); i++ {
 		var crequest C.RS_Buffer
-		var cresponse C.RS_Buffer
 		crequest.buffer = (*C.char)(requests[i].Buffer)
 		crequest.size = C.uint(requests[i].Size)
 		scReqs[i] = &crequest
 
+		var cresponse C.RS_Buffer
 		cresponse.buffer = (*C.char)(responses[i].Buffer)
 		cresponse.size = C.uint(responses[i].Size)
 		scResps[i] = &cresponse
 	}
 
 	ret := C.PKBatchRead(C.uint(noOps), (*C.pRS_Buffer)(cReqs), (*C.pRS_Buffer)(cResps))
+
+	for i := 0; i < int(noOps); i++ {
+		scReqs[i] = nil
+		scResps[i] = nil
+	}
+
 	if ret.http_code != http.StatusOK {
 		return cToGoRet(&ret)
 	}
