@@ -17,7 +17,6 @@
 package batchops
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -64,9 +63,6 @@ func BatchOpsHandler(c *gin.Context) {
 	respPtrs := make([]*dal.NativeBuffer, noOps)
 
 	for i, pkOp := range pkOperations {
-		b, _ := json.Marshal(pkOp)
-
-		fmt.Printf("%s\n", string(b))
 		reqPtrs[i], respPtrs[i], err = pkread.CreateNativeRequest(&pkOp)
 		defer dal.ReturnBuffer(reqPtrs[i])
 		defer dal.ReturnBuffer(respPtrs[i])
