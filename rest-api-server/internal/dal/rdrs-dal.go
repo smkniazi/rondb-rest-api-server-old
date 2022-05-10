@@ -96,6 +96,7 @@ func RonDBPKRead(request *NativeBuffer, response *NativeBuffer) *DalError {
 }
 
 func RonDBBatchedPKRead(noOps uint32, requests []*NativeBuffer, responses []*NativeBuffer) *DalError {
+
 	cReqs := C.AllocRSBufferArray(C.uint(noOps))
 	cResps := C.AllocRSBufferArray(C.uint(noOps))
 	defer C.FreeRSBufferArray(cReqs)
@@ -137,7 +138,7 @@ func cToGoRet(ret *C.RS_Status) *DalError {
 
 func GetRonDBStats() (*RonDBStats, *DalError) {
 
-	p := (*C.RonDB_Stats)(C.malloc(C.size_t(unsafe.Sizeof(C.struct_student{}))))
+	p := (*C.RonDB_Stats)(C.malloc(C.size_t(unsafe.Sizeof(C.sizeof_RonDB_Stats))))
 	defer C.free(unsafe.Pointer(p))
 
 	ret := C.GetRonDBStats(p)
