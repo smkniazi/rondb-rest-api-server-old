@@ -124,7 +124,7 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff) {
  * Batched primary key read operation
  */
 
-RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs) {
+RS_Status PKBatchRead(unsigned int no_req, RS_Buffer *req_buffs, RS_Buffer *resp_buffs) {
   Ndb *ndb_object  = nullptr;
   RS_Status status = NdbObjectPool::GetInstance()->GetNdbObject(ndb_connection, &ndb_object);
   if (status.http_code != SUCCESS) {

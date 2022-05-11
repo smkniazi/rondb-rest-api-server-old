@@ -42,13 +42,13 @@ PKROperation::PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_o
   this->no_ops     = 1;
 }
 
-PKROperation::PKROperation(Uint32 no_ops, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs,
+PKROperation::PKROperation(Uint32 no_ops, RS_Buffer *req_buffs, RS_Buffer *resp_buffs,
                            Ndb *ndb_object) {
 
   this->no_ops = no_ops;
   for (Uint32 i = 0; i < no_ops; i++) {
-    this->requests.push_back(new PKRRequest(req_buffs[i]));
-    this->responses.push_back(new PKRResponse(resp_buffs[i]));
+    this->requests.push_back(new PKRRequest(&req_buffs[i]));
+    this->responses.push_back(new PKRResponse(&resp_buffs[i]));
   }
   this->ndb_object = ndb_object;
   this->isBatch    = true;

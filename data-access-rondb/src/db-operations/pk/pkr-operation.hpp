@@ -46,7 +46,7 @@ class PKROperation {
  public:
   PKROperation(RS_Buffer *req_buff, RS_Buffer *resp_buff, Ndb *ndb_object);
 
-  PKROperation(Uint32 noOps, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs, Ndb *ndb_object);
+  PKROperation(Uint32 noOps, RS_Buffer *req_buffs, RS_Buffer *resp_buffs, Ndb *ndb_object);
 
   ~PKROperation();
 

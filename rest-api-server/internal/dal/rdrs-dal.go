@@ -96,33 +96,23 @@ func RonDBPKRead(request *NativeBuffer, response *NativeBuffer) *DalError {
 }
 
 func RonDBBatchedPKRead(noOps uint32, requests []*NativeBuffer, responses []*NativeBuffer) *DalError {
+	reqMem := C.malloc(C.size_t(noOps) * C.size_t(C.sizeof_RS_Buffer))
+	defer C.free(reqMem)
+	cReqs := unsafe.Slice((*C.RS_Buffer)(reqMem), noOps)
 
-	cReqs := C.AllocRSBufferArray(C.uint(noOps))
-	cResps := C.AllocRSBufferArray(C.uint(noOps))
-	defer C.FreeRSBufferArray(cReqs)
-	defer C.FreeRSBufferArray(cResps)
-
-	scReqs := unsafe.Slice((*C.pRS_Buffer)(cReqs), noOps)
-	scResps := unsafe.Slice((*C.pRS_Buffer)(cResps), noOps)
-
-	for i := 0; i < int(noOps); i++ {
-		var crequest C.RS_Buffer
-		crequest.buffer = (*C.char)(requests[i].Buffer)
-		crequest.size = C.uint(requests[i].Size)
-		scReqs[i] = &crequest
-
-		var cresponse C.RS_Buffer
-		cresponse.buffer = (*C.char)(responses[i].Buffer)
-		cresponse.size = C.uint(responses[i].Size)
-		scResps[i] = &cresponse
-	}
-
-	ret := C.PKBatchRead(C.uint(noOps), (*C.pRS_Buffer)(cReqs), (*C.pRS_Buffer)(cResps))
+	respMem := C.malloc(C.size_t(noOps) * C.size_t(C.sizeof_RS_Buffer))
+	defer C.free(respMem)
+	cResps := unsafe.Slice((*C.RS_Buffer)(respMem), noOps)
 
 	for i := 0; i < int(noOps); i++ {
-		scReqs[i] = nil
-		scResps[i] = nil
+		cReqs[i].buffer = (*C.char)(requests[i].Buffer)
+		cReqs[i].size = C.uint(requests[i].Size)
+
+		cResps[i].buffer = (*C.char)(responses[i].Buffer)
+		cResps[i].size = C.uint(responses[i].Size)
 	}
+
+	ret := C.PKBatchRead(C.uint(noOps), (*C.RS_Buffer)(reqMem), (*C.RS_Buffer)(respMem))
 
 	if ret.http_code != http.StatusOK {
 		return cToGoRet(&ret)

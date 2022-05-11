@@ -91,7 +91,7 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff);
 /**
  * Batched primary key read operation
  */
-RS_Status PKBatchRead(unsigned int no_req, pRS_Buffer *req_buffs, pRS_Buffer *resp_buffs);
+RS_Status PKBatchRead(unsigned int no_req, RS_Buffer *req_buffs, RS_Buffer *resp_buffs);
 
 /**
  * Allocate pointer array to pass request and response buffers from go layer
