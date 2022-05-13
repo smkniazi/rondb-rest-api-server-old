@@ -68,5 +68,5 @@ func PreAllocBuffers() uint32 {
 }
 
 func MaxThreads() int {
-	return 30
+	return -1
 }
