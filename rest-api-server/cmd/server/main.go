@@ -20,7 +20,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
 
+	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/pkg/server/router"
 	"hopsworks.ai/rdrs/version"
 )
@@ -29,6 +31,9 @@ func main() {
 	log.Printf("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
 	log.Printf("Starting API Version : %s  \n", version.API_VERSION)
+
+	runtime.GOMAXPROCS(config.MaxThreads())
+
 	router := router.CreateRouterContext()
 	err := router.SetupRouter()
 	if err != nil {

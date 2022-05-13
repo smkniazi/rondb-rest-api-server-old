@@ -66,3 +66,7 @@ func BufferSize() uint32 {
 func PreAllocBuffers() uint32 {
 	return 1
 }
+
+func MaxThreads() int {
+	return 30
+}
