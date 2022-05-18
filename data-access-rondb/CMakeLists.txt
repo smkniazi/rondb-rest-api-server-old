@@ -24,7 +24,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 include_directories (${CMAKE_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR})
-set(RONDB_DEFAULT_DIR "/usr/local/mysql")
+set(RONDB_DEFAULT_DIR "/srv/hops/mysql")
 
 if(NOT RONDB_DIR)
   IF(NOT EXISTS ${RONDB_DEFAULT_DIR})
