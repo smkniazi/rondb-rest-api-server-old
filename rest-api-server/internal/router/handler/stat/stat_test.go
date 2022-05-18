@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"hopsworks.ai/rdrs/internal/common"
+	"hopsworks.ai/rdrs/internal/config"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	tu "hopsworks.ai/rdrs/internal/router/handler/utils"
@@ -37,21 +38,28 @@ func TestStat(t *testing.T) {
 
 	ch := make(chan int)
 
-	numOps := 10
+	numOps := uint32(5)
+	expectedAllocations := numOps * 2
+
+	if config.Configuration().RestServer.PreAllocBuffers > numOps {
+		expectedAllocations = config.Configuration().RestServer.PreAllocBuffers
+	}
 
 	tu.WithDBs(t, [][][]string{common.Database(db)},
 		[]tu.RegisterTestHandler{pkread.RegisterPKTestHandler, RegisterStatTestHandler}, func(router *gin.Engine) {
-			for i := 0; i < numOps; i++ {
+			for i := uint32(0); i < numOps; i++ {
 				go performPkOp(t, router, db, table, ch)
 			}
-			for i := 0; i < numOps; i++ {
+			for i := uint32(0); i < numOps; i++ {
 				<-ch
 			}
 
 			// get stats
 			stats := getStats(t, router)
-			if stats.NativeBufferStats.AllocationsCount != uint64(2*numOps) || stats.NativeBufferStats.BuffersCount != uint64(2*numOps) || stats.NativeBufferStats.FreeBuffers != uint64(2*numOps) {
-				t.Fatalf("Native buffer stats do not match")
+			if stats.NativeBufferStats.AllocationsCount != uint64(expectedAllocations) ||
+				stats.NativeBufferStats.BuffersCount != uint64(expectedAllocations) ||
+				stats.NativeBufferStats.FreeBuffers != uint64(expectedAllocations) {
+				t.Fatalf("Native buffer stats do not match Got: %v", stats)
 			}
 
 			if stats.RonDBStats.NdbObjectsCreationCount != uint64(numOps) || stats.RonDBStats.NdbObjectsTotalCount != uint64(numOps) || stats.RonDBStats.NdbObjectsFreeCount != uint64(numOps) {

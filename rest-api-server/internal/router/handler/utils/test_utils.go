@@ -130,8 +130,11 @@ func getColumnDataFromJson(t *testing.T, colName string, resp string) (string, b
 }
 
 func getColumnDataFromDB(t *testing.T, db string, table string, filters *[]ds.Filter, col string, isBinary bool) (string, error) {
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
-		config.SqlServerIP(), config.SqlServerPort())
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/",
+		config.Configuration().MySQLServer.User,
+		config.Configuration().MySQLServer.Password,
+		config.Configuration().MySQLServer.IP,
+		config.Configuration().MySQLServer.Port)
 	dbConn, err := sql.Open("mysql", connectionString)
 	defer dbConn.Close()
 	if err != nil {
@@ -327,8 +330,11 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandlers []RegisterTestHand
 	rand.Seed(int64(time.Now().Nanosecond()))
 
 	//user:password@tcp(IP:Port)/
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/", config.SqlUser(), config.SqlPassword(),
-		config.SqlServerIP(), config.SqlServerPort())
+	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/",
+		config.Configuration().MySQLServer.User,
+		config.Configuration().MySQLServer.Password,
+		config.Configuration().MySQLServer.IP,
+		config.Configuration().MySQLServer.Port)
 	dbConnection, err := sql.Open("mysql", connectionString)
 	defer dbConnection.Close()
 	if err != nil {
@@ -372,9 +378,8 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 
 func InitRouter(t *testing.T, registerHandlers []RegisterTestHandler) (*gin.Engine, error) {
 	t.Helper()
-	//router := gin.Default()
 	router := gin.New()
-	err := dal.InitRonDBConnection(config.ConnectionString(), true)
+	err := dal.InitRonDBConnection(config.Configuration().RonDBConfig.ConnectionString, true)
 	if err != nil {
 		return nil, err
 	}

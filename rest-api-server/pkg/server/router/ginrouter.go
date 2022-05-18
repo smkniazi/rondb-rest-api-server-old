@@ -33,7 +33,7 @@ import (
 type RouterConext struct {
 	// REST Server
 	Ip         string
-	Port       int32
+	Port       uint16
 	APIVersion string
 	Engine     *gin.Engine
 
@@ -75,10 +75,10 @@ func (rc *RouterConext) StartRouter() error {
 
 func CreateRouterContext() Router {
 	router := RouterConext{
-		Ip:         config.RestAPIIP(),
-		Port:       config.RestAPIPort(),
-		APIVersion: config.RestAPIVersion(),
-		ConnStr:    config.ConnectionString(),
+		Ip:         config.Configuration().RestServer.IP,
+		Port:       config.Configuration().RestServer.Port,
+		APIVersion: config.Configuration().RestServer.APIVersion,
+		ConnStr:    config.Configuration().RonDBConfig.ConnectionString,
 	}
 	return &router
 }

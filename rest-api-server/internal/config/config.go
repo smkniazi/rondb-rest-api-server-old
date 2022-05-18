@@ -18,55 +18,101 @@
 package config
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"hopsworks.ai/rdrs/version"
 )
 
-var ronDBConnString = "localhost:1186"
+const CONFIG_FILE_NAME = "config.json"
 
-func RestAPIIP() string {
-	return "localhost"
+var _config RSConfiguration
+
+func init() {
+	restServer := RestServer{
+		IP:              "localhost",
+		Port:            8080,
+		APIVersion:      version.VERSION,
+		BufferSize:      320 * 1024,
+		GOMAXPROCS:      -1,
+		PreAllocBuffers: 1024,
+	}
+	ronDBConfig := RonDBConfig{
+		ConnectionString: "localhost:1186",
+	}
+	mySQLServer := MySQLServer{
+		IP:       "localhost",
+		Port:     3306,
+		User:     "rondb",
+		Password: "rondb",
+	}
+
+	_config = RSConfiguration{
+		RestServer:  restServer,
+		MySQLServer: mySQLServer,
+		RonDBConfig: ronDBConfig,
+	}
+
+	dir, err := os.Getwd()
+	if err == nil {
+		configFile := filepath.Join(dir, CONFIG_FILE_NAME)
+		LoadConfig(configFile, false)
+	}
 }
 
-func RestAPIPort() int32 {
-	return 8080
+func LoadConfig(path string, fail bool) {
+	jsonFile, err := os.Open(path)
+	if err != nil {
+		if fail {
+			panic(fmt.Sprintf("Unable to read configuration file. Error: %v", err))
+		}
+		return
+	}
+	defer jsonFile.Close()
+
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	err = json.Unmarshal([]byte(byteValue), &_config)
+	if err != nil {
+		panic(fmt.Sprintf("Unable to load configuration from file. Error: %v", err))
+	}
+
+	// Print Config
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, []byte(byteValue), "", "\t")
+	fmt.Printf("Configuration loaded from file: %s\n", string(prettyJSON.Bytes()))
 }
 
-func RestAPIVersion() string {
-	return version.API_VERSION
+type RSConfiguration struct {
+	RestServer  RestServer
+	RonDBConfig RonDBConfig
+	MySQLServer MySQLServer
 }
 
-func SetConnectionString(conStr string) {
-	ronDBConnString = conStr
+type RestServer struct {
+	IP              string
+	Port            uint16
+	APIVersion      string
+	BufferSize      int
+	PreAllocBuffers uint32
+	GOMAXPROCS      int
 }
 
-func ConnectionString() string {
-	return ronDBConnString
+type MySQLServer struct {
+	IP       string
+	Port     uint16
+	User     string
+	Password string
 }
 
-func SqlUser() string {
-	return "hop"
+type RonDBConfig struct {
+	ConnectionString string
 }
 
-func SqlPassword() string {
-	return "hop"
-}
-
-func SqlServerIP() string {
-	return "localhost"
-}
-
-func SqlServerPort() int32 {
-	return 3306
-}
-
-func BufferSize() uint32 {
-	return 320 * 1024
-}
-
-func PreAllocBuffers() uint32 {
-	return 1
-}
-
-func MaxThreads() int {
-	return -1
+func Configuration() RSConfiguration {
+	return _config
 }

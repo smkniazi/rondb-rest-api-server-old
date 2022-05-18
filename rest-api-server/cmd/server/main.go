@@ -18,6 +18,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"runtime"
@@ -28,18 +29,27 @@ import (
 )
 
 func main() {
+	configFile := flag.String("config", "", "Configuration file path")
+	flag.Parse()
+
+	if *configFile != "" {
+		config.LoadConfig(*configFile, true)
+	}
+
 	log.Printf("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
 	log.Printf("Starting API Version : %s  \n", version.API_VERSION)
 
-	runtime.GOMAXPROCS(config.MaxThreads())
+	runtime.GOMAXPROCS(config.Configuration().RestServer.GOMAXPROCS)
 
 	router := router.CreateRouterContext()
 	err := router.SetupRouter()
 	if err != nil {
+		panic(fmt.Sprintf("Unable to setup router: Error: %v", err))
 	}
 	err = router.StartRouter()
 	if err != nil {
+		panic(fmt.Sprintf("Unable to start router: Error: %v", err))
 	}
 	fmt.Println("Bye ...")
 }
