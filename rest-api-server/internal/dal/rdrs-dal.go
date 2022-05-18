@@ -21,8 +21,6 @@ package dal
 /*
 #cgo CFLAGS: -g -Wall
 #cgo LDFLAGS: -L./../../../data-access-rondb/build/ -lrdrclient
-#cgo LDFLAGS: -L/usr/local/mysql/lib -lndbclient
-#cgo LDFLAGS: -L/usr/local/mysql/lib -lrdrs_string
 #include <stdlib.h>
 #include <stdbool.h>
 #include "./../../../data-access-rondb/src/rdrs-dal.h"
