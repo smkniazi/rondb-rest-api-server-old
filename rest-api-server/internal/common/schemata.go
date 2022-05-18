@@ -18,6 +18,7 @@
 package common
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -25,7 +26,16 @@ import (
 var databases map[string][][]string = make(map[string][][]string)
 
 func init() {
-	db := "DB001"
+	db := "bench"
+	databases[db] = [][]string{
+		benchmarSchema(db, 1000),
+
+		{ // clean up commands
+			"DROP DATABASE " + db,
+		},
+	}
+
+	db = "DB001"
 	databases[db] = [][]string{
 		{
 			// setup commands
@@ -471,6 +481,28 @@ func SchemaTextualColumns(colType string, db string, length int) [][]string {
 	} else {
 		panic("Data type not supported")
 	}
+}
+
+func benchmarSchema(db string, count int) []string {
+	colWidth := 1000
+	dummyData := ""
+	for i := 0; i < colWidth; i++ {
+		dummyData += "$"
+	}
+
+	schema := []string{
+		// setup commands
+		"DROP DATABASE IF EXISTS " + db,
+		"CREATE DATABASE " + db,
+		"USE " + db,
+		"CREATE TABLE table_1(id0 INT, col_0 VARCHAR(" + strconv.Itoa(colWidth) + "), PRIMARY KEY(id0))",
+	}
+
+	for i := 0; i < count; i++ {
+		schema = append(schema, fmt.Sprintf("INSERT INTO table_1 VALUES(%d, \"%s\")", i, dummyData))
+	}
+
+	return schema
 }
 
 func Database(name string) [][]string {

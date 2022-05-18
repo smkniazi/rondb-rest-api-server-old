@@ -44,7 +44,8 @@ type RouterConext struct {
 var _ Router = (*RouterConext)(nil)
 
 func (rc *RouterConext) SetupRouter() error {
-	rc.Engine = gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	rc.Engine = gin.New()
 
 	rc.Engine.GET("/"+rc.APIVersion+"/"+ds.STAT_OPERATION, stat.StatHandler)
 	rc.Engine.POST("/"+rc.APIVersion+"/:db/:table/"+ds.PK_DB_OPERATION, pkread.PkReadHandler)

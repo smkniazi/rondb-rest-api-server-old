@@ -35,18 +35,26 @@ func RegisterStatTestHandler(engine *gin.Engine) {
 }
 
 func StatHandler(c *gin.Context) {
-	var stats ds.StatInfo
-	rondbStats, err := dal.GetRonDBStats()
+	stats, err := Stats()
 	if err != nil {
 		common.SetResponseError(c, http.StatusInternalServerError,
 			common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
 		return
 	}
+	c.JSON(200, stats)
+}
+
+func Stats() (*ds.StatInfo, error) {
+	var stats ds.StatInfo
+
+	rondbStats, err := dal.GetRonDBStats()
+	if err != nil {
+		return nil, err
+	}
 
 	nativeBuffersStats := dal.GetNativeBuffersStats()
-
 	stats.NativeBufferStats = nativeBuffersStats
 	stats.RonDBStats = *rondbStats
 
-	c.JSON(200, stats)
+	return &stats, nil
 }

@@ -17,7 +17,6 @@
 package utils
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -50,12 +49,13 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
-	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, resp.Body.Bytes(), "", "\t")
-	if err != nil {
-		fmt.Printf("Error %v \n", err)
-	}
-	fmt.Printf("Response Body. %s\n", string(prettyJSON.Bytes()))
+	// var prettyJSON bytes.Buffer
+	// err := json.Indent(&prettyJSON, resp.Body.Bytes(), "", "\t")
+	// if err != nil {
+	// fmt.Printf("Error %v \n", err)
+	// }
+	// fmt.Printf("Response Body. %s\n", string(prettyJSON.Bytes()))
+
 	if resp.Code != expectedStatus || !strings.Contains(resp.Body.String(), expectedMsg) {
 		if resp.Code != expectedStatus {
 			t.Fatalf("Test failed. Expected: %d, Got: %d. Complete Response Body: %v ", expectedStatus, resp.Code, resp.Body)
