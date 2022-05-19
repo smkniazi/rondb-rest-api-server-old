@@ -20,36 +20,41 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"runtime"
 
 	"hopsworks.ai/rdrs/internal/config"
+	"hopsworks.ai/rdrs/internal/log"
 	"hopsworks.ai/rdrs/pkg/server/router"
 	"hopsworks.ai/rdrs/version"
 )
 
 func main() {
 	configFile := flag.String("config", "", "Configuration file path")
+	logFile := flag.String("logFile", "", "Log file path. By default the log is written to console")
+	logLevel := flag.String("logLevel", "info", "Levels: error, warn, info, debug, trace")
 	flag.Parse()
 
 	if *configFile != "" {
 		config.LoadConfig(*configFile, true)
 	}
 
-	log.Printf("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
+	log.InitLogger(*logLevel, *logFile)
+
+	log.Infof("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
-	log.Printf("Starting API Version : %s  \n", version.API_VERSION)
+	log.Infof("Starting API Version : %s  \n", version.API_VERSION)
 
 	runtime.GOMAXPROCS(config.Configuration().RestServer.GOMAXPROCS)
 
 	router := router.CreateRouterContext()
 	err := router.SetupRouter()
 	if err != nil {
-		panic(fmt.Sprintf("Unable to setup router: Error: %v", err))
+		log.Panic(fmt.Sprintf("Unable to setup router: Error: %v", err))
 	}
 	err = router.StartRouter()
 	if err != nil {
-		panic(fmt.Sprintf("Unable to start router: Error: %v", err))
+		log.Panic(fmt.Sprintf("Unable to start router: Error: %v", err))
 	}
-	fmt.Println("Bye ...")
+
+	log.Info("Shutting down REST server")
 }

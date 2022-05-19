@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"hopsworks.ai/rdrs/internal/log"
 	"hopsworks.ai/rdrs/version"
 )
 
@@ -84,7 +85,7 @@ func LoadConfig(path string, fail bool) {
 	// Print Config
 	var prettyJSON bytes.Buffer
 	err = json.Indent(&prettyJSON, []byte(byteValue), "", "\t")
-	fmt.Printf("Configuration loaded from file: %s\n", string(prettyJSON.Bytes()))
+	log.Infof("Configuration loaded from file: %s\n", string(prettyJSON.Bytes()))
 }
 
 type RSConfiguration struct {

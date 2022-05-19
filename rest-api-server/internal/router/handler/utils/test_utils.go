@@ -52,9 +52,9 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	// var prettyJSON bytes.Buffer
 	// err := json.Indent(&prettyJSON, resp.Body.Bytes(), "", "\t")
 	// if err != nil {
-	// fmt.Printf("Error %v \n", err)
+	// log.Infof("Error %v \n", err)
 	// }
-	// fmt.Printf("Response Body. %s\n", string(prettyJSON.Bytes()))
+	// log.Infof("Response Body. %s\n", string(prettyJSON.Bytes()))
 
 	if resp.Code != expectedStatus || !strings.Contains(resp.Body.String(), expectedMsg) {
 		if resp.Code != expectedStatus {

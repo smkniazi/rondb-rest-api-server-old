@@ -18,6 +18,7 @@ package batchops
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/log"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	"hopsworks.ai/rdrs/version"
 )
@@ -38,7 +40,10 @@ func BatchOpsHandler(c *gin.Context) {
 	operations := ds.BatchOperation{}
 	err := c.ShouldBindJSON(&operations)
 	if err != nil {
-		fmt.Printf("Unable to parse request. Error: %v\n", err)
+		if log.IsDebug() {
+			body, _ := ioutil.ReadAll(c.Request.Body)
+			log.Debugf("Unable to parse request. Error: %v. Body: %s\n", err, body)
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"OK": false, "msg": fmt.Sprintf("%-v", err)})
 		return
 	}
@@ -52,7 +57,9 @@ func BatchOpsHandler(c *gin.Context) {
 	for i, operation := range *operations.Operations {
 		err := parseOperation(&operation, &pkOperations[i])
 		if err != nil {
-			fmt.Printf("Error: %v", err)
+			if log.IsDebug() {
+				log.Debugf("Error: %v", err)
+			}
 			c.JSON(http.StatusBadRequest, gin.H{"OK": false, "msg": fmt.Sprintf("%-v", err)})
 			return
 		}

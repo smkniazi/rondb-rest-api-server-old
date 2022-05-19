@@ -24,6 +24,7 @@ import (
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/log"
 	"hopsworks.ai/rdrs/internal/router/handler/batchops"
 	"hopsworks.ai/rdrs/internal/router/handler/pkread"
 	"hopsworks.ai/rdrs/internal/router/handler/stat"
@@ -64,7 +65,7 @@ func (rc *RouterConext) SetupRouter() error {
 func (rc *RouterConext) StartRouter() error {
 
 	address := fmt.Sprintf("%s:%d", rc.Ip, rc.Port)
-	fmt.Printf("Listening on %s\n", address)
+	log.Infof("Listening on %s\n", address)
 	err := rc.Engine.Run(address)
 	if err != nil {
 		return err

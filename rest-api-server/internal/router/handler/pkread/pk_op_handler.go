@@ -20,6 +20,7 @@ package pkread
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,7 @@ import (
 	"hopsworks.ai/rdrs/internal/common"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/log"
 )
 
 func RegisterPKTestHandler(e *gin.Engine) {
@@ -40,7 +42,10 @@ func PkReadHandler(c *gin.Context) {
 
 	err := parseRequest(c, &pkReadParams)
 	if err != nil {
-		fmt.Printf("Unable to parse request. Error: %v\n", err)
+		if log.IsDebug() {
+			body, _ := ioutil.ReadAll(c.Request.Body)
+			log.Debugf("Unable to parse request. Error: %v. Body: %s\n", err, body)
+		}
 		c.AbortWithError(http.StatusBadRequest, err)
 		common.SetResponseError(c, http.StatusBadRequest, common.ErrorResponse{Error: fmt.Sprintf("%-v", err)})
 		return
