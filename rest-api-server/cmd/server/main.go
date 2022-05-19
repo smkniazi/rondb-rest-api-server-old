@@ -30,15 +30,13 @@ import (
 
 func main() {
 	configFile := flag.String("config", "", "Configuration file path")
-	logFile := flag.String("logFile", "", "Log file path. By default the log is written to console")
-	logLevel := flag.String("logLevel", "info", "Levels: error, warn, info, debug, trace")
 	flag.Parse()
 
 	if *configFile != "" {
 		config.LoadConfig(*configFile, true)
 	}
 
-	log.InitLogger(*logLevel, *logFile)
+	log.InitLogger(config.Configuration().Log)
 
 	log.Infof("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)

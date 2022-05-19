@@ -379,7 +379,8 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 func InitRouter(t *testing.T, registerHandlers []RegisterTestHandler) (*gin.Engine, error) {
 	t.Helper()
 	router := gin.New()
-	err := dal.InitRonDBConnection(config.Configuration().RonDBConfig.ConnectionString, true)
+	connStr := fmt.Sprintf("%s:%d", config.Configuration().RonDBConfig.IP, config.Configuration().RonDBConfig.Port)
+	err := dal.InitRonDBConnection(connStr, true)
 	if err != nil {
 		return nil, err
 	}

@@ -33,13 +33,14 @@ import (
 
 type RouterConext struct {
 	// REST Server
-	Ip         string
-	Port       uint16
+	ServerIP   string
+	ServerPort uint16
 	APIVersion string
 	Engine     *gin.Engine
 
 	// RonDB
-	ConnStr string
+	DBIP   string
+	DBPort uint16
 }
 
 var _ Router = (*RouterConext)(nil)
@@ -54,7 +55,7 @@ func (rc *RouterConext) SetupRouter() error {
 
 	// connect to RonDB
 	dal.InitializeBuffers()
-	err := dal.InitRonDBConnection(rc.ConnStr, false)
+	err := dal.InitRonDBConnection(fmt.Sprintf("%s:%d", rc.DBIP, rc.DBPort), false)
 	if err != nil {
 		return err
 	}
@@ -64,7 +65,7 @@ func (rc *RouterConext) SetupRouter() error {
 
 func (rc *RouterConext) StartRouter() error {
 
-	address := fmt.Sprintf("%s:%d", rc.Ip, rc.Port)
+	address := fmt.Sprintf("%s:%d", rc.ServerIP, rc.ServerPort)
 	log.Infof("Listening on %s\n", address)
 	err := rc.Engine.Run(address)
 	if err != nil {
@@ -76,10 +77,11 @@ func (rc *RouterConext) StartRouter() error {
 
 func CreateRouterContext() Router {
 	router := RouterConext{
-		Ip:         config.Configuration().RestServer.IP,
-		Port:       config.Configuration().RestServer.Port,
+		ServerIP:   config.Configuration().RestServer.IP,
+		ServerPort: config.Configuration().RestServer.Port,
 		APIVersion: config.Configuration().RestServer.APIVersion,
-		ConnStr:    config.Configuration().RonDBConfig.ConnectionString,
+		DBIP:       config.Configuration().RonDBConfig.IP,
+		DBPort:     config.Configuration().RonDBConfig.Port,
 	}
 	return &router
 }

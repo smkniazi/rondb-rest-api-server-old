@@ -33,6 +33,34 @@ const CONFIG_FILE_NAME = "config.json"
 
 var _config RSConfiguration
 
+type RSConfiguration struct {
+	RestServer  RestServer
+	RonDBConfig RonDB
+	MySQLServer MySQLServer
+	Log         log.LogConfig
+}
+
+type RestServer struct {
+	IP              string
+	Port            uint16
+	APIVersion      string
+	BufferSize      int
+	PreAllocBuffers uint32
+	GOMAXPROCS      int
+}
+
+type MySQLServer struct {
+	IP       string
+	Port     uint16
+	User     string
+	Password string
+}
+
+type RonDB struct {
+	IP   string
+	Port uint16
+}
+
 func init() {
 	restServer := RestServer{
 		IP:              "localhost",
@@ -42,9 +70,12 @@ func init() {
 		GOMAXPROCS:      -1,
 		PreAllocBuffers: 1024,
 	}
-	ronDBConfig := RonDBConfig{
-		ConnectionString: "localhost:1186",
+
+	ronDBConfig := RonDB{
+		IP:   "localhost",
+		Port: 1186,
 	}
+
 	mySQLServer := MySQLServer{
 		IP:       "localhost",
 		Port:     3306,
@@ -52,10 +83,19 @@ func init() {
 		Password: "rondb",
 	}
 
+	log := log.LogConfig{
+		Level:      "info",
+		Filename:   "",
+		MaxSizeMB:  100,
+		MaxBackups: 10,
+		MaxAge:     30,
+	}
+
 	_config = RSConfiguration{
 		RestServer:  restServer,
 		MySQLServer: mySQLServer,
 		RonDBConfig: ronDBConfig,
+		Log:         log,
 	}
 
 	dir, err := os.Getwd()
@@ -86,32 +126,6 @@ func LoadConfig(path string, fail bool) {
 	var prettyJSON bytes.Buffer
 	err = json.Indent(&prettyJSON, []byte(byteValue), "", "\t")
 	log.Infof("Configuration loaded from file: %s\n", string(prettyJSON.Bytes()))
-}
-
-type RSConfiguration struct {
-	RestServer  RestServer
-	RonDBConfig RonDBConfig
-	MySQLServer MySQLServer
-}
-
-type RestServer struct {
-	IP              string
-	Port            uint16
-	APIVersion      string
-	BufferSize      int
-	PreAllocBuffers uint32
-	GOMAXPROCS      int
-}
-
-type MySQLServer struct {
-	IP       string
-	Port     uint16
-	User     string
-	Password string
-}
-
-type RonDBConfig struct {
-	ConnectionString string
 }
 
 func Configuration() RSConfiguration {
