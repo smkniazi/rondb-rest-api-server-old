@@ -44,8 +44,9 @@ Ndb_cluster_connection *ndb_connection;
  * @return status
  */
 RS_Status Init(const char *connection_string, _Bool find_available_node_id) {
+
   int retCode = 0;
-  TRACE("Connecting to " << connection_string << " ... ")
+  INFO(std::string("Connecting to ") + connection_string );
 
   retCode = ndb_init();
   if (retCode != 0) {
@@ -75,7 +76,7 @@ RS_Status Init(const char *connection_string, _Bool find_available_node_id) {
     return RS_SERVER_ERROR(ERROR_003 + std::string(" RetCode: ") + std::to_string(retCode));
   }
 
-  INFO("Connected.")
+  INFO("Connected.");
   return RS_OK;
 }
 
@@ -85,7 +86,7 @@ RS_Status Shutdown() {
     NdbObjectPool::GetInstance()->Close();
     delete ndb_connection;
   } catch (...) {
-    std::cout << "------> Exception in Shutdown <------" << std::endl;
+    WARN("Exception in Shutdown"); 
   }
   return RS_OK;
 }
@@ -142,14 +143,6 @@ RS_Status PKBatchRead(unsigned int no_req, RS_Buffer *req_buffs, RS_Buffer *resp
   return RS_OK;
 }
 
-pRS_Buffer *AllocRSBufferArray(unsigned int len) {
-  return (pRS_Buffer *)malloc(len * sizeof(pRS_Buffer));
-}
-
-void FreeRSBufferArray(pRS_Buffer *p) {
-  free(p);
-}
-
 /**
  * Deallocate pointer array
  */
@@ -178,17 +171,17 @@ int GetAvailableAPINode(const char *connection_string) {
 
   h = ndb_mgm_create_handle();
   if (h == 0) {
-    WARN("Failed to create mgm handle");
+    PANIC("Failed to create mgm handle");
     return -1;
   }
 
   if (ndb_mgm_set_connectstring(h, connection_string) == -1) {
-    WARN("Failed set mgm connect string");
+    PANIC("Failed set mgm connect string");
     return -1;
   }
 
   if (ndb_mgm_connect(h, 0, 0, 0)) {
-    INFO("Failed to connect to mgm node");
+    PANIC("Failed to connect to mgm node");
     return -1;
   }
 
@@ -221,6 +214,14 @@ int GetAvailableAPINode(const char *connection_string) {
   free(ret);
   return -1;
 }
+
+/**
+ * Register callbacks
+ */
+void register_callbacks(Callbacks cbs) {
+  set_log_call_back_fns(cbs);
+}
+
 
 /**
  * only for testing

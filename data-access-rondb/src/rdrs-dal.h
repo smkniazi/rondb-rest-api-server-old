@@ -33,6 +33,7 @@ typedef enum HTTP_CODE {
   SERVER_ERROR = 500
 } HTTP_CODE;
 
+// Status 
 #define RS_STATUS_MSG_LEN       256
 #define RS_STATUS_FILE_NAME_LEN 256
 typedef struct RS_Status {
@@ -45,6 +46,13 @@ typedef struct RS_Status {
   int err_line_no;                  // error line number
   char err_file_name[RS_STATUS_FILE_NAME_LEN];  // error file name.
 } RS_Status;
+
+// Log Message 
+#define RS_LOG_MSG_LEN       256
+typedef struct RS_LOG_MSG {
+ int level;                  // log level 
+ char message[RS_LOG_MSG_LEN]; 
+} RS_LOG_MSG;
 
 // Data return type. You can change the return type for the column data
 // int/floats/decimal are returned as JSON Number type (default),
@@ -94,19 +102,24 @@ RS_Status PKRead(RS_Buffer *reqBuff, RS_Buffer *respBuff);
 RS_Status PKBatchRead(unsigned int no_req, RS_Buffer *req_buffs, RS_Buffer *resp_buffs);
 
 /**
- * Allocate pointer array to pass request and response buffers from go layer
- */
-pRS_Buffer *AllocRSBufferArray(unsigned int len);
-
-/**
- * Deallocate pointer array
- */
-void FreeRSBufferArray(pRS_Buffer *p);
-
-/**
  * Deallocate pointer array
  */
 RS_Status GetRonDBStats(RonDB_Stats *stats);
+
+
+/**
+* Call back function for log messages
+*/
+typedef void (*LogCallBackFn)(RS_LOG_MSG msg);
+
+typedef struct {
+  LogCallBackFn logger;
+} Callbacks;
+
+/**
+* Register call back function  
+*/
+void register_callbacks(Callbacks cbs);
 
 #endif
 

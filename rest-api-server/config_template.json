@@ -1,19 +1,27 @@
 {
-  "RestServer": {
-    "IP": "localhost",
-    "Port": 8080,
-    "APIVersion": "0.1.0",
-    "BufferSize": 327680,
-    "PreAllocBuffers": 1024,
-    "GOMAXPROCS": -1
-  },
-  "RonDBConfig": {
-    "ConnectionString": "localhostt:1186x"
-  },
-  "MySQLServer": {
-    "IP": "localhost",
-    "Port": 3306,
-    "User": "rondb",
-    "Password": "rondb"
-  }
+        "RestServer": {
+                "IP": "localhost",
+                "Port": 8080,
+                "APIVersion": "0.1.0",
+                "BufferSize": 327680,
+                "PreAllocBuffers": 1024,
+                "GOMAXPROCS": -1
+        },
+        "RonDBConfig": {
+                "IP": "localhost",
+                "Port": 1186
+        },
+        "MySQLServer": {
+                "IP": "localhost",
+                "Port": 3306,
+                "User": "rondb",
+                "Password": "rondb"
+        },
+        "Log": {
+                "Level": "debug",
+                "Filename": "test.log",
+                "MaxSizeMB": 100,
+                "MaxBackups": 10,
+                "MaxAge": 30
+        }
 }

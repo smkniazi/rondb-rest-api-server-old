@@ -552,7 +552,6 @@ RS_Status SetOperationPKCol(const NdbDictionary::Column *col, NdbOperation *oper
                              std::string(col->getName()))
     }
 
-    std::cout << "Boost secs : " << epoch << std::endl;
     // TODO(salman) 1 apply timezone changes
     // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
     // iMySQL converts TIMESTAMP values from the current time zone to UTC for storage, and back from

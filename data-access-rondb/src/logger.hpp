@@ -20,10 +20,80 @@
 #define DATA_ACCESS_RONDB_SRC_LOGGER_HPP_
 
 #include <iostream>
+#include <string.h>
+#include "src/rdrs-dal.h"
 
-#define WARN(msg)  std::cout << msg << std::endl;
-#define ERROR(msg) std::cout << msg << std::endl;
-#define INFO(msg)  std::cout << msg << std::endl;
-#define TRACE(msg) std::cout << msg << std::endl;
+#define PanicLevel 0
+#define FatalLevel 1
+#define ErrorLevel 2
+#define WarnLevel  3
+#define InfoLevel  4
+#define DebugLevel 5
+#define TraceLevel 6
+
+static Callbacks my_cb_fns;
+
+inline void set_log_call_back_fns(const Callbacks cbs) {
+  my_cb_fns = cbs;
+}
+
+inline void log(const int level, const char *msg) {
+  RS_LOG_MSG log_msg;
+  log_msg.level = level;
+  strncpy(log_msg.message, msg, RS_LOG_MSG_LEN-1);
+  my_cb_fns.logger(log_msg);
+}
+
+inline void PANIC(const char *msg) {
+  log(PanicLevel, msg);
+}
+
+inline void PANIC(const std::string msg) {
+  log(PanicLevel, msg.c_str());
+}
+
+inline void FATAL(const char *msg) {
+  log(FatalLevel, msg);
+}
+
+inline void FATAL(const std::string msg) {
+  log(FatalLevel, msg.c_str());
+}
+
+inline void ERROR(const char *msg) {
+  log(ErrorLevel, msg);
+}
+
+inline void ERROR(const std::string msg) {
+  log(ErrorLevel, msg.c_str());
+}
+
+inline void WARN(const char *msg) {
+  log(WarnLevel, msg);
+}
+
+inline void WARN(const std::string msg) {
+  log(WarnLevel, msg.c_str());
+}
+
+inline void INFO(const char *msg) {
+  log(InfoLevel, msg);
+}
+
+inline void INFO(const std::string msg) {
+  log(InfoLevel, msg.c_str());
+}
+
+inline void DEBUG(const char *msg) {
+  log(DebugLevel, msg);
+}
+
+inline void DEBUG(const std::string msg) {
+  log(DebugLevel, msg.c_str());
+}
+
+inline void TRACE(char *msg) {
+  log(TraceLevel, msg);
+}
 
 #endif  // DATA_ACCESS_RONDB_SRC_LOGGER_HPP_

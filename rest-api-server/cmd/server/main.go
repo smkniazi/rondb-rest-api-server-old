@@ -37,10 +37,11 @@ func main() {
 	}
 
 	log.InitLogger(config.Configuration().Log)
+	log.Infof("Current configuration: %s", config.Configuration())
 
-	log.Infof("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s  \n",
+	log.Infof("Starting Version : %s, Git Branch: %s (%s). Built on %s at %s",
 		version.VERSION, version.BRANCH, version.GITCOMMIT, version.BUILDTIME, version.HOSTNAME)
-	log.Infof("Starting API Version : %s  \n", version.API_VERSION)
+	log.Infof("Starting API Version : %s", version.API_VERSION)
 
 	runtime.GOMAXPROCS(config.Configuration().RestServer.GOMAXPROCS)
 

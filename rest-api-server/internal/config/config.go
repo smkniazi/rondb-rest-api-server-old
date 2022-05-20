@@ -18,7 +18,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -38,6 +37,11 @@ type RSConfiguration struct {
 	RonDBConfig RonDB
 	MySQLServer MySQLServer
 	Log         log.LogConfig
+}
+
+func (config RSConfiguration) String() string {
+	b, _ := json.MarshalIndent(_config, "", "\t")
+	return fmt.Sprintf("%s", string(b))
 }
 
 type RestServer struct {
@@ -121,11 +125,11 @@ func LoadConfig(path string, fail bool) {
 	if err != nil {
 		panic(fmt.Sprintf("Unable to load configuration from file. Error: %v", err))
 	}
+}
 
-	// Print Config
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, []byte(byteValue), "", "\t")
-	log.Infof("Configuration loaded from file: %s\n", string(prettyJSON.Bytes()))
+func PrintConfig() {
+	b, _ := json.MarshalIndent(_config, "", "\t")
+	log.Infof("Configuration loaded from file: %s\n", string(b))
 }
 
 func Configuration() RSConfiguration {

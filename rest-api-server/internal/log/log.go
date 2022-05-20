@@ -58,6 +58,8 @@ func InitLogger(logConfig LogConfig) {
 	} else {
 		log.SetOutput(os.Stdout)
 	}
+
+	RegisterLogCallBack()
 }
 
 func Tracef(format string, v ...interface{}) {
