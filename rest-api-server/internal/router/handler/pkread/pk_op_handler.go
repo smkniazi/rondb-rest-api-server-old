@@ -37,7 +37,6 @@ func RegisterPKTestHandler(e *gin.Engine) {
 }
 
 func PkReadHandler(c *gin.Context) {
-
 	pkReadParams := ds.PKReadParams{}
 
 	err := parseRequest(c, &pkReadParams)

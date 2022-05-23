@@ -39,8 +39,8 @@ func TestPKReadOmitRequired(t *testing.T) {
 	// Test. Omitting filter should result in 400 error
 	param := ds.PKReadBody{
 		Filters:     nil,
-		ReadColumns: tu.NewReadColumns(t, "read_col_", 5),
-		OperationID: tu.NewOperationID(t, 64),
+		ReadColumns: tu.NewReadColumns("read_col_", 5),
+		OperationID: tu.NewOperationID(64),
 	}
 
 	url := tu.NewPKReadURL("db", "table")
@@ -51,14 +51,14 @@ func TestPKReadOmitRequired(t *testing.T) {
 
 	// Test. unset filter values should result in 400 error
 	col := "col"
-	filter := tu.NewFilter(t, &col, nil)
+	filter := tu.NewFilter(&col, nil)
 	param.Filters = filter
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
 		"Field validation for 'Value' failed on the 'required' tag")
 
 	val := "val"
-	filter = tu.NewFilter(t, nil, val)
+	filter = tu.NewFilter(nil, val)
 	param.Filters = filter
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
@@ -75,9 +75,9 @@ func TestPKReadLargeColumns(t *testing.T) {
 	col := tu.RandString(65)
 	val := "val"
 	param := ds.PKReadBody{
-		Filters:     tu.NewFilter(t, &col, val),
-		ReadColumns: tu.NewReadColumns(t, "read_col_", 5),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilter(&col, val),
+		ReadColumns: tu.NewReadColumns("read_col_", 5),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ := json.MarshalIndent(param, "", "\t")
 	url := tu.NewPKReadURL("db", "table")
@@ -86,9 +86,9 @@ func TestPKReadLargeColumns(t *testing.T) {
 
 	// Test. Large read column names.
 	param = ds.PKReadBody{
-		Filters:     tu.NewFilters(t, "filter_col_", 3),
-		ReadColumns: tu.NewReadColumns(t, tu.RandString(65), 5),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilters("filter_col_", 3),
+		ReadColumns: tu.NewReadColumns(tu.RandString(65), 5),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB,
@@ -96,9 +96,9 @@ func TestPKReadLargeColumns(t *testing.T) {
 
 	// Test. Large db and table names
 	param = ds.PKReadBody{
-		Filters:     tu.NewFilters(t, "filter_col_", 3),
-		ReadColumns: tu.NewReadColumns(t, "read_col_", 5),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilters("filter_col_", 3),
+		ReadColumns: tu.NewReadColumns("read_col_", 5),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	url1 := tu.NewPKReadURL(tu.RandString(65), "table")
@@ -127,9 +127,9 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	col := "col" + string(rune(0x0000))
 	val := "val"
 	param := ds.PKReadBody{
-		Filters:     tu.NewFilter(t, &col, val),
-		ReadColumns: tu.NewReadColumn(t, "read_col"),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilter(&col, val),
+		ReadColumns: tu.NewReadColumn("read_col"),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ := json.MarshalIndent(param, "", "\t")
 	url := tu.NewPKReadURL("db", "table")
@@ -140,9 +140,9 @@ func TestPKInvalidIdentifier(t *testing.T) {
 	col = "col"
 	val = "val"
 	param = ds.PKReadBody{
-		Filters:     tu.NewFilter(t, &col, val),
-		ReadColumns: tu.NewReadColumn(t, "col"+string(rune(0x10000))),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilter(&col, val),
+		ReadColumns: tu.NewReadColumn("col" + string(rune(0x10000))),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
@@ -150,9 +150,9 @@ func TestPKInvalidIdentifier(t *testing.T) {
 
 	// Test. Invalid path parameteres
 	param = ds.PKReadBody{
-		Filters:     tu.NewFilter(t, &col, val),
-		ReadColumns: tu.NewReadColumn(t, "col"),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilter(&col, val),
+		ReadColumns: tu.NewReadColumn("col"),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	url1 := tu.NewPKReadURL("db"+string(rune(0x10000)), "table")
@@ -175,9 +175,9 @@ func TestPKUniqueParams(t *testing.T) {
 	readColumns[0].Column = &col
 	readColumns[1].Column = &col
 	param := ds.PKReadBody{
-		Filters:     tu.NewFilters(t, "col", 1),
+		Filters:     tu.NewFilters("col", 1),
 		ReadColumns: &readColumns,
-		OperationID: tu.NewOperationID(t, 64),
+		OperationID: tu.NewOperationID(64),
 	}
 	url := tu.NewPKReadURL("db", "table")
 	body, _ := json.MarshalIndent(param, "", "\t")
@@ -188,13 +188,13 @@ func TestPKUniqueParams(t *testing.T) {
 	col = "col"
 	val := "val"
 	filters := make([]ds.Filter, 2)
-	filters[0] = (*(tu.NewFilter(t, &col, val)))[0]
-	filters[1] = (*(tu.NewFilter(t, &col, val)))[0]
+	filters[0] = (*(tu.NewFilter(&col, val)))[0]
+	filters[1] = (*(tu.NewFilter(&col, val)))[0]
 
 	param = ds.PKReadBody{
 		Filters:     &filters,
-		ReadColumns: tu.NewReadColumns(t, "read_col_", 5),
-		OperationID: tu.NewOperationID(t, 64),
+		ReadColumns: tu.NewReadColumns("read_col_", 5),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
@@ -202,9 +202,9 @@ func TestPKUniqueParams(t *testing.T) {
 
 	//Test that filter and read columns do not contain overlapping columns
 	param = ds.PKReadBody{
-		Filters:     tu.NewFilter(t, &col, val),
-		ReadColumns: tu.NewReadColumn(t, col),
-		OperationID: tu.NewOperationID(t, 64),
+		Filters:     tu.NewFilter(&col, val),
+		ReadColumns: tu.NewReadColumn(col),
+		OperationID: tu.NewOperationID(64),
 	}
 	body, _ = json.MarshalIndent(param, "", "\t")
 	tu.ProcessRequest(t, router, ds.PK_HTTP_VERB, url, string(body), http.StatusBadRequest,
@@ -219,9 +219,9 @@ func TestPKERROR_011(t *testing.T) {
 			pkCol := "id0"
 			pkVal := "1"
 			param := ds.PKReadBody{
-				Filters:     tu.NewFilter(t, &pkCol, pkVal),
-				ReadColumns: tu.NewReadColumn(t, "col_0"),
-				OperationID: tu.NewOperationID(t, 64),
+				Filters:     tu.NewFilter(&pkCol, pkVal),
+				ReadColumns: tu.NewReadColumn("col_0"),
+				OperationID: tu.NewOperationID(64),
 			}
 
 			body, _ := json.MarshalIndent(param, "", "\t")
@@ -242,9 +242,9 @@ func TestPKERROR_012(t *testing.T) {
 			pkCol := "id0"
 			pkVal := "1"
 			param := ds.PKReadBody{
-				Filters:     tu.NewFilter(t, &pkCol, pkVal),
-				ReadColumns: tu.NewReadColumn(t, "col_0_XXX"),
-				OperationID: tu.NewOperationID(t, 64),
+				Filters:     tu.NewFilter(&pkCol, pkVal),
+				ReadColumns: tu.NewReadColumn("col_0_XXX"),
+				OperationID: tu.NewOperationID(64),
 			}
 
 			body, _ := json.MarshalIndent(param, "", "\t")
@@ -262,9 +262,9 @@ func TestPKERROR_013_ERROR_014(t *testing.T) {
 			// send an other request with one column missing from def
 			// //		// one PK col is missing
 			param := ds.PKReadBody{
-				Filters:     tu.NewFilters(t, "id", 1), // PK has two cols. should thow an exception as we have define only one col in PK
-				ReadColumns: tu.NewReadColumn(t, "col_0"),
-				OperationID: tu.NewOperationID(t, 64),
+				Filters:     tu.NewFilters("id", 1), // PK has two cols. should thow an exception as we have define only one col in PK
+				ReadColumns: tu.NewReadColumn("col_0"),
+				OperationID: tu.NewOperationID(64),
 			}
 			body, _ := json.MarshalIndent(param, "", "\t")
 			url := tu.NewPKReadURL("DB002", "table_1")
@@ -272,9 +272,9 @@ func TestPKERROR_013_ERROR_014(t *testing.T) {
 
 			// send an other request with two pk cols but wrong names
 			param = ds.PKReadBody{
-				Filters:     tu.NewFilters(t, "idx", 2),
-				ReadColumns: tu.NewReadColumn(t, "col_0"),
-				OperationID: tu.NewOperationID(t, 64),
+				Filters:     tu.NewFilters("idx", 2),
+				ReadColumns: tu.NewReadColumn("col_0"),
+				OperationID: tu.NewOperationID(64),
 			}
 			body, _ = json.MarshalIndent(param, "", "\t")
 			url = tu.NewPKReadURL("DB002", "table_1")

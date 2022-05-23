@@ -62,17 +62,18 @@ func TestStat(t *testing.T) {
 				t.Fatalf("Native buffer stats do not match Got: %v", stats)
 			}
 
-			if stats.RonDBStats.NdbObjectsCreationCount != uint64(numOps) || stats.RonDBStats.NdbObjectsTotalCount != uint64(numOps) || stats.RonDBStats.NdbObjectsFreeCount != uint64(numOps) {
+			if stats.RonDBStats.NdbObjectsCreationCount != uint64(numOps) ||
+				stats.RonDBStats.NdbObjectsTotalCount != uint64(numOps) ||
+				stats.RonDBStats.NdbObjectsFreeCount != uint64(numOps) {
 				t.Fatalf("RonDB stats do not match")
 			}
-
 		})
 }
 
 func performPkOp(t *testing.T, router *gin.Engine, db string, table string, ch chan int) {
 	param := ds.PKReadBody{
-		Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-		ReadColumns: tu.NewReadColumn(t, "col0"),
+		Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+		ReadColumns: tu.NewReadColumn("col0"),
 	}
 	body, _ := json.MarshalIndent(param, "", "\t")
 

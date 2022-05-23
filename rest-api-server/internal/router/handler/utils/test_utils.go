@@ -36,12 +36,13 @@ import (
 	"hopsworks.ai/rdrs/internal/config"
 	"hopsworks.ai/rdrs/internal/dal"
 	ds "hopsworks.ai/rdrs/internal/datastructs"
+	"hopsworks.ai/rdrs/internal/log"
 	"hopsworks.ai/rdrs/version"
 )
 
 type RegisterTestHandler func(*gin.Engine)
 
-func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
+func ProcessRequest(t testing.TB, router *gin.Engine, httpVerb string,
 	url string, body string, expectedStatus int, expectedMsg string) (int, string) {
 
 	t.Helper()
@@ -68,7 +69,7 @@ func ProcessRequest(t *testing.T, router *gin.Engine, httpVerb string,
 	return resp.Code, string(resp.Body.Bytes())
 }
 
-func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp string, isBinaryData bool) {
+func ValidateResArrayData(t testing.TB, testInfo ds.PKTestInfo, resp string, isBinaryData bool) {
 	t.Helper()
 
 	for i := 0; i < len(testInfo.RespKVs); i++ {
@@ -91,7 +92,7 @@ func ValidateResArrayData(t *testing.T, testInfo ds.PKTestInfo, resp string, isB
 	}
 }
 
-func getColumnDataFromJson(t *testing.T, colName string, resp string) (string, bool) {
+func getColumnDataFromJson(t testing.TB, colName string, resp string) (string, bool) {
 	t.Helper()
 
 	if colName[0:1] != "\"" && colName[len(colName)-1:] != "\"" {
@@ -129,7 +130,7 @@ func getColumnDataFromJson(t *testing.T, colName string, resp string) (string, b
 	}
 }
 
-func getColumnDataFromDB(t *testing.T, db string, table string, filters *[]ds.Filter, col string, isBinary bool) (string, error) {
+func getColumnDataFromDB(t testing.TB, db string, table string, filters *[]ds.Filter, col string, isBinary bool) (string, error) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/",
 		config.Configuration().MySQLServer.User,
 		config.Configuration().MySQLServer.Password,
@@ -220,8 +221,7 @@ func RawBytes(a interface{}) json.RawMessage {
 	return value
 }
 
-func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]ds.ReadColumn {
-	t.Helper()
+func NewReadColumns(prefix string, numReadColumns int) *[]ds.ReadColumn {
 	readColumns := make([]ds.ReadColumn, numReadColumns)
 	for i := 0; i < numReadColumns; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
@@ -232,8 +232,7 @@ func NewReadColumns(t *testing.T, prefix string, numReadColumns int) *[]ds.ReadC
 	return &readColumns
 }
 
-func NewReadColumn(t *testing.T, col string) *[]ds.ReadColumn {
-	t.Helper()
+func NewReadColumn(col string) *[]ds.ReadColumn {
 	readColumns := make([]ds.ReadColumn, 1)
 	drt := string(ds.DRT_DEFAULT)
 	readColumns[0].Column = &col
@@ -256,25 +255,22 @@ func NewStatURL() string {
 	return "/" + version.API_VERSION + "/" + ds.STAT_OPERATION
 }
 
-func NewOperationID(t *testing.T, size int) *string {
+func NewOperationID(size int) *string {
 	opID := RandString(size)
 	return &opID
 }
 
-func NewPKReadReqBodyTBD(t *testing.T) ds.PKReadBody {
-	t.Helper()
+func NewPKReadReqBodyTBD() ds.PKReadBody {
 	param := ds.PKReadBody{
-		Filters:     NewFilters(t, "filter_col_", 3),
-		ReadColumns: NewReadColumns(t, "read_col_", 5),
-		OperationID: NewOperationID(t, 64),
+		Filters:     NewFilters("filter_col_", 3),
+		ReadColumns: NewReadColumns("read_col_", 5),
+		OperationID: NewOperationID(64),
 	}
 	return param
 }
 
 // creates dummy filter columns of type string
-func NewFilters(t *testing.T, prefix string, numFilters int) *[]ds.Filter {
-	t.Helper()
-
+func NewFilters(prefix string, numFilters int) *[]ds.Filter {
 	filters := make([]ds.Filter, numFilters)
 	for i := 0; i < numFilters; i++ {
 		col := prefix + fmt.Sprintf("%d", i)
@@ -285,8 +281,7 @@ func NewFilters(t *testing.T, prefix string, numFilters int) *[]ds.Filter {
 	return &filters
 }
 
-func NewFilter(t *testing.T, column *string, a interface{}) *[]ds.Filter {
-	t.Helper()
+func NewFilter(column *string, a interface{}) *[]ds.Filter {
 	filter := make([]ds.Filter, 1)
 
 	filter[0] = ds.Filter{Column: column}
@@ -295,10 +290,9 @@ func NewFilter(t *testing.T, column *string, a interface{}) *[]ds.Filter {
 	return &filter
 }
 
-func NewFiltersKVs(t *testing.T, vals ...interface{}) *[]ds.Filter {
-	t.Helper()
+func NewFiltersKVs(vals ...interface{}) *[]ds.Filter {
 	if len(vals)%2 != 0 {
-		t.Fatal("Expecting key value pairs")
+		log.Panic("Expecting key value pairs")
 	}
 
 	filters := make([]ds.Filter, len(vals)/2)
@@ -323,7 +317,7 @@ func RandString(n int) string {
 	return string(b)
 }
 
-func WithDBs(t *testing.T, dbs [][][]string, registerHandlers []RegisterTestHandler,
+func WithDBs(t testing.TB, dbs [][][]string, registerHandlers []RegisterTestHandler,
 	fn func(router *gin.Engine)) {
 	t.Helper()
 
@@ -366,7 +360,7 @@ func WithDBs(t *testing.T, dbs [][][]string, registerHandlers []RegisterTestHand
 	}
 }
 
-func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
+func runSQLQueries(t testing.TB, db *sql.DB, setup []string) {
 	t.Helper()
 	for _, command := range setup {
 		_, err := db.Exec(command)
@@ -376,9 +370,10 @@ func runSQLQueries(t *testing.T, db *sql.DB, setup []string) {
 	}
 }
 
-func InitRouter(t *testing.T, registerHandlers []RegisterTestHandler) (*gin.Engine, error) {
+func InitRouter(t testing.TB, registerHandlers []RegisterTestHandler) (*gin.Engine, error) {
 	t.Helper()
 	router := gin.New()
+	router.Use(loggerMiddleware())
 	connStr := fmt.Sprintf("%s:%d", config.Configuration().RonDBConfig.IP, config.Configuration().RonDBConfig.Port)
 	err := dal.InitRonDBConnection(connStr, true)
 	if err != nil {
@@ -395,7 +390,14 @@ func InitRouter(t *testing.T, registerHandlers []RegisterTestHandler) (*gin.Engi
 	return router, nil
 }
 
-func shutDownRouter(t *testing.T, router *gin.Engine) error {
+func loggerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//  Processing requests
+		c.Next()
+	}
+}
+
+func shutDownRouter(t testing.TB, router *gin.Engine) error {
 	t.Helper()
 	err := dal.ShutdownConnection()
 	if err != nil {
@@ -459,7 +461,7 @@ func BatchTest(t *testing.T, tests map[string]ds.BatchOperationTestInfo, isBinar
 	}
 }
 
-func validateBatchResponse(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
+func validateBatchResponse(t testing.TB, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
 	t.Helper()
 	validateBatchResponseOpIdsNCode(t, testInfo, resp)
 	validateBatchResponseMsg(t, testInfo, resp)
@@ -467,7 +469,7 @@ func validateBatchResponse(t *testing.T, testInfo ds.BatchOperationTestInfo, res
 
 }
 
-func validateBatchResponseOpIdsNCode(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string) {
+func validateBatchResponseOpIdsNCode(t testing.TB, testInfo ds.BatchOperationTestInfo, resp string) {
 	var res []struct {
 		Code int
 		Body struct {
@@ -497,7 +499,7 @@ func validateBatchResponseOpIdsNCode(t *testing.T, testInfo ds.BatchOperationTes
 	}
 }
 
-func validateBatchResponseMsg(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string) {
+func validateBatchResponseMsg(t testing.TB, testInfo ds.BatchOperationTestInfo, resp string) {
 
 	var res []json.RawMessage
 	json.Unmarshal([]byte(resp), &res)
@@ -510,7 +512,7 @@ func validateBatchResponseMsg(t *testing.T, testInfo ds.BatchOperationTestInfo, 
 	}
 }
 
-func validateBatchResponseValues(t *testing.T, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
+func validateBatchResponseValues(t testing.TB, testInfo ds.BatchOperationTestInfo, resp string, isBinaryData bool) {
 	var res []struct {
 		Code int
 		Body json.RawMessage

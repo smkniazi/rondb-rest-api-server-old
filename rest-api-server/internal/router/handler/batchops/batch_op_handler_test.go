@@ -38,9 +38,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "int_table",
@@ -59,9 +59,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "int_table",
@@ -75,9 +75,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "bigint_table",
@@ -96,9 +96,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "int_table",
@@ -112,9 +112,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 0, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 0, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "bigint_table",
@@ -128,9 +128,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB006/tinyint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", -128, "id1", 0),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", -128, "id1", 0),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "tinyint_table",
@@ -144,9 +144,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB007/smallint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 32767, "id1", 65535),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 32767, "id1", 65535),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "smallint_table",
@@ -160,9 +160,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB007/smallint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 1, "id1", 1),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 1, "id1", 1),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "smallint_table",
@@ -181,9 +181,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB004/int_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 100, "id1", 100),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 100, "id1", 100),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "int_table",
@@ -197,9 +197,9 @@ func TestBatchSimple1(t *testing.T) {
 						Method:      &[]string{ds.PK_HTTP_VERB}[0],
 						RelativeURL: &[]string{string("DB005/bigint_table/" + ds.PK_DB_OPERATION)}[0],
 						Body: &ds.PKReadBody{
-							Filters:     tu.NewFiltersKVs(t, "id0", 100, "id1", 100),
-							ReadColumns: tu.NewReadColumns(t, "col", 2),
-							OperationID: tu.NewOperationID(t, 64),
+							Filters:     tu.NewFiltersKVs("id0", 100, "id1", 100),
+							ReadColumns: tu.NewReadColumns("col", 2),
+							OperationID: tu.NewOperationID(64),
 						},
 					},
 					Table:        "bigint_table",
@@ -319,9 +319,9 @@ func createSubOperation(t *testing.T, table string, database string, pk string, 
 			Method:      &[]string{ds.PK_HTTP_VERB}[0],
 			RelativeURL: &[]string{string(database + "/" + table + "/" + ds.PK_DB_OPERATION)}[0],
 			Body: &ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", pk),
-				ReadColumns: tu.NewReadColumns(t, "col", 1),
-				OperationID: tu.NewOperationID(t, 5),
+				Filters:     tu.NewFiltersKVs("id0", pk),
+				ReadColumns: tu.NewReadColumns("col", 1),
+				OperationID: tu.NewOperationID(5),
 			},
 		},
 		Table:        table,
@@ -395,7 +395,7 @@ func TestBatchBadSubOp(t *testing.T) {
 			Operations: []ds.BatchSubOperationTestInfo{
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "-1", http.StatusNotFound),
 				//This is bad operation. data is longer than the column width
-				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, *tu.NewOperationID(t, colWidth*4+1), http.StatusNotFound),
+				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, *tu.NewOperationID(colWidth*4 + 1), http.StatusNotFound),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "1", http.StatusOK),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "2", http.StatusOK),
 				arrayColumnBatchTestSubOp(t, table, database, isBinary, colWidth, padding, "3", http.StatusOK),
@@ -413,9 +413,9 @@ func arrayColumnBatchTestSubOp(t *testing.T, table string, database string, isBi
 			Method:      &[]string{ds.PK_HTTP_VERB}[0],
 			RelativeURL: &[]string{string(database + "/" + table + "/" + ds.PK_DB_OPERATION)}[0],
 			Body: &ds.PKReadBody{
-				Filters:     tu.NewFiltersKVs(t, "id0", tu.Encode(pk, isBinary, colWidth, padding)),
-				ReadColumns: tu.NewReadColumns(t, "col", 1),
-				OperationID: tu.NewOperationID(t, 5),
+				Filters:     tu.NewFiltersKVs("id0", tu.Encode(pk, isBinary, colWidth, padding)),
+				ReadColumns: tu.NewReadColumns("col", 1),
+				OperationID: tu.NewOperationID(5),
 			},
 		},
 		Table:        table,
@@ -474,7 +474,7 @@ func NewOperationsTBD(t *testing.T, numOps int) []ds.BatchSubOperation {
 }
 
 func NewOperationTBD(t *testing.T) ds.BatchSubOperation {
-	pkOp := tu.NewPKReadReqBodyTBD(t)
+	pkOp := tu.NewPKReadReqBodyTBD()
 	method := "POST"
 	relativeURL := tu.NewPKReadURL("db", "table")
 
